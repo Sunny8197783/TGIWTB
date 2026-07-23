@@ -73,16 +73,24 @@ public static class MonsterTuning
         /// <summary>유지 거리 앞뒤로 이만큼은 그냥 서 있는다 (덜덜 떨림 방지).</summary>
         public static readonly float DistanceTolerance = 16f;
 
-        /// <summary>선딜 0.5s</summary>
-        public static readonly float Windup = 0.5f;
+        /// <summary>
+        /// 선딜 0.7s. 명세 0.5s 에서 늘렸다 — 예고를 보고 피할 시간이 필요하다.
+        /// </summary>
+        public static readonly float Windup = 0.7f;
 
         public static readonly float Recover = 0.35f;
-        public static readonly float Cooldown = 1.6f;
+
+        /// <summary>
+        /// 2.8s. 명세 1.6s 로는 초원에 궁수가 3마리라 화살이 끊이지 않아
+        /// 한 대도 안 맞고 접근하는 것이 사실상 불가능했다.
+        /// </summary>
+        public static readonly float Cooldown = 2.8f;
 
         /// <summary>탄속 140 px/s</summary>
         public static readonly float ArrowSpeed = 140f;
 
-        public static readonly float ArrowDamage = 10f;
+        /// <summary>8. 명세 10 에서 낮췄다 — 위 쿨다운과 함께 원거리 압박을 줄인다.</summary>
+        public static readonly float ArrowDamage = 8f;
         public static readonly float ArrowLifeSeconds = 3f;
         public static readonly float ArrowRadius = 2.5f;
         public static readonly Color ArrowColor = new(0.95f, 0.90f, 0.60f);
@@ -104,27 +112,39 @@ public static class MonsterTuning
 
     public static class IronjawAttack
     {
-        /// <summary>패턴 1 물어뜯기 — 선딜 0.6s, 전방 부채꼴, 22 데미지.</summary>
+        /// <summary>패턴 1 물어뜯기 — 선딜 0.6s, 전방 부채꼴.</summary>
         public static readonly float BiteWindup = 0.6f;
-        public static readonly float BiteRecover = 0.4f;
-        public static readonly float BiteDamage = 22f;
+
+        /// <summary>0.8s. 패턴이 끝난 뒤 반격할 틈을 주는 구간이라 명세 0.4s 에서 늘렸다.</summary>
+        public static readonly float BiteRecover = 0.8f;
+
+        /// <summary>18. 명세 22 에서 낮췄다.</summary>
+        public static readonly float BiteDamage = 18f;
         public static readonly float BiteRange = 34f;
         public static readonly float BiteAngleDeg = 100f;
 
-        /// <summary>패턴 2 돌진 — 선딜 0.8s, 260 px/s 로 1.0s 직진, 28 데미지.</summary>
+        /// <summary>패턴 2 돌진 — 선딜 0.8s, 260 px/s 로 1.0s 직진.</summary>
         public static readonly float ChargeWindup = 0.8f;
         public static readonly float ChargeSpeed = 260f;
         public static readonly float ChargeDuration = 1.0f;
-        public static readonly float ChargeDamage = 28f;
-        public static readonly float ChargeRecover = 0.6f;
+
+        /// <summary>22. 명세 28 에서 낮췄다.</summary>
+        public static readonly float ChargeDamage = 22f;
+
+        /// <summary>1.1s. 돌진 후 크게 숨을 고른다 — 여기가 주요 공격 기회다.</summary>
+        public static readonly float ChargeRecover = 1.1f;
 
         /// <summary>패턴 3 포효 — HP 40% 이하에서 1회. 이후 공격 속도 25% 증가.</summary>
         public static readonly float RoarHpRatio = 0.4f;
         public static readonly float RoarDuration = 0.9f;
         public static readonly float EnragedSpeedScale = 0.75f;
 
-        /// <summary>패턴 사이 간격.</summary>
-        public static readonly float PatternCooldown = 1.4f;
+        /// <summary>
+        /// 패턴 사이 간격 2.6s. 명세 1.4s 로는 (선딜 0.6 + 후딜 0.4) 가 끝나면
+        /// 0.4s 만에 다음 패턴이 나와서 때릴 틈이 사실상 없었다.
+        /// 물어뜯기 기준 후딜이 끝나고도 1.2s 가 비어 3~4대는 넣을 수 있다.
+        /// </summary>
+        public static readonly float PatternCooldown = 2.6f;
 
         /// <summary>이 거리 안이면 물어뜯기, 밖이면 돌진.</summary>
         public static readonly float BiteDecisionRange = 46f;

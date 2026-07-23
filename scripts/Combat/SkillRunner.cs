@@ -32,6 +32,11 @@ public sealed class SkillRunner
     public bool IsBusy => Phase != SkillPhase.None;
     public bool IsActive => Phase == SkillPhase.Active;
 
+    /// <summary>현재 단계의 진행도 0~1. 공격 모션 보간에 쓴다.</summary>
+    public float PhaseProgress => _phaseLength > 0f
+        ? Mathf.Clamp(1f - (_timer / _phaseLength), 0f, 1f)
+        : 1f;
+
     /// <summary>선딜 중에만 방향을 바꿀 수 있다. (§C-7)</summary>
     public bool CanTurn => Phase != SkillPhase.Active && Phase != SkillPhase.Recovery;
 
@@ -67,6 +72,7 @@ public sealed class SkillRunner
         Skill = null;
         _timer = 0f;
         _phaseLength = 0f;
+        JustEnteredActive = false;
         _hitThisSwing.Clear();
     }
 
@@ -80,8 +86,16 @@ public sealed class SkillRunner
     /// <summary>한 스윙에 같은 대상은 한 번만 맞는다.</summary>
     public bool TryMarkHit(ulong instanceId) => _hitThisSwing.Add(instanceId);
 
+    /// <summary>
+    /// 이번 Tick 에서 판정 프레임에 막 진입했는가.
+    /// 돌진처럼 '판정이 시작되는 순간' 한 번만 해야 하는 일이 있다.
+    /// </summary>
+    public bool JustEnteredActive { get; private set; }
+
     public void Tick(float delta)
     {
+        JustEnteredActive = false;
+
         if (Phase == SkillPhase.None)
             return;
 
@@ -93,6 +107,7 @@ public sealed class SkillRunner
         {
             case SkillPhase.Windup:
                 EnterPhase(SkillPhase.Active, CombatTuning.AttackActive);
+                JustEnteredActive = true;
                 break;
             case SkillPhase.Active:
                 EnterPhase(SkillPhase.Recovery, CombatTuning.AttackRecovery);

@@ -356,8 +356,23 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         _attack.Tick(dt);
 
+        // 돌진은 판정과 함께 시작한다. 그래야 돌진 경로 전체가 판정 범위가 된다.
+        // (선딜에 돌진하면 판정이 도착점에서만 열려 맞히기가 지나치게 어렵다.)
+        if (_attack.JustEnteredActive)
+            StartLunge(_attack.Skill);
+
         if (_attack.IsActive)
             ProcessActiveHitbox();
+    }
+
+    private void StartLunge(SkillDefinition skill)
+    {
+        float distance = skill?.Dash?.DistancePx ?? 0f;
+        if (distance <= 0f || CombatTuning.AttackActive <= 0f)
+            return;
+
+        _lungeTimer = CombatTuning.AttackActive;
+        _lungeVelocity = _attack.LockedFacing * (distance / CombatTuning.AttackActive);
     }
 
     protected bool TryStartSkill(SkillDefinition skill)
@@ -378,12 +393,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (skill.Cooldown > 0f)
             _cooldowns[skill.Id] = skill.Cooldown;
 
-        // 전방 돌진 후 타격 — 선딜 동안 앞으로 밀고 나간다. (§E sk_bash)
-        if (skill.Dash != null && skill.Dash.DistancePx > 0f && CombatTuning.AttackWindup > 0f)
-        {
-            _lungeTimer = CombatTuning.AttackWindup;
-            _lungeVelocity = _facing * (skill.Dash.DistancePx / CombatTuning.AttackWindup);
-        }
+        // 돌진 자체는 판정 프레임에 들어갈 때 시작한다. StartLunge 참고.
 
         // 자기 강화 버프는 사용 즉시 걸린다. (§E sk_warcry)
         if (skill.Buff != null && skill.Buff.DurationSeconds > 0f)
@@ -517,6 +527,14 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         if (!landed)
             return;
+
+        // 돌진 중에 맞으면 그 자리에서 멈춘다. 부딪쳤는데 그대로 지나가면
+        // 때린 느낌이 아니라 스쳐 지나간 느낌이 된다.
+        if (skill.Dash != null && _lungeTimer > 0f)
+        {
+            _lungeTimer = 0f;
+            Velocity = Vector2.Zero;
+        }
 
         bool killed = !monster.IsAlive;
         float hitstop = killed
@@ -683,9 +701,38 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         return input.LengthSquared() > 1f ? input.Normalized() : input;
     }
 
+    /// <summary>
+    /// 공격 모션. 선딜에 뒤로 당겼다가 판정에 내지르고 후딜에 돌아온다.
+    /// 스프라이트 없이 '지금 때리는 중'을 읽히게 하는 유일한 수단이다. (규칙 5)
+    /// </summary>
+    private Vector2 AttackMotionOffset()
+    {
+        if (!_attack.IsBusy)
+            return Vector2.Zero;
+
+        Vector2 dir = _attack.LockedFacing;
+        float t = EaseOut(_attack.PhaseProgress);
+
+        return _attack.Phase switch
+        {
+            SkillPhase.Windup => -dir * (CombatTuning.MotionWindupBack * t),
+            SkillPhase.Active => dir * (CombatTuning.MotionActiveForward * t),
+            SkillPhase.Recovery => dir * (CombatTuning.MotionActiveForward * (1f - t)),
+            _ => Vector2.Zero,
+        };
+    }
+
+    private static float EaseOut(float t) => 1f - (1f - t) * (1f - t);
+
     private void UpdateVisuals(float dt)
     {
-        _facingMarker.Position = _facing * PlayerTuning.FacingMarkerDistance
+        Vector2 motion = AttackMotionOffset();
+        float size = PlayerTuning.BodySize;
+        _body.Position = motion - Vector2.One * (size * 0.5f);
+
+        // 공격 중에는 고정된 판정 방향을 가리킨다 — 어디를 때리는지가 보여야 한다.
+        Vector2 aim = _attack.IsBusy ? _attack.LockedFacing : _facing;
+        _facingMarker.Position = motion + aim * PlayerTuning.FacingMarkerDistance
             - Vector2.One * (PlayerTuning.FacingMarkerSize * 0.5f);
 
         _body.Color = _flashTimer > 0f

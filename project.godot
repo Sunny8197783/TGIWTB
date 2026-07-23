@@ -1,7 +1,10 @@
-; PixelMmo — Godot 4 (.NET) project configuration
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
 ;
-; 입력 액션은 project.godot 이 아니라 scripts/Runtime/InputSetup.cs 에서
-; 코드로 등록한다. (§C-8 키맵을 한 곳에서 읽고 고치기 위함)
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
 
 config_version=5
 
@@ -25,7 +28,6 @@ window/size/viewport_height=360
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="viewport"
-window/stretch/aspect="keep"
 
 [dotnet]
 
@@ -37,6 +39,6 @@ export/convert_text_resources_to_binary=false
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-textures/canvas_textures/default_texture_filter=0

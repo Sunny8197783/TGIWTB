@@ -36,6 +36,9 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     protected MonsterState State { get; private set; } = MonsterState.Idle;
     protected float StateTimer;
+
+    /// <summary>SetState 로 받은 원래 길이. 모션 진행도를 내는 데만 쓴다.</summary>
+    private float _stateLength;
     protected PlayerCharacter Player { get; private set; }
     protected Vector2 Facing { get; set; } = Vector2.Right;
 
@@ -88,8 +91,9 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
                 QueueRedraw();
         }
 
-        // 히트박스 표시는 매 프레임 다시 그려야 켜고 끈 것이 바로 반영된다. (§I F2)
-        if (DebugFlags.ShowHitbox)
+        // 공격 모션이 흐르는 동안은 매 프레임 다시 그린다.
+        // 히트박스 표시도 켜고 끈 것이 바로 반영되어야 한다. (§I F2)
+        if (DebugFlags.ShowHitbox || State is MonsterState.Windup or MonsterState.Attack or MonsterState.Recover)
             QueueRedraw();
 
         if (State == MonsterState.Dead)
@@ -131,17 +135,49 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     public override void _Draw()
     {
+        // 공격 모션만큼 몸을 밀어서 그린다. 위치(물리)는 건드리지 않는다.
+        Vector2 motion = AttackMotionOffset();
+        if (motion != Vector2.Zero)
+            DrawSetTransform(motion, 0f, Vector2.One);
+
         // 피격 순간 0.08s 동안 흰색. (§C-6)
         DrawShape(_flashTimer > 0f ? Colors.White : Stats.Color);
 
+        // 판정 범위는 모션과 무관하게 실제 위치에 그린다 — 모션만큼 어긋나면 안 된다.
         if (DebugFlags.ShowHitbox)
+        {
+            DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
             DrawCircle(Vector2.Zero, Stats.Radius, new Color(1f, 0f, 0f, 0.25f));
+        }
+    }
+
+    /// <summary>
+    /// 선딜에 뒤로 웅크렸다가 공격에 앞으로 튀어나온다.
+    /// 예고 동작이 없으면 원거리·보스 공격을 피할 방법이 없다.
+    /// </summary>
+    private Vector2 AttackMotionOffset()
+    {
+        float scale = CombatTuning.MotionMonsterScale;
+        if (scale <= 0f || _stateLength <= 0f)
+            return Vector2.Zero;
+
+        float t = Mathf.Clamp(1f - (StateTimer / _stateLength), 0f, 1f);
+        float eased = 1f - (1f - t) * (1f - t);
+
+        return State switch
+        {
+            MonsterState.Windup => -Facing * (CombatTuning.MotionWindupBack * scale * eased),
+            MonsterState.Attack => Facing * (CombatTuning.MotionActiveForward * scale * eased),
+            MonsterState.Recover => Facing * (CombatTuning.MotionActiveForward * scale * (1f - eased)),
+            _ => Vector2.Zero,
+        };
     }
 
     protected void SetState(MonsterState state, float duration = 0f)
     {
         State = state;
         StateTimer = duration;
+        _stateLength = duration;
     }
 
     protected float DistanceToPlayer()

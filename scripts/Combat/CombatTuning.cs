@@ -23,6 +23,7 @@ public static class CombatTuning
     public const string GroupInvuln = "무적";
     public const string GroupScreen = "화면";
     public const string GroupInput = "입력";
+    public const string GroupMotion = "모션";
 
     // --- §C-1 이동 --------------------------------------------------------
 
@@ -154,6 +155,24 @@ public static class CombatTuning
 
     public static readonly TuningEntry DeathParticles =
         Custom("fx.particles", GroupScreen, "처치 파티클 수", 8f, 0f, 32f, 1f, "개", isTime: false);
+
+    // --- 공격 모션 ---------------------------------------------------------
+    //
+    // 스프라이트가 없으므로(규칙 5) 도형을 앞뒤로 밀어 예비 동작 → 내지르기 → 복귀를
+    // 만든다. 무엇이 언제 때리는지 눈으로 읽히게 하는 것이 목적이라 §C 에는 없지만
+    // 매직 넘버를 코드에 두지 않기 위해 여기 모은다.
+
+    /// <summary>선딜에 뒤로 빼는 거리. 예비 동작이 있어야 공격이 예고된다.</summary>
+    public static readonly TuningEntry MotionWindupBack =
+        Px("motion.windupBack", GroupMotion, "선딜 뒤로 빼기", 3f, 0f, 16f, 0.5f);
+
+    /// <summary>판정에 앞으로 내미는 거리.</summary>
+    public static readonly TuningEntry MotionActiveForward =
+        Px("motion.activeForward", GroupMotion, "판정 앞으로 내밀기", 6f, 0f, 32f, 0.5f);
+
+    /// <summary>몬스터 모션 배율. 몸집이 큰 놈일수록 크게 움직여야 읽힌다.</summary>
+    public static readonly TuningEntry MotionMonsterScale =
+        Ratio("motion.monster", GroupMotion, "몬스터 모션 배율", 1.6f, 0f, 4f, 0.1f);
 
     // --- §C-7 입력 ---------------------------------------------------------
 
