@@ -32,6 +32,7 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
     private Vector2 _knockbackVelocity;
     private float _deathTimer;
     private bool _burstSpawned;
+    private float _stunTimer;
 
     protected MonsterState State { get; private set; } = MonsterState.Idle;
     protected float StateTimer;
@@ -90,6 +91,15 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
         if (State == MonsterState.Dead)
         {
             UpdateDeath(dt);
+            return;
+        }
+
+        // 경직 — sk_warcry. 넉백보다 우선한다. (§E)
+        if (_stunTimer > 0f)
+        {
+            _stunTimer -= dt;
+            Velocity = Vector2.Zero;
+            MoveAndSlide();
             return;
         }
 
@@ -191,6 +201,19 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
         if (seconds > _hitstopTimer)
             _hitstopTimer = seconds;
     }
+
+    /// <summary>경직. 그동안 아무것도 못 한다. (§E sk_warcry)</summary>
+    public void Stun(float seconds)
+    {
+        if (!IsAlive || seconds <= _stunTimer)
+            return;
+
+        _stunTimer = seconds;
+        Velocity = Vector2.Zero;
+        SetState(MonsterState.Hurt);
+    }
+
+    public bool IsStunned => _stunTimer > 0f;
 
     /// <summary>
     /// ease-out 넉백. 총 이동 거리가 정확히 KnockbackDistance 가 되도록

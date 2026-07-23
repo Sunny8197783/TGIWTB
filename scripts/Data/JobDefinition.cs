@@ -36,6 +36,13 @@ public sealed class JobDefinition
     /// <summary>랭크 문자열 → 그 랭크에서 지급되는 스킬 id 목록.</summary>
     public Dictionary<string, List<string>> RankSkills { get; set; } = new();
 
+    /// <summary>
+    /// P1 전용. 랭크와 무관하게 시작부터 쥐어 주는 스킬.
+    /// 전투 손맛을 4개 키로 검증해야 하는데 랭크 성장이 아직 없어서 둔 임시 필드다.
+    /// P2 에서 전직·랭크가 붙으면 이 배열은 통째로 지운다.
+    /// </summary>
+    public List<string> PrototypeSkills { get; set; } = new();
+
     /// <summary>특정 랭크로 넘어가기 위한 추가 관문(플래그/카운터).</summary>
     public List<JobRankGate> RankGates { get; set; } = new();
 

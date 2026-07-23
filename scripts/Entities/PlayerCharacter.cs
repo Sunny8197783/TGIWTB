@@ -48,6 +48,32 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private float _knockbackTotal;
     private Vector2 _knockbackVelocity;
 
+    /// <summary>스킬 id → 남은 쿨다운(초).</summary>
+    private readonly Dictionary<string, float> _cooldowns = new();
+
+    /// <summary>후딜 중에 누른 입력을 기억한다. (§C-7 입력 버퍼)</summary>
+    private string _bufferedAction;
+    private float _bufferTimer;
+
+    private bool _guarding;
+    private float _guardElapsed;
+    private float _riposteTimer;
+
+    private float _buffTimer;
+    private float _buffAttackMultiplier = 1f;
+
+    /// <summary>sk_bash 의 전방 돌진. 선딜 동안만 흐른다.</summary>
+    private float _lungeTimer;
+    private Vector2 _lungeVelocity;
+
+    /// <summary>§C-8 에서 스킬에 묶인 키들. 버퍼가 감시하는 대상.</summary>
+    private static readonly string[] SkillActions =
+    {
+        InputSetup.Attack,
+        InputSetup.Bash,
+        InputSetup.Warcry,
+    };
+
     /// <summary>이 값이 0 보다 크면 이 엔티티만 시간이 멈춘다. (§C-3)</summary>
     private float _hitstopTimer;
 
@@ -137,12 +163,29 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         GlobalPosition = WorldLayout.SpawnPoint;
 
         Mastery.Restore(null);
-        _attack.Cancel();
+        ResetCombatState();
 
         // P1 은 job_warrior R1 고정. 랭크 1 스킬을 GameDb 에서 실제로 지급받는다. (§D-1)
         Jobs.RestoreFrom("", null, null, null, null);
         Jobs.StartJob(PlayerTuning.StartingJobId, GameDatabase.Instance);
         SetFlag($"held_{PlayerTuning.StartingJobId}");
+    }
+
+    /// <summary>전투 중 임시 상태를 전부 지운다. 부활·로드·새 게임에서 공유한다.</summary>
+    private void ResetCombatState()
+    {
+        _attack.Cancel();
+        _cooldowns.Clear();
+        _bufferedAction = null;
+        _bufferTimer = 0f;
+        _guarding = false;
+        _guardElapsed = 0f;
+        _riposteTimer = 0f;
+        _buffTimer = 0f;
+        _buffAttackMultiplier = 1f;
+        _lungeTimer = 0f;
+        _hitstopTimer = 0f;
+        _knockbackTimer = 0f;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -195,12 +238,41 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _iframeTimer -= dt;
         if (_flashTimer > 0f)
             _flashTimer -= dt;
+        if (_riposteTimer > 0f)
+            _riposteTimer -= dt;
+
+        if (_buffTimer > 0f)
+        {
+            _buffTimer -= dt;
+            if (_buffTimer <= 0f)
+                _buffAttackMultiplier = 1f;
+        }
+
+        TickCooldowns(dt);
 
         if (_state == PlayerState.Dead)
         {
             _respawnTimer -= dt;
             if (_respawnTimer <= 0f)
                 Respawn();
+        }
+    }
+
+    private void TickCooldowns(float dt)
+    {
+        if (_cooldowns.Count == 0)
+            return;
+
+        // 순회 중 수정을 피하려고 키를 먼저 뽑는다.
+        var keys = new string[_cooldowns.Count];
+        _cooldowns.Keys.CopyTo(keys, 0);
+        foreach (string key in keys)
+        {
+            float value = _cooldowns[key] - dt;
+            if (value <= 0f)
+                _cooldowns.Remove(key);
+            else
+                _cooldowns[key] = value;
         }
     }
 
@@ -223,21 +295,56 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        ReadSkillInput();
+        ReadSkillInput(dt);
 
-        // 후딜에는 이동 불가. (§C-2)
+        // sk_bash 의 전방 돌진은 이동 입력을 덮어쓴다.
+        if (_lungeTimer > 0f)
+        {
+            _lungeTimer -= dt;
+            Velocity = _lungeVelocity;
+            return;
+        }
+
+        // 후딜에는 이동 불가. (§C-2) 가드 중에는 40%. (§E)
         Vector2 target = _attack.CanMove
-            ? input * CombatTuning.MoveSpeed * _attack.MoveScale
+            ? input * CombatTuning.MoveSpeed * _attack.MoveScale * GuardMoveScale()
             : Vector2.Zero;
 
         ApplyAcceleration(target, dt, _attack.CanMove && input != Vector2.Zero);
     }
 
-    /// <summary>M3 에서는 J(sk_slash) 하나. M4 에서 나머지 키가 붙는다.</summary>
-    protected virtual void ReadSkillInput()
+    /// <summary>§C-8 의 스킬 키 4개. 버퍼 → 캔슬 창 → 발동 순서로 처리한다.</summary>
+    private void ReadSkillInput(float dt)
     {
-        if (Input.IsActionJustPressed(InputSetup.Attack))
-            TryStartSkill(ResolveSkillForAction(InputSetup.Attack));
+        foreach (string action in SkillActions)
+        {
+            if (Input.IsActionJustPressed(action))
+            {
+                _bufferedAction = action;
+                _bufferTimer = CombatTuning.InputBuffer;
+            }
+        }
+
+        UpdateGuard(dt);
+
+        if (_bufferTimer <= 0f)
+        {
+            _bufferedAction = null;
+            return;
+        }
+
+        _bufferTimer -= dt;
+
+        // 놀고 있거나, 후딜의 캔슬 창 안이면 다음 스킬로 이어진다. (§C-2 콤보)
+        if (_attack.IsBusy && !_attack.InCancelWindow)
+            return;
+
+        var skill = ResolveSkillForAction(_bufferedAction);
+        if (TryStartSkill(skill))
+        {
+            _bufferedAction = null;
+            _bufferTimer = 0f;
+        }
     }
 
     /// <summary>공격 프레임을 진행하고, 판정 프레임이면 히트박스를 돌린다.</summary>
@@ -254,11 +361,72 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     protected bool TryStartSkill(SkillDefinition skill)
     {
-        if (skill == null || _attack.IsBusy)
+        if (skill == null || !skill.IsActive || skill.Kind == "hold")
             return false;
 
+        // 캔슬 창 밖에서는 새 스킬을 시작할 수 없다.
+        if (_attack.IsBusy && !_attack.InCancelWindow)
+            return false;
+
+        if (CooldownRemaining(skill.Id) > 0f)
+            return false;
+
+        _guarding = false;
         _attack.Begin(skill, _facing);
+
+        if (skill.Cooldown > 0f)
+            _cooldowns[skill.Id] = skill.Cooldown;
+
+        // 전방 돌진 후 타격 — 선딜 동안 앞으로 밀고 나간다. (§E sk_bash)
+        if (skill.Dash != null && skill.Dash.DistancePx > 0f && CombatTuning.AttackWindup > 0f)
+        {
+            _lungeTimer = CombatTuning.AttackWindup;
+            _lungeVelocity = _facing * (skill.Dash.DistancePx / CombatTuning.AttackWindup);
+        }
+
+        // 자기 강화 버프는 사용 즉시 걸린다. (§E sk_warcry)
+        if (skill.Buff != null && skill.Buff.DurationSeconds > 0f)
+        {
+            _buffTimer = skill.Buff.DurationSeconds;
+            _buffAttackMultiplier = skill.Buff.AttackPowerMultiplier;
+            DebugLog.Add($"{skill.Id} 공격력 x{_buffAttackMultiplier:0.##} {_buffTimer:0.#}s");
+        }
+
         return true;
+    }
+
+    public float CooldownRemaining(string skillId)
+        => _cooldowns.TryGetValue(skillId, out float value) ? Mathf.Max(0f, value) : 0f;
+
+    // --- 가드 (§E sk_guard) ------------------------------------------------
+
+    public bool IsGuarding => _guarding;
+    public bool IsRiposting => _riposteTimer > 0f;
+
+    private SkillDefinition GuardSkill() => ResolveSkillForAction(InputSetup.Guard);
+
+    private void UpdateGuard(float dt)
+    {
+        var skill = GuardSkill();
+        if (skill?.Guard == null || _attack.IsBusy)
+        {
+            _guarding = false;
+            return;
+        }
+
+        bool held = Input.IsActionPressed(InputSetup.Guard);
+        if (held && !_guarding)
+            _guardElapsed = 0f;
+        else if (held)
+            _guardElapsed += dt;
+
+        _guarding = held;
+    }
+
+    private float GuardMoveScale()
+    {
+        var guard = GuardSkill()?.Guard;
+        return _guarding && guard != null ? guard.MoveSpeedMultiplier : 1f;
     }
 
     /// <summary>
@@ -286,6 +454,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (skill?.Shape == null)
             return;
 
+        // 경직만 주는 스킬(sk_warcry)은 데미지 경로를 타지 않는다.
+        bool support = skill.Stun != null;
+        MonsterBase firstAffected = null;
+
         foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
         {
             if (node is not MonsterBase monster || !IsInstanceValid(monster))
@@ -299,14 +471,31 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             if (!_attack.TryMarkHit(monster.InstanceId))
                 continue;
 
-            Strike(monster, skill);
+            if (support)
+            {
+                if (!monster.IsAlive)
+                    continue;
+                monster.Stun(skill.Stun.DurationSeconds);
+                firstAffected ??= monster;
+            }
+            else
+            {
+                Strike(monster, skill);
+            }
         }
+
+        // 지원 스킬은 '한 명이라도 걸렸는가' 가 유효한 사용의 기준이다. (§F)
+        if (support && firstAffected != null)
+            RegisterMastery(skill, firstAffected, targetWasAlive: true);
     }
 
     private void Strike(MonsterBase monster, SkillDefinition skill)
     {
         bool targetWasAlive = monster.IsAlive;
         float damage = DamageMath.Compute(this, skill, AttackPowerMultiplier());
+
+        // 퍼펙트 가드 직후의 반격은 강타격으로 들어간다.
+        bool heavy = skill.Heavy || _riposteTimer > 0f;
 
         Vector2 direction = monster.GlobalPosition - GlobalPosition;
         if (direction == Vector2.Zero)
@@ -320,7 +509,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         {
             Amount = damage,
             Direction = direction.Normalized(),
-            Heavy = skill.Heavy,
+            Heavy = heavy,
             SkillId = skill.Id,
             Source = this,
         });
@@ -331,11 +520,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         bool killed = !monster.IsAlive;
         float hitstop = killed
             ? CombatTuning.HitstopKill
-            : skill.Heavy ? CombatTuning.HitstopHeavy : CombatTuning.HitstopNormal;
+            : heavy ? CombatTuning.HitstopHeavy : CombatTuning.HitstopNormal;
 
         // 공격자와 피격자 양쪽이 같이 멈춘다. 이게 타격감의 80%. (§C-3)
         ApplyHitstop(hitstop);
-        CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, skill.Heavy, killed);
+        CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, heavy, killed);
     }
 
     private void RegisterMastery(SkillDefinition skill, MonsterBase target, bool targetWasAlive)
@@ -359,8 +548,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// <summary>진화 처리는 M5 에서 붙인다.</summary>
     protected virtual void OnMasteryResult(MasteryResult result, SkillDefinition skill) { }
 
-    /// <summary>함성 등 공격력 버프. M4 에서 붙인다.</summary>
-    protected virtual float AttackPowerMultiplier() => 1f;
+    /// <summary>sk_warcry 등 자기 강화 버프. (§E)</summary>
+    public float AttackPowerMultiplier() => _buffTimer > 0f ? _buffAttackMultiplier : 1f;
+
+    public float BuffRemaining => Mathf.Max(0f, _buffTimer);
 
     private void UpdateDash(float dt)
     {
@@ -455,8 +646,17 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Visible = _state != PlayerState.Dead;
     }
 
-    /// <summary>가드/버프 등 상태에 따른 몸 색. M4 에서 확장한다.</summary>
-    protected virtual Color BodyColorForState() => PlayerTuning.BodyColor;
+    /// <summary>가드·반격·버프 상태를 몸 색으로 알린다. UI 없이도 보이게. (§A 아트 방침)</summary>
+    private Color BodyColorForState()
+    {
+        if (_riposteTimer > 0f)
+            return PlayerTuning.RiposteColor;
+        if (_guarding)
+            return PlayerTuning.GuardColor;
+        if (_buffTimer > 0f)
+            return PlayerTuning.BuffColor;
+        return PlayerTuning.BodyColor;
+    }
 
     /// <summary>F2 — 판정 범위 반투명 표시. (§I)</summary>
     public override void _Draw()
@@ -536,11 +736,29 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         return true;
     }
 
-    /// <summary>가드/퍼펙트 가드는 M4 에서 붙인다.</summary>
-    protected virtual float ApplyDamageReduction(float amount, out bool nullified)
+    /// <summary>
+    /// 가드 중이면 피해 60% 감소. 가드를 올린 지 PerfectWindow 안에 맞았으면
+    /// 퍼펙트 가드 — 피해 0 + 반격 상태. (§E sk_guard)
+    /// </summary>
+    private float ApplyDamageReduction(float amount, out bool nullified)
     {
         nullified = false;
-        return amount;
+
+        var guard = GuardSkill()?.Guard;
+        if (!_guarding || guard == null)
+            return amount;
+
+        if (_guardElapsed <= guard.PerfectWindow)
+        {
+            nullified = true;
+            _riposteTimer = guard.RiposteSeconds;
+            CombatFeedback.Instance?.Popup(GlobalPosition, 0f, heavy: true, onPlayer: false);
+            DebugLog.Add($"퍼펙트 가드 (반격 {guard.RiposteSeconds:0.##}s)");
+            return 0f;
+        }
+
+        DebugLog.Add($"가드 x{guard.DamageMultiplier:0.##}");
+        return amount * guard.DamageMultiplier;
     }
 
     /// <summary>ease-out 넉백. 총 이동 거리가 정확히 명세값이 되게 잡는다. (§C-4)</summary>
@@ -572,10 +790,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Hp = MaxHp;
         Velocity = Vector2.Zero;
         _state = PlayerState.Normal;
-        _hitstopTimer = 0f;
-        _knockbackTimer = 0f;
+        ResetCombatState();
         _iframeTimer = CombatTuning.PlayerIFrames;
-        _attack.Cancel();
     }
 
     /// <summary>사망 시 마을 지점 부활 + 플래그 기록. (§D-1)</summary>
@@ -586,6 +802,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Velocity = Vector2.Zero;
         _respawnTimer = PlayerTuning.RespawnDelay;
         _attack.Cancel();
+        _lungeTimer = 0f;
 
         CombatFeedback.Instance?.DeathBurstAt(GlobalPosition, PlayerTuning.BodyColor);
 
@@ -706,8 +923,6 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         _state = PlayerState.Normal;
         Velocity = Vector2.Zero;
-        _hitstopTimer = 0f;
-        _knockbackTimer = 0f;
-        _attack.Cancel();
+        ResetCombatState();
     }
 }

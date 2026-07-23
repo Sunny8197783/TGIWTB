@@ -19,6 +19,7 @@
     "5": ["sk_warcry"],
     "7": ["sk_frenzy"]
   },
+  "prototypeSkills": ["sk_bash", "sk_warcry"],
   "rankGates": [
     {
       "rank": 10,

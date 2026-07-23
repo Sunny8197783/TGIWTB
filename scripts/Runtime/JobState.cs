@@ -43,6 +43,10 @@ public sealed class JobState
         }
 
         GrantRankSkills(def, record.Rank);
+
+        // P1 전용 선지급. JobDefinition.PrototypeSkills 주석 참고.
+        foreach (string skillId in def.PrototypeSkills)
+            Learn(skillId);
     }
 
     /// <summary>해당 랭크까지의 스킬을 보유 목록에 채운다. 중복은 무시.</summary>

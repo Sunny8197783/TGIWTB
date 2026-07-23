@@ -30,6 +30,15 @@ public static class PlayerTuning
     public static readonly float BodySize = 12f;
     public static readonly Color BodyColor = new(0.31f, 0.55f, 0.95f);
     public static readonly Color FacingColor = new(0.75f, 0.87f, 1.0f);
+
+    /// <summary>가드 중 — 회청색.</summary>
+    public static readonly Color GuardColor = new(0.45f, 0.62f, 0.72f);
+
+    /// <summary>퍼펙트 가드 직후 반격 상태 — 밝은 청록.</summary>
+    public static readonly Color RiposteColor = new(0.45f, 0.95f, 0.90f);
+
+    /// <summary>함성 버프 중 — 붉은 기 도는 파랑.</summary>
+    public static readonly Color BuffColor = new(0.62f, 0.48f, 0.95f);
     public static readonly float FacingMarkerSize = 4f;
     public static readonly float FacingMarkerDistance = 8f;
 

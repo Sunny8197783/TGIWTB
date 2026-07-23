@@ -60,11 +60,12 @@ public partial class GameWorld : Node2D
         if (SaveSystem.Instance != null && !SaveSystem.Instance.LoadInto(_player))
             _player.ResetToNewGame();
 
-        _camera.Follow(_player);
-        _lastZoneId = WorldLayout.ZoneAt(_player.GlobalPosition)?.Id ?? "";
-
+        // 하니스가 시작 좌표를 옮길 수 있으므로 구역 판정보다 먼저 붙인다.
         if (DevCapture.IsRequested())
             AddChild(new DevCapture());
+
+        _camera.Follow(_player);
+        _lastZoneId = WorldLayout.ZoneAt(_player.GlobalPosition)?.Id ?? "";
 
         GD.Print($"[World] ready — spawn={_player.GlobalPosition} zone={_lastZoneId}");
     }

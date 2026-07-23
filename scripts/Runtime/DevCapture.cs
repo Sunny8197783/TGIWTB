@@ -22,6 +22,9 @@ public partial class DevCapture : Node
     private const string FlagSeek = "--capture-seek";
     private const string ArgStart = "--capture-start=";
     private const string ArgOnLog = "--capture-on-log=";
+    private const string ArgSeekKeys = "--capture-seek-keys=";
+    private const string ArgPulse = "--capture-pulse=";
+    private const string ArgSeekRate = "--capture-seek-rate=";
 
     /// <summary>로그 트리거가 걸린 뒤 몇 프레임 있다 찍을지. 히트스톱이 끝나는 시점을 노린다.</summary>
     private static readonly int OnLogDelayFrames = 14;
@@ -29,8 +32,8 @@ public partial class DevCapture : Node
     /// <summary>추적 모드에서 이 거리 안이면 멈추고 때린다.</summary>
     private static readonly float SeekStrikeRange = 22f;
 
-    /// <summary>공격 재입력 간격(프레임).</summary>
-    private static readonly int SeekAttackInterval = 22;
+    /// <summary>공격 재입력 간격(프레임). --capture-seek-rate 로 바꾼다.</summary>
+    private int _seekAttackInterval = 22;
 
     private int _totalFrames = 180;
     private int _every = 20;
@@ -52,6 +55,10 @@ public partial class DevCapture : Node
 
     private string _logNeedle;
     private readonly List<int> _scheduledShots = new();
+    private readonly List<string> _seekKeys = new() { InputSetup.Attack };
+    private string _pulseAction;
+    private int _pulseOnFrames;
+    private int _pulsePeriod = 1;
 
     public static bool IsRequested()
     {
@@ -90,6 +97,16 @@ public partial class DevCapture : Node
                 ParseStart(arg.Substring(ArgStart.Length));
             else if (arg.StartsWith(ArgOnLog, StringComparison.Ordinal))
                 WatchLog(arg.Substring(ArgOnLog.Length));
+            else if (arg.StartsWith(ArgPulse, StringComparison.Ordinal))
+                ParsePulse(arg.Substring(ArgPulse.Length));
+            else if (arg.StartsWith(ArgSeekRate, StringComparison.Ordinal))
+                _seekAttackInterval = Mathf.Max(1, arg.Substring(ArgSeekRate.Length).ToInt());
+            else if (arg.StartsWith(ArgSeekKeys, StringComparison.Ordinal))
+            {
+                _seekKeys.Clear();
+                _seekKeys.AddRange(arg.Substring(ArgSeekKeys.Length)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries));
+            }
         }
     }
 
@@ -104,8 +121,12 @@ public partial class DevCapture : Node
     {
         foreach (string line in DebugLog.Recent(1))
         {
-            if (line.Contains(_logNeedle, StringComparison.Ordinal))
-                _scheduledShots.Add(_frame + OnLogDelayFrames);
+            if (!line.Contains(_logNeedle, StringComparison.Ordinal))
+                continue;
+
+            // 프레임 번호를 같이 남긴다 — 공격 간격 같은 타이밍을 숫자로 검증하려면 필요하다.
+            GD.Print($"[Capture] f{_frame:D4} << {line}");
+            _scheduledShots.Add(_frame + OnLogDelayFrames);
         }
     }
 
@@ -183,10 +204,24 @@ public partial class DevCapture : Node
 
         _stuckFrames = 0;
 
-        if (_frame % SeekAttackInterval == 0)
-            Input.ActionPress(InputSetup.Attack);
+        // 키를 비워 두면 접근만 하고 때리지 않는다 (가드 검증용).
+        if (_seekKeys.Count == 0)
+            return;
+
+        // 여러 키를 지정하면 번갈아 눌러 콤보를 섞는다.
+        int cycle = _frame / _seekAttackInterval;
+        string key = _seekKeys[cycle % _seekKeys.Count];
+
+        foreach (string other in _seekKeys)
+        {
+            if (other != key)
+                Input.ActionRelease(other);
+        }
+
+        if (_frame % _seekAttackInterval == 0)
+            Input.ActionPress(key);
         else
-            Input.ActionRelease(InputSetup.Attack);
+            Input.ActionRelease(key);
     }
 
     private static void ReleaseMovement()
@@ -195,6 +230,32 @@ public partial class DevCapture : Node
         Input.ActionRelease(InputSetup.MoveDown);
         Input.ActionRelease(InputSetup.MoveLeft);
         Input.ActionRelease(InputSetup.MoveRight);
+    }
+
+    /// <summary>
+    /// "guard:8:24" — 24프레임 주기로 8프레임씩 누른다.
+    /// 홀드로는 나오지 않는 퍼펙트 가드(누른 직후 0.12s)를 반복해서 만들기 위한 것.
+    /// </summary>
+    private void ParsePulse(string spec)
+    {
+        string[] parts = spec.Split(':');
+        if (parts.Length != 3 || !InputMap.HasAction(parts[0]))
+            return;
+
+        _pulseAction = parts[0];
+        _pulseOnFrames = Mathf.Max(1, parts[1].ToInt());
+        _pulsePeriod = Mathf.Max(_pulseOnFrames + 1, parts[2].ToInt());
+    }
+
+    private void UpdatePulse()
+    {
+        if (_pulseAction == null)
+            return;
+
+        if (_frame % _pulsePeriod < _pulseOnFrames)
+            Input.ActionPress(_pulseAction);
+        else
+            Input.ActionRelease(_pulseAction);
     }
 
     /// <summary>"30:attack,70:dash" 형식.</summary>
@@ -218,6 +279,8 @@ public partial class DevCapture : Node
 
         if (_seek)
             SeekAndStrike();
+
+        UpdatePulse();
 
         if (_taps.TryGetValue(_frame, out string tap) && InputMap.HasAction(tap))
             Input.ActionPress(tap);
