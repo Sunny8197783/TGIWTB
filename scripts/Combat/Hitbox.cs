@@ -37,8 +37,8 @@ public static class Hitbox
             return true;
 
         float half = Mathf.DegToRad(angleDeg) * 0.5f;
-        return facing.Normalized().AngleTo(delta / distance) is var angle
-            && Mathf.Abs(angle) <= half;
+        float offset = facing.Normalized().AngleTo(delta / distance);
+        return Mathf.Abs(offset) <= half;
     }
 
     public static bool InCircle(Vector2 origin, float range, Vector2 target, float targetRadius)

@@ -172,6 +172,15 @@ public partial class GameWorld : Node2D
         {
             DebugFlags.ShowHitbox = !DebugFlags.ShowHitbox;
             ShowAnnounce($"히트박스 {(DebugFlags.ShowHitbox ? "ON" : "OFF")}");
+
+            // 껐을 때 마지막에 그린 도형이 남지 않도록 한 번 더 그린다.
+            _player.QueueRedraw();
+            foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
+            {
+                if (node is CanvasItem item)
+                    item.QueueRedraw();
+            }
+
             GetViewport().SetInputAsHandled();
         }
         else if (@event.IsActionPressed(InputSetup.DebugTuning))

@@ -88,6 +88,10 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
                 QueueRedraw();
         }
 
+        // 히트박스 표시는 매 프레임 다시 그려야 켜고 끈 것이 바로 반영된다. (§I F2)
+        if (DebugFlags.ShowHitbox)
+            QueueRedraw();
+
         if (State == MonsterState.Dead)
         {
             UpdateDeath(dt);
