@@ -52,7 +52,8 @@ public partial class DevCapture : Node
     private int _stuckFrames;
 
     private static readonly int SeekStuckFrames = 12;
-    private static readonly int SeekDetourFrames = 30;
+    private static readonly int SeekTeleportFrames = 240;
+    private readonly RandomNumberGenerator _rng = new();
 
     private string _logNeedle;
     private readonly List<int> _scheduledShots = new();
@@ -212,10 +213,17 @@ public partial class DevCapture : Node
                 _stuckFrames = 0;
             _lastSeekPosition = player.GlobalPosition;
 
+            // 우회로도 안 되면 초원 임의 지점으로 옮긴다.
+            // 장시간 소크 테스트가 기둥에 낀 채로 끝나지 않게 하기 위한 것.
+            if (_stuckFrames > SeekTeleportFrames)
+            {
+                _stuckFrames = 0;
+                player.GlobalPosition = RandomMeadowPoint();
+                return;
+            }
+
             if (_stuckFrames > SeekStuckFrames)
             {
-                if (_stuckFrames > SeekStuckFrames + SeekDetourFrames)
-                    _stuckFrames = 0;
                 Input.ActionPress(delta.Y > 0f ? InputSetup.MoveLeft : InputSetup.MoveRight);
                 Input.ActionPress(delta.X > 0f ? InputSetup.MoveDown : InputSetup.MoveUp);
                 return;
@@ -262,6 +270,14 @@ public partial class DevCapture : Node
             Input.ActionRelease(action);
 
         Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = pressed });
+    }
+
+    private Vector2 RandomMeadowPoint()
+    {
+        Rect2 rect = WorldLayout.Meadow.WorldRect;
+        return new Vector2(
+            _rng.RandfRange(rect.Position.X + WorldLayout.TileSize * 3, rect.End.X - WorldLayout.TileSize * 3),
+            _rng.RandfRange(rect.Position.Y + WorldLayout.TileSize * 3, rect.End.Y - WorldLayout.TileSize * 3));
     }
 
     private static void ReleaseMovement()
