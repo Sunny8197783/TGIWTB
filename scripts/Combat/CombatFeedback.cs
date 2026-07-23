@@ -11,6 +11,9 @@ public partial class CombatFeedback : Node2D
 {
     public static CombatFeedback Instance { get; private set; }
 
+    /// <summary>플레이어가 실제로 넣은 피해량. 디버그 오버레이의 DPS 가 이걸 센다. (§I)</summary>
+    public event System.Action<float> DamageDealt;
+
     private GameCamera _camera;
 
     public override void _EnterTree()
@@ -30,6 +33,7 @@ public partial class CombatFeedback : Node2D
     /// <summary>플레이어가 적을 때렸을 때.</summary>
     public void OnHit(Vector2 worldPosition, float damage, bool heavy, bool killed)
     {
+        DamageDealt?.Invoke(damage);
         Popup(worldPosition, damage, heavy, onPlayer: false);
 
         if (heavy)

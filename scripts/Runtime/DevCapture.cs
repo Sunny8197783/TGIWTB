@@ -250,6 +250,20 @@ public partial class DevCapture : Node
             Input.ActionRelease(key);
     }
 
+    /// <summary>
+    /// Input.ActionPress 는 폴링 상태만 바꾸고 _UnhandledInput 까지 가지 않는다.
+    /// F1~F3·F5·F9 처럼 이벤트로 받는 키를 누르려면 실제 이벤트를 흘려 넣어야 한다.
+    /// </summary>
+    private static void SendAction(string action, bool pressed)
+    {
+        if (pressed)
+            Input.ActionPress(action);
+        else
+            Input.ActionRelease(action);
+
+        Input.ParseInputEvent(new InputEventAction { Action = action, Pressed = pressed });
+    }
+
     private static void ReleaseMovement()
     {
         Input.ActionRelease(InputSetup.MoveUp);
@@ -309,9 +323,9 @@ public partial class DevCapture : Node
         UpdatePulse();
 
         if (_taps.TryGetValue(_frame, out string tap) && InputMap.HasAction(tap))
-            Input.ActionPress(tap);
+            SendAction(tap, pressed: true);
         if (_taps.TryGetValue(_frame - 1, out string prevTap) && InputMap.HasAction(prevTap))
-            Input.ActionRelease(prevTap);
+            SendAction(prevTap, pressed: false);
 
         bool scheduled = _scheduledShots.Remove(_frame);
         if (scheduled || (_frame > 0 && _frame % _every == 0))

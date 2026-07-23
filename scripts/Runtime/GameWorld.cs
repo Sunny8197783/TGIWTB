@@ -17,6 +17,8 @@ public partial class GameWorld : Node2D
     private GameCamera _camera;
     private CombatFeedback _feedback;
     private MonsterSpawner _spawner;
+    private DebugOverlay _overlay;
+    private TuningPanel _tuning;
     private Label _announceLabel;
     private float _announceTimer;
 
@@ -55,6 +57,13 @@ public partial class GameWorld : Node2D
         PopulateMonsters();
 
         BuildUi();
+
+        _overlay = new DebugOverlay();
+        AddChild(_overlay);
+        _overlay.Bind(_player, _player);
+
+        _tuning = new TuningPanel();
+        AddChild(_tuning);
 
         // 세이브가 있으면 이어서, 없거나 깨졌으면 새 게임. 어느 쪽도 크래시하지 않는다. (§H)
         if (SaveSystem.Instance != null && !SaveSystem.Instance.LoadInto(_player))
@@ -154,10 +163,20 @@ public partial class GameWorld : Node2D
             _camera.Follow(_player);
             GetViewport().SetInputAsHandled();
         }
+        else if (@event.IsActionPressed(InputSetup.DebugOverlay))
+        {
+            _overlay.Toggle();
+            GetViewport().SetInputAsHandled();
+        }
         else if (@event.IsActionPressed(InputSetup.DebugHitbox))
         {
             DebugFlags.ShowHitbox = !DebugFlags.ShowHitbox;
             ShowAnnounce($"히트박스 {(DebugFlags.ShowHitbox ? "ON" : "OFF")}");
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed(InputSetup.DebugTuning))
+        {
+            _tuning.Toggle();
             GetViewport().SetInputAsHandled();
         }
     }
