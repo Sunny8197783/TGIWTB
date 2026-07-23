@@ -1,0 +1,15 @@
+# Godot 4 (.NET)
+.godot/
+.mono/
+data_*/
+
+# .NET
+bin/
+obj/
+*.user
+*.userprefs
+*.swp
+
+# Godot export output
+build/
+export/

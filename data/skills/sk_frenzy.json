@@ -1,0 +1,21 @@
+{
+  "id": "sk_frenzy",
+  "name": "광란",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "",
+  "cooldown": 25.0,
+  "heavy": false,
+  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
+  "damage": { "base": 0.0, "scaling": {} },
+  "buff": {
+    "durationSeconds": 6.0,
+    "attackPowerMultiplier": 1.5,
+    "damageTakenMultiplier": 1.3
+  },
+  "mastery": {
+    "minInterval": 1.0,
+    "damageBonusPer100": 0.04,
+    "evolution": null
+  }
+}

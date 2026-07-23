@@ -1,0 +1,11 @@
+<Project Sdk="Godot.NET.Sdk/4.7.1">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>PixelMmo</RootNamespace>
+    <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <!-- 데이터 로딩은 System.Text.Json 을 쓴다. net8.0 공유 프레임워크에 포함되어 있어
+         별도 PackageReference 없이 참조된다. (CLAUDE.md 규칙 1: data/**.json + C# 로더) -->
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,21 @@
+{
+  "id": "job_ashen_revenant",
+  "name": "잿빛 망령",
+  "tier": 2,
+  "hidden": true,
+  "maxRank": 10,
+  "carrySlots": 3,
+  "description": "",
+  "unlock": {
+    "requiredFlags": ["died_to_ironjaw_x7"],
+    "requiredCounters": {},
+    "requiredJobRanks": { "job_warrior": 5 }
+  },
+  "statPerRank": { "str": 2, "vit": 1, "dex": 2, "int": 0, "wis": 1, "luk": 1 },
+  "expPerRank": [0, 150, 340, 600, 950, 1450, 2100, 3000, 4200, 6000],
+  "rankSkills": {
+    "1": ["sk_hidden_deathline"],
+    "4": ["sk_frenzy"]
+  },
+  "rankGates": []
+}

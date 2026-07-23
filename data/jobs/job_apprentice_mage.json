@@ -1,0 +1,20 @@
+{
+  "id": "job_apprentice_mage",
+  "name": "견습 마법사",
+  "tier": 1,
+  "hidden": false,
+  "maxRank": 10,
+  "carrySlots": 2,
+  "description": "읽는 것으로 시작해서 태우는 것으로 끝난다.",
+  "unlock": {
+    "requiredFlags": [],
+    "requiredCounters": {},
+    "requiredJobRanks": {}
+  },
+  "statPerRank": { "str": 0, "vit": 1, "dex": 0, "int": 3, "wis": 2, "luk": 0 },
+  "expPerRank": [0, 120, 280, 500, 800, 1200, 1750, 2500, 3500, 5000],
+  "rankSkills": {
+    "1": ["sk_slash"]
+  },
+  "rankGates": []
+}
