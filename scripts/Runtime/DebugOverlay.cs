@@ -185,14 +185,29 @@ public partial class DebugOverlay : CanvasLayer
         return list;
     }
 
+    /// <summary>히든 스킬의 습득 카운터는 오버레이에도 띄우지 않는다. (규칙 4)</summary>
     private string FormatCounters()
     {
         if (_player is not PlayerCharacter concrete)
             return "-";
 
+        var hiddenCounters = new HashSet<string>();
+        var db = GameDatabase.Instance;
+        if (db != null)
+        {
+            foreach (var skill in db.Skills.Values)
+            {
+                if (skill.Hidden && !string.IsNullOrEmpty(skill.LearnTrigger?.Counter))
+                    hiddenCounters.Add(skill.LearnTrigger.Counter);
+            }
+        }
+
         var parts = new List<string>();
         foreach (var pair in concrete.Counters)
-            parts.Add($"{pair.Key}={pair.Value}");
+        {
+            if (!hiddenCounters.Contains(pair.Key))
+                parts.Add($"{pair.Key}={pair.Value}");
+        }
         parts.Sort();
         return parts.Count > 0 ? string.Join(", ", parts) : "-";
     }
