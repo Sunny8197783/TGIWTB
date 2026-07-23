@@ -1,5 +1,6 @@
 using Godot;
 using PixelMmo.Combat;
+using PixelMmo.Balance;
 
 namespace PixelMmo.Runtime;
 
@@ -14,6 +15,8 @@ public partial class GameWorld : Node2D
     private TileWorld _tiles;
     private PlayerCharacter _player;
     private GameCamera _camera;
+    private CombatFeedback _feedback;
+    private MonsterSpawner _spawner;
     private Label _announceLabel;
     private float _announceTimer;
 
@@ -22,6 +25,7 @@ public partial class GameWorld : Node2D
     public PlayerCharacter Player => _player;
     public GameCamera Camera => _camera;
     public TileWorld Tiles => _tiles;
+    public MonsterSpawner Spawner => _spawner;
 
     public override void _Ready()
     {
@@ -34,9 +38,21 @@ public partial class GameWorld : Node2D
         AddChild(_player);
         _player.Announced += ShowAnnounce;
 
+        // 스킬 사용 1건 = 로그 1줄. 유효/무효와 사유가 전부 남는다. (§I)
+        _player.SkillUsed += result => DebugLog.Add(result.ToLogLine());
+
         _camera = new GameCamera();
         AddChild(_camera);
         _camera.Follow(_player);
+
+        _feedback = new CombatFeedback();
+        AddChild(_feedback);
+        _feedback.Bind(_camera);
+
+        _spawner = new MonsterSpawner();
+        AddChild(_spawner);
+        _spawner.Configure(_tiles, _player);
+        PopulateMonsters();
 
         BuildUi();
 
@@ -51,6 +67,13 @@ public partial class GameWorld : Node2D
             AddChild(new DevCapture());
 
         GD.Print($"[World] ready — spawn={_player.GlobalPosition} zone={_lastZoneId}");
+    }
+
+    /// <summary>§G 구역별 몬스터. 고블린·철턱은 M5 에서 붙는다.</summary>
+    private void PopulateMonsters()
+    {
+        _spawner.AddGroup(() => new Slime(), WorldLayout.Meadow,
+            MonsterTuning.MeadowSlimeCount, MonsterTuning.MeadowRespawnSeconds);
     }
 
     private void BuildUi()
@@ -122,6 +145,12 @@ public partial class GameWorld : Node2D
             bool ok = SaveSystem.Instance?.LoadInto(_player) ?? false;
             ShowAnnounce(ok ? "불러왔다." : "불러올 것이 없다.");
             _camera.Follow(_player);
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed(InputSetup.DebugHitbox))
+        {
+            DebugFlags.ShowHitbox = !DebugFlags.ShowHitbox;
+            ShowAnnounce($"히트박스 {(DebugFlags.ShowHitbox ? "ON" : "OFF")}");
             GetViewport().SetInputAsHandled();
         }
     }
