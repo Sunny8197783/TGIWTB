@@ -87,8 +87,9 @@ public partial class GoblinArcher : MonsterBase
         if (direction == Vector2.Zero)
             return;
 
-        var arrow = new Arrow { Position = GlobalPosition + direction * (Stats.Radius + 4f) };
+        var arrow = new Arrow();
         GetParent().AddChild(arrow);
+        arrow.GlobalPosition = GlobalPosition + direction * (Stats.Radius + 4f);
         arrow.Setup(direction, MonsterTuning.GoblinAttack.ArrowSpeed,
             MonsterTuning.GoblinAttack.ArrowDamage, this);
     }

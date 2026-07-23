@@ -16,6 +16,7 @@ public partial class DamagePopup : Node2D
     private float _life;
     private float _rise;
     private float _elapsed;
+    private bool _started;
 
     public void Setup(float amount, bool heavy, bool onPlayer)
     {
@@ -38,12 +39,18 @@ public partial class DamagePopup : Node2D
 
     public override void _Ready()
     {
-        _origin = Position;
         ZIndex = 100;
     }
 
     public override void _Process(double delta)
     {
+        // 시작 위치는 첫 프레임에 잡는다 — 생성 직후 좌표가 정해지는 순서에 의존하지 않으려고.
+        if (!_started)
+        {
+            _started = true;
+            _origin = Position;
+        }
+
         _elapsed += (float)delta;
         float t = _life > 0f ? Mathf.Clamp(_elapsed / _life, 0f, 1f) : 1f;
 

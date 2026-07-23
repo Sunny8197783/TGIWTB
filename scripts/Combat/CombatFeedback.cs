@@ -54,15 +54,17 @@ public partial class CombatFeedback : Node2D
 
     public void Popup(Vector2 worldPosition, float damage, bool heavy, bool onPlayer)
     {
-        var popup = new DamagePopup { Position = worldPosition };
+        var popup = new DamagePopup();
         popup.Setup(damage, heavy, onPlayer);
         AddChild(popup);
+        popup.GlobalPosition = worldPosition;
     }
 
     public void DeathBurstAt(Vector2 worldPosition, Color color)
     {
-        var burst = new DeathBurst { Position = worldPosition };
+        var burst = new DeathBurst();
         AddChild(burst);
+        burst.GlobalPosition = worldPosition;
         burst.Setup(color);
     }
 
