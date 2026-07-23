@@ -70,11 +70,17 @@ public partial class GameWorld : Node2D
         GD.Print($"[World] ready — spawn={_player.GlobalPosition} zone={_lastZoneId}");
     }
 
-    /// <summary>§G 구역별 몬스터. 고블린·철턱은 M5 에서 붙는다.</summary>
+    /// <summary>§G 구역별 몬스터 배치.</summary>
     private void PopulateMonsters()
     {
         _spawner.AddGroup(() => new Slime(), WorldLayout.Meadow,
             MonsterTuning.MeadowSlimeCount, MonsterTuning.MeadowRespawnSeconds);
+
+        _spawner.AddGroup(() => new GoblinArcher(), WorldLayout.Meadow,
+            MonsterTuning.MeadowGoblinCount, MonsterTuning.MeadowRespawnSeconds);
+
+        _spawner.AddGroup(() => new Ironjaw(), WorldLayout.IronjawDen,
+            MonsterTuning.DenIronjawCount, MonsterTuning.DenRespawnSeconds);
     }
 
     private void BuildUi()

@@ -86,6 +86,15 @@ public static class CombatTuning
     public static readonly TuningEntry HitstopKill =
         Sec("stop.kill", GroupHitstop, "처치", 0.16f, 0f, 0.6f, 0.005f);
 
+    /// <summary>
+    /// 처치된 몬스터가 터지기까지 남아 있는 시간. §C 에 없는 구현 값이지만
+    /// 매직 넘버를 코드에 두지 않기 위해 여기 모은다.
+    /// 처치 히트스톱보다 길어야 '시체를 때리는' 경우가 실제로 생기고,
+    /// 그래야 숙련 매크로 방어(deadTarget)가 로그로 확인된다. (§F, §K)
+    /// </summary>
+    public static readonly TuningEntry DeathLinger =
+        Sec("stop.corpse", GroupHitstop, "시체 유지", 0.45f, 0f, 1f, 0.01f);
+
     // --- §C-4 넉백 ---------------------------------------------------------
 
     public static readonly TuningEntry KnockbackDistance =

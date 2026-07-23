@@ -210,6 +210,20 @@ public sealed class MasteryTracker
         return state;
     }
 
+    /// <summary>
+    /// 진화로 스킬이 교체될 때 숙련을 그대로 넘긴다.
+    /// 갈고닦은 결과가 진화인데 0 부터 다시 시작하면 성장이 끊긴 것처럼 느껴진다. (§K)
+    /// </summary>
+    public void Transfer(string fromSkillId, string toSkillId)
+    {
+        if (!_skills.TryGetValue(fromSkillId, out var from) || string.IsNullOrEmpty(toSkillId))
+            return;
+
+        var to = GetOrCreate(toSkillId);
+        to.Value = Math.Max(to.Value, from.Value);
+        _skills.Remove(fromSkillId);
+    }
+
     // --- 세이브 연동 -------------------------------------------------------
 
     public Dictionary<string, float> Snapshot()

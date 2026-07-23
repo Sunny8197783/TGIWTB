@@ -114,6 +114,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         ZIndex = 10;
 
         BuildShapes();
+        DodgeSucceeded += OnDodgeSucceeded;
         ResetToNewGame();
     }
 
@@ -545,8 +546,70 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         OnMasteryResult(result, skill);
     }
 
-    /// <summary>진화 처리는 M5 에서 붙인다.</summary>
-    protected virtual void OnMasteryResult(MasteryResult result, SkillDefinition skill) { }
+    /// <summary>
+    /// 숙련이 진화 임계값을 넘었을 때. 플래그 조건을 확인하고 스킬을 교체한다. (§F)
+    /// 화면에는 한 줄만 뜬다 — 조건은 설명하지 않는다. (CLAUDE.md 규칙 4)
+    /// </summary>
+    private void OnMasteryResult(MasteryResult result, SkillDefinition skill)
+    {
+        if (string.IsNullOrEmpty(result.EvolvedInto))
+            return;
+
+        var evolution = skill.Mastery?.Evolution;
+        var evolved = GameDatabase.Instance?.GetSkill(result.EvolvedInto);
+        if (evolution == null || evolved == null)
+            return;
+
+        foreach (string flag in evolution.RequiredFlags)
+        {
+            if (!HasFlag(flag))
+            {
+                DebugLog.Add($"{skill.Id} 진화 보류: {flag} 없음");
+                return;
+            }
+        }
+
+        ReplaceSkill(skill.Id, evolved.Id);
+        Mastery.Transfer(skill.Id, evolved.Id);
+        _attack.Cancel();
+
+        DebugLog.Add($"{skill.Id} → {evolved.Id} 진화");
+        Announce(evolution.Announce);
+    }
+
+    /// <summary>
+    /// 대시 무적으로 공격을 흘렸을 때. data/skills 의 situational_repeat 트리거를
+    /// 전부 훑어 조건을 만족하면 카운터를 올리고, 도달하면 습득한다. (§F)
+    /// 어떤 스킬이 걸려 있는지는 코드가 알지 않는다 — JSON 이 정한다. (규칙 1)
+    /// </summary>
+    private void OnDodgeSucceeded()
+    {
+        var db = GameDatabase.Instance;
+        if (db == null)
+            return;
+
+        foreach (var skill in db.Skills.Values)
+        {
+            var trigger = skill.LearnTrigger;
+            if (trigger == null || trigger.Type != SituationalRepeat)
+                continue;
+            if (Jobs.Has(skill.Id) || string.IsNullOrEmpty(trigger.Counter))
+                continue;
+            if (HpRatio > trigger.HpRatioAtMost)
+                continue;
+
+            int count = AddCounter(trigger.Counter);
+            if (count < trigger.RequiredCount)
+                continue;
+
+            LearnSkill(skill.Id);
+            Announce(trigger.Announce);
+            DebugLog.Add($"{skill.Id} 습득");
+        }
+    }
+
+    /// <summary>data/skills 의 learnTrigger.type 값.</summary>
+    private const string SituationalRepeat = "situational_repeat";
 
     /// <summary>sk_warcry 등 자기 강화 버프. (§E)</summary>
     public float AttackPowerMultiplier() => _buffTimer > 0f ? _buffAttackMultiplier : 1f;

@@ -155,6 +155,9 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     protected bool PlayerIsAlive => Player != null && IsInstanceValid(Player) && Player.IsAlive;
 
+    /// <summary>플래그·카운터는 반드시 인터페이스를 통해 건드린다. (CLAUDE.md 규칙 2)</summary>
+    protected IPlayerContext Context => Player;
+
     /// <summary>플레이어에게 피해를 넣는다. 무적으로 흘렸으면 false.</summary>
     protected bool StrikePlayer(float amount, Vector2 direction, bool heavy = false)
     {
@@ -192,7 +195,13 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
         }
 
         ApplyHitstop(info.Heavy ? CombatTuning.HitstopHeavy : CombatTuning.HitstopNormal);
-        SetState(MonsterState.Hurt, 0f);
+
+        // 선딜·판정 중에는 상태를 덮어쓰지 않는다. 덮어쓰면 예고 동작이 취소되고,
+        // 연타로 미니보스가 영영 패턴을 못 꺼내는 상태가 된다.
+        // 넉백은 상태와 무관하게 따로 흐르므로 피격 반응은 그대로 보인다.
+        if (State != MonsterState.Windup && State != MonsterState.Attack)
+            SetState(MonsterState.Hurt, 0f);
+
         return true;
     }
 
@@ -250,9 +259,12 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
         Velocity = Vector2.Zero;
 
         // 처치 히트스톱 동안 멈춰 있다가 터진다. 이 정지가 처치의 손맛이다. (§C-3)
-        _deathTimer = CombatTuning.HitstopKill;
+        // 시체는 히트스톱보다 조금 더 남는다 — CombatTuning.DeathLinger 주석 참고.
+        _deathTimer = Mathf.Max(CombatTuning.HitstopKill, CombatTuning.DeathLinger);
         _hitstopTimer = 0f;
-        _flashTimer = CombatTuning.HitstopKill;
+
+        // 시체는 사라질 때까지 흰색으로 굳어 있는다 — 살아 있는 것과 헷갈리지 않게.
+        _flashTimer = _deathTimer;
         QueueRedraw();
 
         // 그룹에서 바로 빼지 않는다 — 죽는 0.16s 동안 시체를 때리는 것이

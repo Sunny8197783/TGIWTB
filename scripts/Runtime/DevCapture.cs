@@ -25,6 +25,7 @@ public partial class DevCapture : Node
     private const string ArgSeekKeys = "--capture-seek-keys=";
     private const string ArgPulse = "--capture-pulse=";
     private const string ArgSeekRate = "--capture-seek-rate=";
+    private const string ArgTune = "--capture-tune=";
 
     /// <summary>로그 트리거가 걸린 뒤 몇 프레임 있다 찍을지. 히트스톱이 끝나는 시점을 노린다.</summary>
     private static readonly int OnLogDelayFrames = 14;
@@ -101,6 +102,8 @@ public partial class DevCapture : Node
                 ParsePulse(arg.Substring(ArgPulse.Length));
             else if (arg.StartsWith(ArgSeekRate, StringComparison.Ordinal))
                 _seekAttackInterval = Mathf.Max(1, arg.Substring(ArgSeekRate.Length).ToInt());
+            else if (arg.StartsWith(ArgTune, StringComparison.Ordinal))
+                ApplyTune(arg.Substring(ArgTune.Length));
             else if (arg.StartsWith(ArgSeekKeys, StringComparison.Ordinal))
             {
                 _seekKeys.Clear();
@@ -108,6 +111,29 @@ public partial class DevCapture : Node
                     .Split(',', StringSplitOptions.RemoveEmptyEntries));
             }
         }
+    }
+
+    /// <summary>
+    /// "dash.cooldown=0.12" — CombatTuning 항목을 커맨드라인에서 덮어쓴다.
+    /// F3 슬라이더와 같은 경로(TuningEntry.Value)를 쓰므로, 이게 먹히면 슬라이더도 먹힌다.
+    /// </summary>
+    private static void ApplyTune(string spec)
+    {
+        string[] parts = spec.Split('=');
+        if (parts.Length != 2)
+            return;
+
+        foreach (var entry in Combat.CombatTuning.All)
+        {
+            if (entry.Key != parts[0])
+                continue;
+
+            entry.Value = parts[1].ToFloat();
+            GD.Print($"[Capture] tune {entry.Key} = {entry.Value}");
+            return;
+        }
+
+        GD.PushWarning($"[Capture] 없는 튜닝 키: {parts[0]}");
     }
 
     /// <summary>로그에 특정 문자열이 뜨면 잠시 뒤 스크린샷. 처치 연출을 놓치지 않으려는 것.</summary>

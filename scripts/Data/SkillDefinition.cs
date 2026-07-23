@@ -70,6 +70,9 @@ public sealed class SkillEvolution
     public float At { get; set; }
     public string Into { get; set; } = "";
 
+    /// <summary>이 플래그가 전부 있어야 진화가 성립한다. 비어 있으면 숙련만으로 진화. (§F)</summary>
+    public List<string> RequiredFlags { get; set; } = new();
+
     /// <summary>진화 시 화면 중앙에 뜨는 한 줄. 조건은 설명하지 않는다. (§E)</summary>
     public string Announce { get; set; } = "";
 }
