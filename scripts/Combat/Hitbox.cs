@@ -43,4 +43,37 @@ public static class Hitbox
 
     public static bool InCircle(Vector2 origin, float range, Vector2 target, float targetRadius)
         => origin.DistanceTo(target) <= range + targetRadius;
+
+    /// <summary>
+    /// 이번 프레임에 무기가 훑고 지나간 영역. 그리는 무기(선분)가 fromOffset → toOffset
+    /// 으로 회전하면서 만드는 부채꼴 띠를 그대로 판정으로 쓴다.
+    ///
+    /// 각도는 baseAngle 기준 상대값(rad), 반지름은 자루 끝(inner) ~ 칼끝(outer).
+    /// 무기 두께와 대상 반지름만큼은 후하게 쳐 준다 — 스치는 판정이 답답하지 않게.
+    ///
+    /// 프레임 사이의 회전 구간 전체를 보므로, 빠른 스윙이 대상을 뚫고 지나가지 않는다.
+    /// </summary>
+    public static bool SweptArc(Vector2 origin, float baseAngle, float fromOffset, float toOffset,
+        float inner, float outer, float weaponWidth, Vector2 target, float targetRadius)
+    {
+        Vector2 delta = target - origin;
+        float distance = delta.Length();
+        float pad = targetRadius + weaponWidth * 0.5f;
+
+        if (distance > outer + pad || distance < inner - pad)
+            return false;
+
+        // 겹쳐 있으면 방향을 따질 수 없다.
+        if (distance <= pad)
+            return true;
+
+        float relative = Mathf.Wrap(Mathf.Atan2(delta.Y, delta.X) - baseAngle, -Mathf.Pi, Mathf.Pi);
+
+        // 이 거리에서 대상이 차지하는 각도만큼 여유를 준다.
+        float tolerance = Mathf.Atan2(pad, distance);
+        float low = Mathf.Min(fromOffset, toOffset) - tolerance;
+        float high = Mathf.Max(fromOffset, toOffset) + tolerance;
+
+        return relative >= low && relative <= high;
+    }
 }

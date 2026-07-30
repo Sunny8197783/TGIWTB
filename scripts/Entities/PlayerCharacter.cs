@@ -72,6 +72,13 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private float _lungeTimer;
     private Vector2 _lungeVelocity;
 
+    /// <summary>이번 스윙의 시작 각도와 지난 프레임 칼날 각도. 판정 띠를 만드는 데 쓴다.</summary>
+    private float _swingStartAngle;
+    private float _prevBladeAngle;
+
+    /// <summary>시선 고정(Shift) 대상. 잡혀 있으면 이동과 무관하게 계속 바라본다.</summary>
+    private MonsterBase _lockTarget;
+
     /// <summary>§C-8 에서 스킬에 묶인 키들. 버퍼가 감시하는 대상.</summary>
     private static readonly string[] SkillActions =
     {
@@ -195,6 +202,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _lungeTimer = 0f;
         _hitstopTimer = 0f;
         _knockbackTimer = 0f;
+        _lockTarget = null;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -233,8 +241,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         MoveAndSlide();
         UpdateVisuals(dt);
 
-        // 무기 모션이 흐르는 동안은 매 프레임 다시 그린다.
-        if (DebugFlags.ShowHitbox || _attack.IsBusy || _guarding || _guardCooldown > 0f)
+        // 무기 모션·시선 고정이 흐르는 동안은 매 프레임 다시 그린다.
+        if (DebugFlags.ShowHitbox || _attack.IsBusy || _guarding || _guardCooldown > 0f
+            || _lockTarget != null)
             QueueRedraw();
     }
 
@@ -290,8 +299,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     {
         Vector2 input = ReadMoveInput();
 
+        UpdateLockOn();
+
+        // 시선 고정 중에는 이동 입력이 방향을 바꾸지 않는다 — 그래서 뒷걸음질이 된다.
         // 선딜 중에만 방향 전환 가능. 판정이 시작되면 고정된다. (§C-7)
-        if (input != Vector2.Zero && (!_attack.IsBusy || _attack.CanTurn))
+        if (_lockTarget == null && input != Vector2.Zero && (!_attack.IsBusy || _attack.CanTurn))
         {
             _facing = input;
             _attack.Aim(input);
@@ -368,10 +380,19 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 돌진은 판정과 함께 시작한다. 그래야 돌진 경로 전체가 판정 범위가 된다.
         // (선딜에 돌진하면 판정이 도착점에서만 열려 맞히기가 지나치게 어렵다.)
         if (_attack.JustEnteredActive)
+        {
             StartLunge(_attack.Skill);
 
+            // 스윙 시작 각도를 잡아 둔다. 판정은 여기서부터 훑어 나간다.
+            _swingStartAngle = PoseFor(_attack.Skill, SkillPhase.Active, 0f).AngleOffset;
+            _prevBladeAngle = _swingStartAngle;
+        }
+
         if (_attack.IsActive)
+        {
             ProcessActiveHitbox();
+            _prevBladeAngle = PoseFor(_attack.Skill, _attack.Phase, _attack.PhaseProgress).AngleOffset;
+        }
     }
 
     private void StartLunge(SkillDefinition skill)
@@ -428,6 +449,64 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private SkillDefinition GuardSkill() => ResolveSkillForAction(InputSetup.Guard);
 
     public float GuardCooldownRemaining => Mathf.Max(0f, _guardCooldown);
+
+    // --- 시선 고정 ---------------------------------------------------------
+
+    public bool IsLockedOn => _lockTarget != null;
+
+    /// <summary>
+    /// Shift 를 누르고 있으면 가장 가까운 적을 계속 바라본다.
+    /// 이동 입력이 방향을 덮지 않으므로 옆걸음·뒷걸음으로 거리를 재면서 싸울 수 있다.
+    /// 대상이 죽거나 멀어지면 다시 잡고, 잡을 게 없으면 지금 방향을 그대로 유지한다.
+    /// </summary>
+    private void UpdateLockOn()
+    {
+        if (!Input.IsActionPressed(InputSetup.LockOn))
+        {
+            _lockTarget = null;
+            return;
+        }
+
+        float range = CombatTuning.LockOnRange;
+
+        if (!IsValidLockTarget(_lockTarget, range))
+            _lockTarget = FindLockTarget(range);
+
+        if (_lockTarget == null)
+            return;
+
+        Vector2 toTarget = _lockTarget.GlobalPosition - GlobalPosition;
+        if (toTarget.LengthSquared() <= 0.0001f)
+            return;
+
+        // 판정이 시작된 뒤에는 스킬 방향을 돌리지 않는다. (§C-7)
+        _facing = toTarget.Normalized();
+        _attack.Aim(_facing);
+    }
+
+    private bool IsValidLockTarget(MonsterBase target, float range)
+        => target != null && IsInstanceValid(target) && target.IsAlive
+            && GlobalPosition.DistanceTo(target.GlobalPosition) <= range;
+
+    private MonsterBase FindLockTarget(float range)
+    {
+        MonsterBase best = null;
+        float bestDistance = float.MaxValue;
+
+        foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
+        {
+            if (node is not MonsterBase monster || !IsInstanceValid(monster) || !monster.IsAlive)
+                continue;
+
+            float distance = GlobalPosition.DistanceTo(monster.GlobalPosition);
+            if (distance <= range && distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = monster;
+            }
+        }
+        return best;
+    }
 
     private void UpdateGuard(float dt)
     {
@@ -511,13 +590,23 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         bool support = skill.Stun != null;
         MonsterBase firstAffected = null;
 
+        // 무기 스킬은 이번 프레임에 칼날이 훑고 간 띠가 판정 범위다.
+        // 지원 스킬(고리)은 형태 정의(circle)를 그대로 쓴다.
+        var pose = PoseFor(skill, _attack.Phase, _attack.PhaseProgress);
+        float baseAngle = _attack.LockedFacing.Angle();
+
         foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
         {
             if (node is not MonsterBase monster || !IsInstanceValid(monster))
                 continue;
 
-            if (!Hitbox.Overlaps(skill.Shape, GlobalPosition, _attack.LockedFacing,
-                    monster.GlobalPosition, monster.Stats.Radius))
+            bool hit = support
+                ? Hitbox.Overlaps(skill.Shape, GlobalPosition, _attack.LockedFacing,
+                    monster.GlobalPosition, monster.Stats.Radius)
+                : Hitbox.SweptArc(GlobalPosition, baseAngle, _prevBladeAngle, pose.AngleOffset,
+                    pose.Inner, pose.Outer, pose.Width, monster.GlobalPosition, monster.Stats.Radius);
+
+            if (!hit)
                 continue;
 
             // 한 스윙에 같은 대상은 한 번만.
@@ -812,8 +901,28 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     public override void _Draw()
     {
+        DrawLockMarker();
         DrawWeapon();
         DrawHitboxDebug();
+    }
+
+    /// <summary>고정된 대상에 표식. 누구를 보고 있는지 알 수 없으면 시선 고정이 무의미하다.</summary>
+    private void DrawLockMarker()
+    {
+        if (_lockTarget == null || !IsInstanceValid(_lockTarget))
+            return;
+
+        Vector2 local = _lockTarget.GlobalPosition - GlobalPosition;
+        float radius = _lockTarget.Stats.Radius + 4f;
+        var color = new Color(1f, 0.95f, 0.6f, 0.75f);
+
+        // 네 방향 짧은 갈고리 — 조준 표식처럼 보이게. (규칙 5)
+        for (int i = 0; i < 4; i++)
+        {
+            float angle = Mathf.Tau * i / 4f + Mathf.Pi / 4f;
+            Vector2 dir = Vector2.Right.Rotated(angle);
+            DrawLine(local + dir * radius, local + dir * (radius + 3f), color, 1f);
+        }
     }
 
     /// <summary>
@@ -828,10 +937,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
             if (skill.Stun != null)
                 DrawWarcryRing();          // 함성 — 퍼지는 고리
-            else if (skill.Dash != null)
-                DrawThrust(skill);         // 강타 — 앞으로 찌르기
             else
-                DrawSlash(skill);          // 베기 — 호를 그리며 휘두르기
+                DrawBlade(skill, PoseFor(skill, _attack.Phase, _attack.PhaseProgress));
             return;
         }
 
@@ -839,59 +946,66 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             DrawShield();
     }
 
-    /// <summary>검을 호를 그리며 휘두른다. 선딜에 감아올리고 판정에 베어 낸다.</summary>
-    private void DrawSlash(SkillDefinition skill)
-    {
-        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
-        float baseAngle = _attack.LockedFacing.Angle();
-        float t = EaseOut(_attack.PhaseProgress);
+    /// <summary>
+    /// 무기의 현재 자세. 자루(Inner) ~ 칼끝(Outer) 거리와 바라보는 방향 기준 각도(rad).
+    /// 그리기와 판정이 같은 함수를 쓰므로 보이는 궤적과 히트박스가 어긋날 수 없다.
+    /// </summary>
+    private readonly record struct WeaponPose(float AngleOffset, float Inner, float Outer, float Width);
 
-        // 시작 각(뒤로 감아올림) → 끝 각(베어 내림).
-        float swing = _attack.Phase switch
+    private static WeaponPose PoseFor(SkillDefinition skill, SkillPhase phase, float progress)
+    {
+        float t = EaseOut(progress);
+
+        // 돌진이 붙은 스킬(강타)은 찌르기 — 각도 고정, 앞뒤로 뺐다가 내민다.
+        if (skill.Dash != null)
+        {
+            float reach = phase switch
+            {
+                SkillPhase.Windup => Mathf.Lerp(6f, 2f, t),
+                SkillPhase.Active => Mathf.Lerp(2f, 1f, t),
+                _ => Mathf.Lerp(1f, 6f, t),
+            };
+            float thrust = PlayerTuning.SwordLength * 1.3f;
+            return new WeaponPose(0f, reach, reach + thrust, PlayerTuning.SwordWidth + 1f);
+        }
+
+        // 그 외는 베기 — 뒤로 감아올렸다가 호를 그리며 베어 낸다.
+        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
+        float swing = phase switch
         {
             SkillPhase.Windup => Mathf.Lerp(0f, -half * 1.2f, t),
             SkillPhase.Active => Mathf.Lerp(-half * 1.2f, half, t),
             _ => Mathf.Lerp(half, 0f, t),
         };
-
         float length = PlayerTuning.SwordLength * (skill.Heavy ? 1.25f : 1f);
+        return new WeaponPose(swing, 3f, length, PlayerTuning.SwordWidth);
+    }
+
+    /// <summary>칼날 + 이번 스윙에서 훑은 궤적. 궤적 띠가 곧 히트박스다.</summary>
+    private void DrawBlade(SkillDefinition skill, WeaponPose pose)
+    {
+        float baseAngle = _attack.LockedFacing.Angle();
+        Vector2 dir = Vector2.Right.Rotated(baseAngle + pose.AngleOffset);
+
         Color color = _attack.IsActive
             ? (skill.Heavy ? PlayerTuning.SwordHotColor : PlayerTuning.SwordColor)
             : PlayerTuning.SwordColor.Darkened(0.3f);
 
-        Vector2 dir = Vector2.Right.Rotated(baseAngle + swing);
-        DrawLine(dir * 3f, dir * length, color, PlayerTuning.SwordWidth);
-
-        // 판정 중에는 베인 궤적을 남긴다 — 어디를 훑었는지 보이게.
-        if (_attack.IsActive)
+        // 판정 중이면 스윙 시작점부터 지금까지 훑은 띠를 먼저 깔고 칼날을 그린다.
+        if (_attack.IsActive && !Mathf.IsEqualApprox(_swingStartAngle, pose.AngleOffset))
         {
-            float from = baseAngle - half * 1.2f;
-            float to = baseAngle + swing;
-            DrawArc(Vector2.Zero, length * 0.85f, from, to, 12,
-                new Color(color.R, color.G, color.B, 0.35f), 1.5f);
+            float lo = Mathf.Min(_swingStartAngle, pose.AngleOffset);
+            float hi = Mathf.Max(_swingStartAngle, pose.AngleOffset);
+            float mid = (pose.Inner + pose.Outer) * 0.5f;
+
+            DrawArc(Vector2.Zero, mid, baseAngle + lo, baseAngle + hi, 12,
+                new Color(color.R, color.G, color.B, 0.28f), pose.Outer - pose.Inner);
         }
-    }
 
-    /// <summary>강타 — 검을 앞으로 내지른다. 돌진 방향과 같다.</summary>
-    private void DrawThrust(SkillDefinition skill)
-    {
-        Vector2 dir = _attack.LockedFacing;
-        float t = EaseOut(_attack.PhaseProgress);
+        DrawLine(dir * pose.Inner, dir * pose.Outer, color, pose.Width);
 
-        float reach = _attack.Phase switch
-        {
-            SkillPhase.Windup => Mathf.Lerp(6f, 2f, t),     // 뒤로 당겨 겨눔
-            SkillPhase.Active => Mathf.Lerp(2f, 1f, t),
-            _ => Mathf.Lerp(1f, 6f, t),
-        };
-
-        float length = PlayerTuning.SwordLength * 1.3f;
-        Color color = _attack.IsActive ? PlayerTuning.SwordHotColor : PlayerTuning.SwordColor.Darkened(0.3f);
-
-        DrawLine(dir * reach, dir * (reach + length), color, PlayerTuning.SwordWidth + 1f);
-
-        // 돌진 중엔 뒤로 속도선을 남긴다.
-        if (_attack.IsActive)
+        // 돌진 중엔 뒤로 속도선.
+        if (_attack.IsActive && skill.Dash != null)
             DrawLine(-dir * 4f, -dir * 14f, new Color(1f, 1f, 1f, 0.25f), 2f);
     }
 
@@ -946,40 +1060,39 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         DrawColoredPolygon(corners, color);
     }
 
-    /// <summary>F2 — 판정 범위 반투명 표시. (§I)</summary>
+    /// <summary>
+    /// F2 — 판정 범위 표시. 실제 판정과 같은 값으로 그린다.
+    /// 무기 스킬은 칼날이 훑는 띠, 지원 스킬은 형태 정의의 원. (§I)
+    /// </summary>
     private void DrawHitboxDebug()
     {
-        if (!DebugFlags.ShowHitbox || !_attack.IsBusy || _attack.Skill?.Shape == null)
+        if (!DebugFlags.ShowHitbox || !_attack.IsBusy || _attack.Skill == null)
             return;
 
-        var shape = _attack.Skill.Shape;
+        var skill = _attack.Skill;
 
         // 선딜은 옅게, 판정 프레임은 진하게.
         Color color = _attack.IsActive
             ? new Color(1f, 0.3f, 0.3f, 0.35f)
             : new Color(1f, 1f, 1f, 0.12f);
 
-        if (shape.Kind == "circle")
+        if (skill.Stun != null)
         {
-            DrawCircle(Vector2.Zero, shape.RangePx, color);
+            if (skill.Shape != null)
+                DrawCircle(Vector2.Zero, skill.Shape.RangePx, color);
             return;
         }
 
-        if (shape.Kind != "cone")
-            return;
-
-        const int segments = 16;
-        float half = Mathf.DegToRad(shape.AngleDeg) * 0.5f;
+        var pose = PoseFor(skill, _attack.Phase, _attack.PhaseProgress);
         float baseAngle = _attack.LockedFacing.Angle();
 
-        var points = new Vector2[segments + 2];
-        points[0] = Vector2.Zero;
-        for (int i = 0; i <= segments; i++)
-        {
-            float angle = baseAngle - half + 2f * half * i / segments;
-            points[i + 1] = Vector2.Right.Rotated(angle) * shape.RangePx;
-        }
-        DrawColoredPolygon(points, color);
+        // 판정 중이면 스윙 시작 ~ 현재, 선딜이면 지금 자세만.
+        float from = _attack.IsActive ? _swingStartAngle : pose.AngleOffset;
+        float lo = Mathf.Min(from, pose.AngleOffset);
+        float hi = Mathf.Max(from, pose.AngleOffset);
+
+        DrawArc(Vector2.Zero, (pose.Inner + pose.Outer) * 0.5f,
+            baseAngle + lo, baseAngle + hi, 16, color, pose.Outer - pose.Inner);
     }
 
     // --- 피해 / 사망 -------------------------------------------------------

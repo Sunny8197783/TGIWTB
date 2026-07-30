@@ -18,6 +18,7 @@ public partial class InputSetup : Node
     public const string Bash = "bash";            // L  — sk_bash
     public const string Warcry = "warcry";        // U  — sk_warcry
     public const string Dash = "dash";            // Space
+    public const string LockOn = "lock_on";       // Shift — 시선 고정(뒷걸음)
     public const string DebugOverlay = "debug_overlay";   // F1
     public const string DebugHitbox = "debug_hitbox";     // F2
     public const string DebugTuning = "debug_tuning";     // F3
@@ -42,6 +43,7 @@ public partial class InputSetup : Node
         Bind(Bash, Key.L);
         Bind(Warcry, Key.U);
         Bind(Dash, Key.Space);
+        Bind(LockOn, Key.Shift);
 
         Bind(DebugOverlay, Key.F1);
         Bind(DebugHitbox, Key.F2);

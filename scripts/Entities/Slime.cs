@@ -15,6 +15,9 @@ public partial class Slime : MonsterBase
     /// <summary>이번 휘두르기에서 이미 피해를 넣었는가. 한 스윙에 한 번만.</summary>
     private bool _struckThisSwing;
 
+    /// <summary>지난 프레임의 몽둥이 각도. 프레임 사이를 훑는 띠를 만드는 데 쓴다.</summary>
+    private float _prevClubAngle;
+
     protected override void UpdateAi(float delta)
     {
         if (_attackCooldown > 0f)
@@ -27,20 +30,18 @@ public partial class Slime : MonsterBase
             if (PlayerIsAlive)
                 Facing = DirectionToPlayer();  // 선딜엔 조준을 따라온다
             if (StateTimer <= 0f)
+            {
                 SetState(MonsterState.Attack, MonsterTuning.SlimeAttack.Strike);
+                _prevClubAngle = MonsterTuning.SlimeAttack.ClubSwingFrom;
+            }
             return;
         }
 
-        // 내려치는 순간 — 사거리 안이면 이번 스윙에 한 번 피해.
+        // 내려치는 중 — 몽둥이가 실제로 훑고 지나간 자리에만 피해가 들어간다.
         if (State == MonsterState.Attack)
         {
             Velocity = Vector2.Zero;
-            if (!_struckThisSwing)
-            {
-                _struckThisSwing = true;
-                if (PlayerIsAlive && DistanceToPlayer() <= MonsterTuning.SlimeAttack.ContactRange)
-                    StrikePlayer(MonsterTuning.SlimeAttack.ContactDamage, Facing);
-            }
+            SweepClub();
             if (StateTimer <= 0f)
                 SetState(MonsterState.Recover, MonsterTuning.SlimeAttack.Recover);
             return;
@@ -88,6 +89,45 @@ public partial class Slime : MonsterBase
         Velocity = direction * Stats.MoveSpeed;
     }
 
+    /// <summary>
+    /// 몽둥이가 이번 프레임에 훑은 띠로 판정한다. 보이는 궤적이 곧 히트박스라
+    /// 헛스윙은 확실히 헛스윙이 된다. 한 스윙에 한 번만 맞는다.
+    /// </summary>
+    private void SweepClub()
+    {
+        if (_struckThisSwing || !PlayerIsAlive)
+            return;
+
+        float current = ClubSwingOffset();
+        bool hit = Hitbox.SweptArc(GlobalPosition, Facing.Angle(), _prevClubAngle, current,
+            MonsterTuning.SlimeAttack.ClubInner, MonsterTuning.SlimeAttack.ClubOuter,
+            MonsterTuning.SlimeAttack.ClubWidth,
+            Player.GlobalPosition, PlayerTuning.BodySize * 0.5f);
+
+        _prevClubAngle = current;
+
+        if (!hit)
+            return;
+
+        _struckThisSwing = true;
+        StrikePlayer(MonsterTuning.SlimeAttack.ContactDamage, Facing);
+    }
+
+    /// <summary>몽둥이의 현재 각도(바라보는 방향 기준). 그리기와 판정이 공유한다.</summary>
+    private float ClubSwingOffset()
+    {
+        float from = MonsterTuning.SlimeAttack.ClubSwingFrom;
+        float to = MonsterTuning.SlimeAttack.ClubSwingTo;
+
+        return State switch
+        {
+            MonsterState.Windup => from * StateProgress,
+            MonsterState.Attack => Mathf.Lerp(from, to, StateProgress),
+            MonsterState.Recover => Mathf.Lerp(to, 0f, StateProgress),
+            _ => 0f,
+        };
+    }
+
     private void Decelerate(float delta)
         => Velocity = Velocity.MoveToward(Vector2.Zero, Stats.MoveSpeed * delta * 4f);
 
@@ -114,24 +154,26 @@ public partial class Slime : MonsterBase
             return;
 
         float baseAngle = Facing.Angle();
+        float swing = ClubSwingOffset();
 
-        // -1(뒤로 치켜듦) → +1(앞으로 내려침) 로 스윙 진행.
-        float swing = State switch
-        {
-            MonsterState.Windup => -0.9f * StateProgress,          // 뒤로 감아올림
-            MonsterState.Attack => Mathf.Lerp(-0.9f, 1.0f, StateProgress),  // 빠르게 내려침
-            _ => Mathf.Lerp(1.0f, 0f, StateProgress),               // 후딜에 복귀
-        };
-
-        float angle = baseAngle + swing;
-        Vector2 dir = Vector2.Right.Rotated(angle);
-        Vector2 start = dir * (Stats.Radius * 0.4f);
-        Vector2 end = dir * (Stats.Radius + 12f);
+        float inner = MonsterTuning.SlimeAttack.ClubInner;
+        float outer = MonsterTuning.SlimeAttack.ClubOuter;
 
         Color shaft = State == MonsterState.Attack
             ? new Color(1f, 0.85f, 0.4f)   // 내려칠 때 밝게
             : new Color(0.5f, 0.35f, 0.2f);
-        DrawLine(start, end, shaft, 2.5f);
-        DrawCircle(end, 3f, shaft);        // 뭉툭한 끝
+
+        // 내려치는 중이면 지금까지 훑은 띠를 깐다 — 이 띠가 그대로 히트박스다.
+        if (State == MonsterState.Attack)
+        {
+            float from = MonsterTuning.SlimeAttack.ClubSwingFrom;
+            DrawArc(Vector2.Zero, (inner + outer) * 0.5f,
+                baseAngle + Mathf.Min(from, swing), baseAngle + Mathf.Max(from, swing), 10,
+                new Color(shaft.R, shaft.G, shaft.B, 0.25f), outer - inner);
+        }
+
+        Vector2 dir = Vector2.Right.Rotated(baseAngle + swing);
+        DrawLine(dir * inner, dir * outer, shaft, MonsterTuning.SlimeAttack.ClubWidth);
+        DrawCircle(dir * outer, 3f, shaft);   // 뭉툭한 끝
     }
 }

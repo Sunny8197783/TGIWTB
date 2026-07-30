@@ -47,6 +47,15 @@ public static class MonsterTuning
         /// <summary>이 거리 안이면 공격을 시작한다. 몸+몽둥이 사거리.</summary>
         public static readonly float ContactRange = 20f;
 
+        /// <summary>몽둥이 자루 끝 ~ 뭉툭한 끝까지. 그리기와 판정이 같은 값을 쓴다.</summary>
+        public static readonly float ClubInner = 2.8f;   // Radius * 0.4
+        public static readonly float ClubOuter = 19f;    // Radius + 12
+        public static readonly float ClubWidth = 3f;
+
+        /// <summary>스윙 각도 — 뒤로 감아올린 각(rad)에서 앞으로 내려친 각까지.</summary>
+        public static readonly float ClubSwingFrom = -0.9f;
+        public static readonly float ClubSwingTo = 1.0f;
+
         /// <summary>
         /// 선딜 0.3s — 몽둥이를 치켜드는 예고. 이 동안 피하거나 (퍼펙트) 가드할 수 있다.
         /// 예고 없이 닿자마자 때리면 근접 몹에게 붙는 순간 무조건 맞는 문제가 생긴다.

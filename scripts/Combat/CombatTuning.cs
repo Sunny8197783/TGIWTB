@@ -52,6 +52,14 @@ public static class CombatTuning
     public static readonly TuningEntry DashInvuln =
         Sec("dash.invuln", GroupMove, "대시 무적", 0.10f, 0f, 0.5f, 0.005f);
 
+    /// <summary>
+    /// 시선 고정(Shift)이 대상을 잡는 거리. 이 안의 가장 가까운 적을 계속 바라본다.
+    /// 3배 줌에서 화면에 보이는 범위가 가로 ±107px 이라, 보이지도 않는 적에게
+    /// 고정되지 않도록 130px 로 잡았다. (고블린 유지 거리 120px 는 들어온다.)
+    /// </summary>
+    public static readonly TuningEntry LockOnRange =
+        Px("lock.range", GroupMove, "시선 고정 거리", 130f, 40f, 400f, 5f);
+
     // --- §C-2 공격 프레임 --------------------------------------------------
 
     /// <summary>0.08s (5프레임). 이 동안 이동 속도가 WindupMoveScale 로 줄어든다.</summary>
@@ -62,9 +70,9 @@ public static class CombatTuning
     public static readonly TuningEntry AttackActive =
         Sec("atk.active", GroupAttack, "판정", 0.10f, 0.01f, 0.5f, 0.005f);
 
-    /// <summary>0.16s (10프레임). 이동 불가.</summary>
+    /// <summary>0.14s (8프레임). 이동 불가. 명세 0.16s 에서 살짝 줄여 콤보가 더 붙게 했다.</summary>
     public static readonly TuningEntry AttackRecovery =
-        Sec("atk.recovery", GroupAttack, "후딜", 0.16f, 0.01f, 0.8f, 0.005f);
+        Sec("atk.recovery", GroupAttack, "후딜", 0.14f, 0.01f, 0.8f, 0.005f);
 
     public static readonly TuningEntry WindupMoveScale =
         Ratio("atk.windupMove", GroupAttack, "선딜 이동 배율", 0.40f, 0f, 1f, 0.05f);
@@ -75,17 +83,20 @@ public static class CombatTuning
 
     // --- §C-3 히트스톱 (타격감의 80%) --------------------------------------
 
-    /// <summary>0.06s (4프레임)</summary>
+    /// <summary>0.07s (4프레임). 명세 0.06s — 한 프레임 더 씹어 타격을 또렷하게.</summary>
     public static readonly TuningEntry HitstopNormal =
-        Sec("stop.normal", GroupHitstop, "일반 타격", 0.06f, 0f, 0.4f, 0.005f);
+        Sec("stop.normal", GroupHitstop, "일반 타격", 0.07f, 0f, 0.4f, 0.005f);
 
-    /// <summary>0.11s (7프레임)</summary>
+    /// <summary>
+    /// 0.14s (8프레임). 명세 0.11s 에서 늘렸다 — 강타·카운터가 일반 타격과
+    /// 확실히 다르게 느껴져야 강한 한 방을 노릴 이유가 생긴다.
+    /// </summary>
     public static readonly TuningEntry HitstopHeavy =
-        Sec("stop.heavy", GroupHitstop, "강타격", 0.11f, 0f, 0.4f, 0.005f);
+        Sec("stop.heavy", GroupHitstop, "강타격", 0.14f, 0f, 0.4f, 0.005f);
 
-    /// <summary>0.16s (10프레임)</summary>
+    /// <summary>0.18s (11프레임). 명세 0.16s. 처치의 '툭' 끊기는 맛을 조금 더.</summary>
     public static readonly TuningEntry HitstopKill =
-        Sec("stop.kill", GroupHitstop, "처치", 0.16f, 0f, 0.6f, 0.005f);
+        Sec("stop.kill", GroupHitstop, "처치", 0.18f, 0f, 0.6f, 0.005f);
 
     /// <summary>
     /// 처치된 몬스터가 터지기까지 남아 있는 시간. §C 에 없는 구현 값이지만
@@ -101,9 +112,9 @@ public static class CombatTuning
     public static readonly TuningEntry KnockbackDistance =
         Px("kb.dist", GroupKnockback, "일반 거리", 20f, 0f, 120f, 1f);
 
-    /// <summary>0.12s, ease-out</summary>
+    /// <summary>0.10s, ease-out. 명세 0.12s — 짧게 끝나야 '튕겨 나갔다'로 읽힌다.</summary>
     public static readonly TuningEntry KnockbackTime =
-        Sec("kb.time", GroupKnockback, "일반 시간", 0.12f, 0.02f, 0.6f, 0.005f);
+        Sec("kb.time", GroupKnockback, "일반 시간", 0.10f, 0.02f, 0.6f, 0.005f);
 
     public static readonly TuningEntry KnockbackHeavyDistance =
         Px("kb.heavyDist", GroupKnockback, "강타격 거리", 40f, 0f, 200f, 1f);
@@ -124,14 +135,16 @@ public static class CombatTuning
 
     // --- §C-6 화면 연출 ----------------------------------------------------
 
+    /// <summary>2.2px. 명세 1.5px — 3배 줌이라 1.5px 는 거의 안 보였다.</summary>
     public static readonly TuningEntry ShakeNormalAmp =
-        Px("shake.normalAmp", GroupScreen, "일반 타격 진폭", 1.5f, 0f, 12f, 0.1f);
+        Px("shake.normalAmp", GroupScreen, "일반 타격 진폭", 2.2f, 0f, 12f, 0.1f);
 
     public static readonly TuningEntry ShakeNormalTime =
         Sec("shake.normalTime", GroupScreen, "일반 타격 지속", 0.08f, 0f, 0.6f, 0.005f);
 
+    /// <summary>4.5px. 명세 3.0px — 강타·카운터가 확실히 크게 흔들려야 한다.</summary>
     public static readonly TuningEntry ShakeHeavyAmp =
-        Px("shake.heavyAmp", GroupScreen, "강타격 진폭", 3.0f, 0f, 16f, 0.1f);
+        Px("shake.heavyAmp", GroupScreen, "강타격 진폭", 4.5f, 0f, 16f, 0.1f);
 
     public static readonly TuningEntry ShakeHeavyTime =
         Sec("shake.heavyTime", GroupScreen, "강타격 지속", 0.15f, 0f, 0.8f, 0.005f);
@@ -164,11 +177,11 @@ public static class CombatTuning
 
     /// <summary>선딜에 뒤로 빼는 거리. 예비 동작이 있어야 공격이 예고된다.</summary>
     public static readonly TuningEntry MotionWindupBack =
-        Px("motion.windupBack", GroupMotion, "선딜 뒤로 빼기", 3f, 0f, 16f, 0.5f);
+        Px("motion.windupBack", GroupMotion, "선딜 뒤로 빼기", 4f, 0f, 16f, 0.5f);
 
-    /// <summary>판정에 앞으로 내미는 거리.</summary>
+    /// <summary>판정에 앞으로 내미는 거리. 몸이 실리는 만큼 때린 느낌이 난다.</summary>
     public static readonly TuningEntry MotionActiveForward =
-        Px("motion.activeForward", GroupMotion, "판정 앞으로 내밀기", 6f, 0f, 32f, 0.5f);
+        Px("motion.activeForward", GroupMotion, "판정 앞으로 내밀기", 8f, 0f, 32f, 0.5f);
 
     /// <summary>몬스터 모션 배율. 몸집이 큰 놈일수록 크게 움직여야 읽힌다.</summary>
     public static readonly TuningEntry MotionMonsterScale =
