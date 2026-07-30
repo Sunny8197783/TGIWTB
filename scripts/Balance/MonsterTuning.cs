@@ -48,10 +48,11 @@ public static class MonsterTuning
         public static readonly float ContactRange = 20f;
 
         /// <summary>
-        /// 선딜 0.45s — 몽둥이를 치켜드는 예고. 이 동안 피하거나 (퍼펙트) 가드할 수 있다.
+        /// 선딜 0.3s — 몽둥이를 치켜드는 예고. 이 동안 피하거나 (퍼펙트) 가드할 수 있다.
         /// 예고 없이 닿자마자 때리면 근접 몹에게 붙는 순간 무조건 맞는 문제가 생긴다.
+        /// 0.45s 는 피하기엔 너무 굼떠 보여 0.3s 로 줄였다.
         /// </summary>
-        public static readonly float Windup = 0.45f;
+        public static readonly float Windup = 0.3f;
 
         /// <summary>내려치는 순간. 이 시점에 사거리 안이면 피해가 들어간다.</summary>
         public static readonly float Strike = 0.1f;
@@ -82,9 +83,10 @@ public static class MonsterTuning
         public static readonly float DistanceTolerance = 16f;
 
         /// <summary>
-        /// 선딜 0.7s. 명세 0.5s 에서 늘렸다 — 예고를 보고 피할 시간이 필요하다.
+        /// 선딜 0.45s. 0.7s 는 활 당기는 게 굼떠 보여 줄였다.
+        /// (아래 쿨다운이 넉넉해서 선딜이 짧아도 압박이 과하지 않다.)
         /// </summary>
-        public static readonly float Windup = 0.7f;
+        public static readonly float Windup = 0.45f;
 
         public static readonly float Recover = 0.35f;
 
