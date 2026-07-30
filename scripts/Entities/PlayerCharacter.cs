@@ -31,6 +31,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// <summary>무적 점멸에 따른 이번 프레임 투명도. 그리기에서 파츠 색에 곱한다.</summary>
     private float _blinkAlpha = 1f;
 
+    /// <summary>애니메이션 위상 누적. 대기·걸음 들썩임을 만든다.</summary>
+    private float _animTime;
+
     private readonly RandomNumberGenerator _rng = new();
 
     private readonly HashSet<string> _flags = new();
@@ -865,6 +868,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void UpdateVisuals(float dt)
     {
+        _animTime += dt;
+
         // 무적 동안 10Hz 점멸. (§C-5) 실제 그리기는 _Draw 에서 이 값을 곱한다.
         bool blinkOff = false;
         if (_iframeTimer > 0f && CombatTuning.IFrameBlinkHz > 0f)
@@ -931,7 +936,18 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         float s = PlayerTuning.FigureScale;
         Vector2 m = AttackMotionOffset();
 
-        // 그림자 — 발밑 납작한 타원. 위치감의 대부분을 만든다. (모션 영향 없음)
+        // 대기/걸음 들썩임 — 공격 중이 아닐 때만. 몸만 오르내리고 그림자는 제자리라
+        // '숨 쉬는/발 구르는' 느낌이 난다. (스프라이트 애니메이션 전까지의 생동감)
+        if (!_attack.IsBusy)
+        {
+            bool walking = _state == PlayerState.Normal && Velocity.Length() > 5f;
+            float amp = walking ? PlayerTuning.WalkBobAmp : PlayerTuning.IdleBobAmp;
+            float hz = walking ? PlayerTuning.WalkBobHz : PlayerTuning.IdleBobHz;
+            // 절댓값 sine — 바닥을 딛고 튀어오르는 것처럼 위로만 들썩인다.
+            m.Y -= Mathf.Abs(Mathf.Sin(_animTime * hz * Mathf.Pi)) * amp * s;
+        }
+
+        // 그림자 — 발밑 납작한 타원. 위치감의 대부분을 만든다. (모션·들썩임 영향 없음)
         DrawSetTransform(new Vector2(0f, 8f * s), 0f, new Vector2(1f, 0.4f));
         DrawCircle(Vector2.Zero, 5f * s, PlayerTuning.ShadowColor);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);

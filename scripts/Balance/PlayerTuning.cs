@@ -42,6 +42,13 @@ public static class PlayerTuning
 
     public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.28f);
 
+    // 살아있는 느낌 — 스프라이트 애니메이션 전까지 도형에 넣는 '숨쉬기/걸음' 들썩임.
+    // 스프라이트가 들어와도 이 오프셋은 그대로 위에 얹어 쓸 수 있다.
+    public static readonly float IdleBobAmp = 1.1f;   // 대기 시 위아래 폭(px)
+    public static readonly float IdleBobHz = 1.7f;    // 느리고 부드럽게
+    public static readonly float WalkBobAmp = 1.4f;   // 걸을 때 폭
+    public static readonly float WalkBobHz = 7.5f;    // 걸음 리듬
+
     // 커스터마이즈 프리셋 — 색 슬롯이 고를 팔레트. 첫 항목이 기본값.
     public static readonly Color[] SkinTones =
     {
