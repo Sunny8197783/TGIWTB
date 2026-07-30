@@ -828,7 +828,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (_iframeTimer > 0f)
             return false;
 
-        float amount = ApplyDamageReduction(info.Amount, out bool nullified);
+        float amount = ApplyDamageReduction(info, out bool nullified);
         if (nullified)
             return false;
 
@@ -848,15 +848,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     /// <summary>
     /// 가드 중이면 피해 60% 감소. 가드를 올린 지 PerfectWindow 안에 맞았으면
-    /// 퍼펙트 가드 — 피해 0 + 반격 상태. (§E sk_guard)
+    /// 퍼펙트 가드 — 피해 0 + 반격 상태 + 근접 상대 카운터. (§E sk_guard)
     /// </summary>
-    private float ApplyDamageReduction(float amount, out bool nullified)
+    private float ApplyDamageReduction(in DamageInfo info, out bool nullified)
     {
         nullified = false;
 
         var guard = GuardSkill()?.Guard;
         if (!_guarding || guard == null)
-            return amount;
+            return info.Amount;
 
         if (_guardElapsed <= guard.PerfectWindow)
         {
@@ -864,11 +864,48 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _riposteTimer = guard.RiposteSeconds;
             CombatFeedback.Instance?.Popup(GlobalPosition, 0f, heavy: true, onPlayer: false);
             DebugLog.Add($"퍼펙트 가드 (반격 {guard.RiposteSeconds:0.##}s)");
+            TryCounter(info, guard);
             return 0f;
         }
 
         DebugLog.Add($"가드 x{guard.DamageMultiplier:0.##}");
-        return amount * guard.DamageMultiplier;
+        return info.Amount * guard.DamageMultiplier;
+    }
+
+    /// <summary>
+    /// 퍼펙트 가드 카운터. 되받아칠 상대가 카운터 거리 안의 근접 몹일 때만,
+    /// 받을 뻔한 피해의 CounterMultiplier 배를 강타격으로 돌려주고 기절시킨다.
+    /// 화면 흔들림은 강타격 경로(CombatFeedback.OnHit)가 함께 처리한다.
+    /// </summary>
+    private void TryCounter(in DamageInfo info, SkillGuard guard)
+    {
+        if (guard.CounterMultiplier <= 0f || info.Source is not MonsterBase attacker || !attacker.IsAlive)
+            return;
+
+        // 화살처럼 멀리서 온 공격은 되받아치지 않는다 — 근접 몹만 카운터 대상.
+        if (GlobalPosition.DistanceTo(attacker.GlobalPosition) > guard.CounterRange)
+            return;
+
+        float damage = info.Amount * guard.CounterMultiplier;
+        Vector2 toAttacker = (attacker.GlobalPosition - GlobalPosition).Normalized();
+
+        bool landed = attacker.TakeDamage(new DamageInfo
+        {
+            Amount = damage,
+            Direction = toAttacker,
+            Heavy = true,
+            SkillId = "guard_counter",
+            Source = this,
+        });
+
+        if (guard.CounterStunSeconds > 0f)
+            attacker.Stun(guard.CounterStunSeconds);
+
+        // 반격은 플레이어가 손해 없이 반격했다는 신호이므로 크게 확인시켜 준다.
+        ApplyHitstop(CombatTuning.HitstopHeavy);
+        CombatFeedback.Instance?.OnHit(attacker.GlobalPosition, damage, heavy: true, killed: !attacker.IsAlive);
+        DebugLog.Add($"카운터! {attacker.Stats.Id} -{damage:0.#}"
+            + (guard.CounterStunSeconds > 0f ? $" 기절 {guard.CounterStunSeconds:0.##}s" : ""));
     }
 
     /// <summary>ease-out 넉백. 총 이동 거리가 정확히 명세값이 되게 잡는다. (§C-4)</summary>

@@ -12,7 +12,10 @@
     "damageMultiplier": 0.4,
     "moveSpeedMultiplier": 0.4,
     "perfectWindow": 0.12,
-    "riposteSeconds": 0.5
+    "riposteSeconds": 0.5,
+    "counterMultiplier": 2.0,
+    "counterRange": 44.0,
+    "counterStunSeconds": 0.9
   },
   "mastery": {
     "minInterval": 0.5,

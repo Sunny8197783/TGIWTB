@@ -39,16 +39,24 @@ public static class MonsterTuning
 
     public static class SlimeAttack
     {
-        /// <summary>접촉 시 6 데미지.</summary>
+        /// <summary>몽둥이 휘두르기 데미지.</summary>
         public static readonly float ContactDamage = 6f;
 
-        public static readonly float Cooldown = 1.2f;
+        public static readonly float Cooldown = 1.4f;
 
-        /// <summary>중심 간 거리가 이 값 이하이면 접촉으로 본다.</summary>
-        public static readonly float ContactRange = 13f;
+        /// <summary>이 거리 안이면 공격을 시작한다. 몸+몽둥이 사거리.</summary>
+        public static readonly float ContactRange = 20f;
 
-        /// <summary>피해를 주는 순간의 짧은 정지.</summary>
-        public static readonly float AttackDuration = 0.12f;
+        /// <summary>
+        /// 선딜 0.45s — 몽둥이를 치켜드는 예고. 이 동안 피하거나 (퍼펙트) 가드할 수 있다.
+        /// 예고 없이 닿자마자 때리면 근접 몹에게 붙는 순간 무조건 맞는 문제가 생긴다.
+        /// </summary>
+        public static readonly float Windup = 0.45f;
+
+        /// <summary>내려치는 순간. 이 시점에 사거리 안이면 피해가 들어간다.</summary>
+        public static readonly float Strike = 0.1f;
+
+        public static readonly float Recover = 0.35f;
     }
 
     // --- 2) 고블린 궁수 — 위치 이동 강제 -----------------------------------

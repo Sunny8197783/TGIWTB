@@ -108,14 +108,50 @@ public partial class GoblinArcher : MonsterBase
         };
         DrawColoredPolygon(points, color);
 
-        // 선딜 동안 테두리를 밝혀서 '쏜다'를 예고한다. 예고 없는 원거리는 불공평하다.
-        if (State == MonsterState.Windup)
-            DrawArc(Vector2.Zero, r + 3f, 0f, Mathf.Tau, 16, new Color(1f, 0.9f, 0.4f, 0.8f), 1f);
+        DrawBow();
 
         float width = r * 2f;
         float y = r + 3f;
         DrawRect(new Rect2(-r, y, width, 1.5f), new Color(0f, 0f, 0f, 0.5f));
         DrawRect(new Rect2(-r, y, width * HpRatio, 1.5f), new Color(0.9f, 0.35f, 0.35f));
+    }
+
+    /// <summary>
+    /// 활. 선딜 동안 시위를 뒤로 당기고(예고), 발사 순간 튕겨 나간다.
+    /// 활 = 정면 앞의 호, 시위 = 활 양 끝과 화살 오늬를 잇는 선. (규칙 5)
+    /// </summary>
+    private void DrawBow()
+    {
+        if (State is not (MonsterState.Windup or MonsterState.Recover))
+            return;
+
+        float r = Stats.Radius;
+        float angle = Facing.Angle();
+        Vector2 forward = Vector2.Right.Rotated(angle);
+        Vector2 side = Vector2.Right.Rotated(angle + Mathf.Pi / 2f);
+
+        // 활대는 몸 앞쪽에.
+        Vector2 bowCenter = forward * (r + 3f);
+        Vector2 top = bowCenter + side * (r + 2f);
+        Vector2 bottom = bowCenter - side * (r + 2f);
+
+        var wood = new Color(0.55f, 0.38f, 0.2f);
+        DrawLine(top, bowCenter + forward * 3f, wood, 1.5f);
+        DrawLine(bottom, bowCenter + forward * 3f, wood, 1.5f);
+
+        // 시위 당김: 선딜이 진행될수록 뒤로. 발사(후딜) 순간엔 앞으로 튕긴다.
+        float pull = State == MonsterState.Windup
+            ? Mathf.Lerp(0f, r + 4f, StateProgress)
+            : Mathf.Lerp(r + 4f, -2f, Mathf.Min(1f, StateProgress * 3f));
+
+        Vector2 nock = bowCenter - forward * pull;
+        var stringColor = new Color(0.9f, 0.9f, 0.85f);
+        DrawLine(top, nock, stringColor, 1f);
+        DrawLine(bottom, nock, stringColor, 1f);
+
+        // 메긴 화살은 선딜에만. 시위 위치에서 앞으로.
+        if (State == MonsterState.Windup)
+            DrawLine(nock, nock + forward * (r + 8f), new Color(0.95f, 0.9f, 0.6f), 1.5f);
     }
 
     public override void _PhysicsProcess(double delta)

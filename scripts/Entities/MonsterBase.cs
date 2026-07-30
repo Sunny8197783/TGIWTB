@@ -39,6 +39,11 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     /// <summary>SetState 로 받은 원래 길이. 모션 진행도를 내는 데만 쓴다.</summary>
     private float _stateLength;
+
+    /// <summary>현재 상태의 진행도 0~1. 그리기(선딜 예고 등)에 쓴다.</summary>
+    protected float StateProgress => _stateLength > 0f
+        ? Mathf.Clamp(1f - (StateTimer / _stateLength), 0f, 1f)
+        : 1f;
     protected PlayerCharacter Player { get; private set; }
     protected Vector2 Facing { get; set; } = Vector2.Right;
 

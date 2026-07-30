@@ -92,6 +92,15 @@ public sealed class SkillGuard
     /// <summary>가드 시작 후 이 시간 안에 맞으면 퍼펙트 가드. (§E sk_guard)</summary>
     public float PerfectWindow { get; set; }
     public float RiposteSeconds { get; set; }
+
+    /// <summary>퍼펙트 가드 카운터 — 받을 뻔한 피해의 이 배율만큼 돌려준다.</summary>
+    public float CounterMultiplier { get; set; }
+
+    /// <summary>카운터가 닿는 거리(px). 근접 공격만 되받아친다. 화살은 밖이라 반사되지 않는다.</summary>
+    public float CounterRange { get; set; }
+
+    /// <summary>카운터에 맞은 상대가 기절하는 시간(초).</summary>
+    public float CounterStunSeconds { get; set; }
 }
 
 public sealed class SkillDash
