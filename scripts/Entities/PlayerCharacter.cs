@@ -25,8 +25,13 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// <summary>몬스터가 플레이어를 찾는 그룹 이름.</summary>
     public const string Group = "player";
 
-    private ColorRect _body;
-    private ColorRect _facingMarker;
+    /// <summary>겉모습(색 슬롯). 피규어를 이 데이터로 그린다.</summary>
+    private CharacterAppearance _appearance = CharacterAppearance.Default();
+
+    /// <summary>무적 점멸에 따른 이번 프레임 투명도. 그리기에서 파츠 색에 곱한다.</summary>
+    private float _blinkAlpha = 1f;
+
+    private readonly RandomNumberGenerator _rng = new();
 
     private readonly HashSet<string> _flags = new();
     private readonly Dictionary<string, int> _counters = new();
@@ -133,31 +138,13 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void BuildShapes()
     {
+        // 충돌은 전투 판정용 크기 그대로. 시각 피규어는 _Draw 에서 그린다.
         float size = PlayerTuning.BodySize;
-
         var shape = new CollisionShape2D
         {
             Shape = new RectangleShape2D { Size = new Vector2(size, size) },
         };
         AddChild(shape);
-
-        _body = new ColorRect
-        {
-            Size = new Vector2(size, size),
-            Position = new Vector2(-size * 0.5f, -size * 0.5f),
-            Color = PlayerTuning.BodyColor,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        AddChild(_body);
-
-        float marker = PlayerTuning.FacingMarkerSize;
-        _facingMarker = new ColorRect
-        {
-            Size = new Vector2(marker, marker),
-            Color = PlayerTuning.FacingColor,
-            MouseFilter = Control.MouseFilterEnum.Ignore,
-        };
-        AddChild(_facingMarker);
     }
 
     /// <summary>새 게임 상태. 세이브가 없거나 로드가 실패했을 때의 폴백. (§H)</summary>
@@ -178,6 +165,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         Mastery.Restore(null);
         ResetCombatState();
+        _appearance = CharacterAppearance.Default();
 
         // P1 은 job_warrior R1 고정. 랭크 1 스킬을 GameDb 에서 실제로 지급받는다. (§D-1)
         Jobs.RestoreFrom("", null, null, null, null);
@@ -241,10 +229,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         MoveAndSlide();
         UpdateVisuals(dt);
 
-        // 무기 모션·시선 고정이 흐르는 동안은 매 프레임 다시 그린다.
-        if (DebugFlags.ShowHitbox || _attack.IsBusy || _guarding || _guardCooldown > 0f
-            || _lockTarget != null)
-            QueueRedraw();
+        // 피규어가 늘 보이고(점멸·방향·모션이 매 프레임 바뀜) 비용도 미미하므로 항상 다시 그린다.
+        QueueRedraw();
     }
 
     private void TickTimers(float dt)
@@ -310,6 +296,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
 
         AdvanceAttack(dt);
+
+        // 겉모습 무작위 — 정식 커스터마이즈 UI 전까지의 임시 진입점. (C)
+        if (Input.IsActionJustPressed(InputSetup.Customize))
+            RandomizeAppearance();
 
         if (!_attack.IsBusy && Input.IsActionJustPressed(InputSetup.Dash) && _dashCooldownTimer <= 0f)
         {
@@ -875,53 +865,136 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void UpdateVisuals(float dt)
     {
-        Vector2 motion = AttackMotionOffset();
-        float size = PlayerTuning.BodySize;
-        _body.Position = motion - Vector2.One * (size * 0.5f);
-
-        // 공격 중에는 고정된 판정 방향을 가리킨다 — 어디를 때리는지가 보여야 한다.
-        Vector2 aim = _attack.IsBusy ? _attack.LockedFacing : _facing;
-        _facingMarker.Position = motion + aim * PlayerTuning.FacingMarkerDistance
-            - Vector2.One * (PlayerTuning.FacingMarkerSize * 0.5f);
-
-        _body.Color = _flashTimer > 0f
-            ? Colors.White
-            : _state == PlayerState.Dash
-                ? PlayerTuning.BodyColor.Lightened(0.35f)
-                : BodyColorForState();
-
-        // 무적 동안 10Hz 점멸. (§C-5)
+        // 무적 동안 10Hz 점멸. (§C-5) 실제 그리기는 _Draw 에서 이 값을 곱한다.
         bool blinkOff = false;
         if (_iframeTimer > 0f && CombatTuning.IFrameBlinkHz > 0f)
         {
             float period = 1f / CombatTuning.IFrameBlinkHz;
             blinkOff = Mathf.PosMod(_iframeTimer, period) < period * 0.5f;
         }
-
-        float alpha = blinkOff ? 0.25f : 1f;
-        _body.Modulate = new Color(1f, 1f, 1f, alpha);
-        _facingMarker.Modulate = new Color(1f, 1f, 1f, alpha);
+        _blinkAlpha = blinkOff ? 0.25f : 1f;
 
         Visible = _state != PlayerState.Dead;
     }
 
-    /// <summary>가드·반격·버프 상태를 몸 색으로 알린다. UI 없이도 보이게. (§A 아트 방침)</summary>
-    private Color BodyColorForState()
+    /// <summary>
+    /// 파츠 색에 현재 상태(피격 플래시·대시·가드·반격·버프)와 점멸을 입힌다.
+    /// 색 슬롯(꾸미기)을 지우지 않도록 상태는 '덮어쓰기(플래시)'만 전체색이고
+    /// 나머지는 원래 색을 상태색 쪽으로 살짝 섞는다. (§A 아트 방침)
+    /// </summary>
+    private Color Tinted(Color part)
     {
-        if (_riposteTimer > 0f)
-            return PlayerTuning.RiposteColor;
-        if (_guarding)
-            return PlayerTuning.GuardColor;
-        if (_buffTimer > 0f)
-            return PlayerTuning.BuffColor;
-        return PlayerTuning.BodyColor;
+        Color c = part;
+
+        if (_flashTimer > 0f)
+            c = Colors.White;                              // 피격 순간 — 전체 흰색
+        else if (_state == PlayerState.Dash)
+            c = part.Lightened(0.3f);
+        else if (_riposteTimer > 0f)
+            c = part.Lerp(PlayerTuning.RiposteColor, 0.45f);
+        else if (_guarding)
+            c = part.Lerp(PlayerTuning.GuardColor, 0.4f);
+        else if (_buffTimer > 0f)
+            c = part.Lerp(PlayerTuning.BuffColor, 0.4f);
+
+        c.A *= _blinkAlpha;
+        return c;
+    }
+
+    /// <summary>겉모습을 바꾸고 저장한다. (임시 데모 진입점 — C 키)</summary>
+    private void RandomizeAppearance()
+    {
+        _appearance.Randomize(_rng);
+        QueueRedraw();
+        SaveSystem.Instance?.Save(this, "customize");
+        DebugLog.Add("겉모습 변경");
     }
 
     public override void _Draw()
     {
+        if (_state == PlayerState.Dead)
+            return;
+
+        DrawFigure();
         DrawLockMarker();
         DrawWeapon();
         DrawHitboxDebug();
+    }
+
+    /// <summary>
+    /// 세워 그린 사람 피규어 — 그림자·다리·몸통·팔·손·머리·머리카락·눈.
+    /// 파츠가 색 슬롯별로 나뉘어 있어 꾸미기가 바로 얹힌다. 도형만. (규칙 5)
+    /// 공격 모션(AttackMotionOffset)은 몸에만 싣고 그림자는 제자리에 둔다.
+    /// </summary>
+    private void DrawFigure()
+    {
+        float s = PlayerTuning.FigureScale;
+        Vector2 m = AttackMotionOffset();
+
+        // 그림자 — 발밑 납작한 타원. 위치감의 대부분을 만든다. (모션 영향 없음)
+        DrawSetTransform(new Vector2(0f, 8f * s), 0f, new Vector2(1f, 0.4f));
+        DrawCircle(Vector2.Zero, 5f * s, PlayerTuning.ShadowColor);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+
+        Color skin = Tinted(_appearance.Skin);
+        Color hair = Tinted(_appearance.Hair);
+        Color shirt = Tinted(_appearance.Shirt);
+        Color pants = Tinted(_appearance.Pants);
+
+        int face = FaceDir();   // 0 아래(정면) 1 위(뒤) 2 좌 3 우
+
+        // 다리 (하의)
+        DrawRect(new Rect2(m.X - 3f * s, m.Y + 3f * s, 2.4f * s, 5f * s), pants);
+        DrawRect(new Rect2(m.X + 0.6f * s, m.Y + 3f * s, 2.4f * s, 5f * s), pants);
+
+        // 팔 (상의 소매) + 손 (피부)
+        DrawRect(new Rect2(m.X - 5.6f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s), shirt);
+        DrawRect(new Rect2(m.X + 3.8f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s), shirt);
+        DrawRect(new Rect2(m.X - 5.6f * s, m.Y + 3f * s, 1.8f * s, 1.8f * s), skin);
+        DrawRect(new Rect2(m.X + 3.8f * s, m.Y + 3f * s, 1.8f * s, 1.8f * s), skin);
+
+        // 몸통 (상의)
+        DrawRect(new Rect2(m.X - 4f * s, m.Y - 3f * s, 8f * s, 7f * s), shirt);
+
+        // 머리 (피부)
+        Vector2 head = new(m.X, m.Y - 7f * s);
+        float headR = 4f * s;
+        DrawCircle(head, headR, skin);
+
+        // 머리카락 — 머리 위쪽을 덮는 두꺼운 호. 뒤를 볼 땐 더 내려 덮는다.
+        float hairInner = face == 1 ? 3.2f * s : 2.6f * s;
+        DrawArc(head, headR - hairInner * 0.5f, Mathf.Pi, Mathf.Tau, 14, hair, hairInner + 1.2f * s);
+        if (face == 1)   // 뒤통수 — 얼굴 대신 머리로 채운다
+            DrawCircle(head, headR * 0.7f, hair);
+
+        // 눈 — 바라보는 쪽에만. 뒤를 보면 안 그린다.
+        if (face != 1)
+            DrawEyes(head, headR, face, skin);
+    }
+
+    private void DrawEyes(Vector2 head, float headR, int face, Color skin)
+    {
+        var eye = new Color(0.12f, 0.12f, 0.16f, skin.A);
+        float r = headR * 0.15f;
+        float y = head.Y + headR * 0.05f;
+
+        // 좌/우를 볼 땐 두 눈을 그쪽으로 몰고, 정면이면 좌우로 벌린다.
+        float cx = head.X + face switch { 2 => -headR * 0.32f, 3 => headR * 0.32f, _ => 0f };
+        float spread = face == 0 ? headR * 0.4f : headR * 0.24f;
+
+        DrawCircle(new Vector2(cx - spread, y), r, eye);
+        DrawCircle(new Vector2(cx + spread, y), r, eye);
+    }
+
+    /// <summary>바라보는 4방향. 0 아래(정면), 1 위(뒤), 2 좌, 3 우.</summary>
+    private int FaceDir()
+    {
+        Vector2 f = _attack.IsBusy ? _attack.LockedFacing : _facing;
+        if (f == Vector2.Zero)
+            return 0;
+        if (Mathf.Abs(f.X) > Mathf.Abs(f.Y))
+            return f.X < 0f ? 2 : 3;
+        return f.Y < 0f ? 1 : 0;
     }
 
     /// <summary>고정된 대상에 표식. 누구를 보고 있는지 알 수 없으면 시선 고정이 무의미하다.</summary>
@@ -1327,6 +1400,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Mastery = Mastery.Snapshot(),
         Flags = new List<string>(_flags),
         Counters = new Dictionary<string, int>(_counters),
+        Appearance = _appearance.ToSave(),
     };
 
     public void RestoreSave(SaveData data)
@@ -1380,8 +1454,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (data.Position != null)
             GlobalPosition = new Vector2(data.Position.X, data.Position.Y);
 
+        _appearance = CharacterAppearance.FromSave(data.Appearance);
+
         _state = PlayerState.Normal;
         Velocity = Vector2.Zero;
         ResetCombatState();
+        QueueRedraw();
     }
 }

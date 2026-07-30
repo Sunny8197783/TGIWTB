@@ -26,10 +26,50 @@ public static class PlayerTuning
     public static readonly float RespawnDelay = 1.2f;
 
     // --- 도형 (스프라이트 금지 — CLAUDE.md 규칙 5) ---
-    /// <summary>플레이어는 파란 사각형. (§A 아트 방침)</summary>
+    /// <summary>충돌·전투 판정용 몸 크기. 시각 피규어와 별개로 게임 수치다.</summary>
     public static readonly float BodySize = 12f;
+
+    /// <summary>구버전 참조 호환용. 피규어의 기본 상의 색으로도 쓴다.</summary>
     public static readonly Color BodyColor = new(0.31f, 0.55f, 0.95f);
-    public static readonly Color FacingColor = new(0.75f, 0.87f, 1.0f);
+
+    // --- 업라이트 피규어 (P2) ---------------------------------------------
+    // 위에서 90도로 내려다보지 않고 비스듬히(≈60~70도) 보는 느낌은,
+    // 캐릭터를 '세워서 앞모습으로' 그려서 낸다. 2D 엔진엔 기울일 카메라가 없다.
+    // 바닥 그림자가 위치감과 입체감의 대부분을 만든다.
+
+    /// <summary>피규어 전체 배율. 키우면 파츠가 더 선명해진다(꾸미기 가독성).</summary>
+    public static readonly float FigureScale = 1.6f;
+
+    public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.28f);
+
+    // 커스터마이즈 프리셋 — 색 슬롯이 고를 팔레트. 첫 항목이 기본값.
+    public static readonly Color[] SkinTones =
+    {
+        new(0.95f, 0.80f, 0.66f), new(0.86f, 0.66f, 0.50f),
+        new(0.68f, 0.49f, 0.35f), new(0.52f, 0.36f, 0.26f),
+        new(0.98f, 0.87f, 0.78f),
+    };
+
+    public static readonly Color[] HairColors =
+    {
+        new(0.30f, 0.20f, 0.13f), new(0.08f, 0.08f, 0.10f),
+        new(0.85f, 0.70f, 0.35f), new(0.75f, 0.20f, 0.20f),
+        new(0.55f, 0.55f, 0.62f), new(0.40f, 0.55f, 0.85f),
+    };
+
+    public static readonly Color[] ShirtColors =
+    {
+        new(0.31f, 0.55f, 0.95f), new(0.85f, 0.30f, 0.30f),
+        new(0.35f, 0.72f, 0.42f), new(0.80f, 0.55f, 0.20f),
+        new(0.55f, 0.40f, 0.75f), new(0.90f, 0.90f, 0.92f),
+    };
+
+    public static readonly Color[] PantsColors =
+    {
+        new(0.28f, 0.30f, 0.38f), new(0.20f, 0.22f, 0.26f),
+        new(0.45f, 0.32f, 0.20f), new(0.30f, 0.40f, 0.35f),
+        new(0.60f, 0.60f, 0.65f),
+    };
 
     /// <summary>가드 중 — 회청색.</summary>
     public static readonly Color GuardColor = new(0.45f, 0.62f, 0.72f);
@@ -65,8 +105,6 @@ public static class PlayerTuning
 
     /// <summary>가드 쿨다운 중 방패가 흐려지는 색 — 지금 못 막는다는 신호.</summary>
     public static readonly Color ShieldCooldownColor = new(0.45f, 0.45f, 0.50f);
-    public static readonly float FacingMarkerSize = 4f;
-    public static readonly float FacingMarkerDistance = 8f;
 
     // --- 세이브 플래그 / 카운터 키 ---
     public static readonly string FlagDiedOnce = "died_once";
