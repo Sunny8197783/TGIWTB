@@ -15,7 +15,8 @@
     "riposteSeconds": 0.5,
     "counterMultiplier": 2.0,
     "counterRange": 44.0,
-    "counterStunSeconds": 0.9
+    "counterStunSeconds": 0.9,
+    "cooldownSeconds": 0.6
   },
   "mastery": {
     "minInterval": 0.5,

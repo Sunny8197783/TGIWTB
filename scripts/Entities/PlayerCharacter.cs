@@ -59,6 +59,12 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private float _guardElapsed;
     private float _riposteTimer;
 
+    /// <summary>가드를 뗀 뒤 다시 올리기까지의 쿨다운. 퍼펙트 가드는 이를 0 으로 초기화한다.</summary>
+    private float _guardCooldown;
+
+    /// <summary>이번 가드 유지 동안 퍼펙트가 있었는가. 뗄 때 쿨다운을 걸지 결정한다.</summary>
+    private bool _perfectThisGuard;
+
     private float _buffTimer;
     private float _buffAttackMultiplier = 1f;
 
@@ -181,6 +187,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _bufferTimer = 0f;
         _guarding = false;
         _guardElapsed = 0f;
+        _guardCooldown = 0f;
+        _perfectThisGuard = false;
         _riposteTimer = 0f;
         _buffTimer = 0f;
         _buffAttackMultiplier = 1f;
@@ -225,7 +233,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         MoveAndSlide();
         UpdateVisuals(dt);
 
-        if (DebugFlags.ShowHitbox)
+        // 무기 모션이 흐르는 동안은 매 프레임 다시 그린다.
+        if (DebugFlags.ShowHitbox || _attack.IsBusy || _guarding || _guardCooldown > 0f)
             QueueRedraw();
     }
 
@@ -387,7 +396,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (CooldownRemaining(skill.Id) > 0f)
             return false;
 
-        _guarding = false;
+        // 가드를 공격으로 끊는 것도 '뗀 것'으로 본다 — 가드↔공격 왕복으로
+        // 쿨다운을 회피하지 못하게 한다.
+        ReleaseGuard(GuardSkill()?.Guard);
         _attack.Begin(skill, _facing);
 
         if (skill.Cooldown > 0f)
@@ -416,22 +427,53 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private SkillDefinition GuardSkill() => ResolveSkillForAction(InputSetup.Guard);
 
+    public float GuardCooldownRemaining => Mathf.Max(0f, _guardCooldown);
+
     private void UpdateGuard(float dt)
     {
+        if (_guardCooldown > 0f)
+            _guardCooldown -= dt;
+
         var skill = GuardSkill();
         if (skill?.Guard == null || _attack.IsBusy)
         {
-            _guarding = false;
+            ReleaseGuard(skill?.Guard);
             return;
         }
 
         bool held = Input.IsActionPressed(InputSetup.Guard);
-        if (held && !_guarding)
-            _guardElapsed = 0f;
-        else if (held)
-            _guardElapsed += dt;
 
-        _guarding = held;
+        if (!held)
+        {
+            ReleaseGuard(skill.Guard);
+            return;
+        }
+
+        // 쿨다운 중에는 새로 올릴 수 없다. 뗐다가 바로 다시 누르는 남발을 막는다.
+        // (누르고 있는 동안은 계속 유지되지만, 한 번 떼면 쿨다운을 기다려야 한다.)
+        if (!_guarding && _guardCooldown > 0f)
+            return;
+
+        if (!_guarding)
+        {
+            _guardElapsed = 0f;
+            _perfectThisGuard = false;
+        }
+        else
+        {
+            _guardElapsed += dt;
+        }
+
+        _guarding = true;
+    }
+
+    /// <summary>가드를 내린다. 퍼펙트로 막지 못했으면 쿨다운을 건다. (§E)</summary>
+    private void ReleaseGuard(SkillGuard guard)
+    {
+        if (_guarding && !_perfectThisGuard && guard != null)
+            _guardCooldown = guard.CooldownSeconds;
+
+        _guarding = false;
     }
 
     private float GuardMoveScale()
@@ -768,8 +810,144 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         return PlayerTuning.BodyColor;
     }
 
-    /// <summary>F2 — 판정 범위 반투명 표시. (§I)</summary>
     public override void _Draw()
+    {
+        DrawWeapon();
+        DrawHitboxDebug();
+    }
+
+    /// <summary>
+    /// 스킬 종류에 맞는 무기 모션. 스킬 id 를 박아 넣지 않고 데이터의 성질로 고른다
+    /// (돌진이 있는가 / 경직만 주는가 / 강타격인가). 규칙 1·5.
+    /// </summary>
+    private void DrawWeapon()
+    {
+        if (_attack.IsBusy && _attack.Skill != null)
+        {
+            var skill = _attack.Skill;
+
+            if (skill.Stun != null)
+                DrawWarcryRing();          // 함성 — 퍼지는 고리
+            else if (skill.Dash != null)
+                DrawThrust(skill);         // 강타 — 앞으로 찌르기
+            else
+                DrawSlash(skill);          // 베기 — 호를 그리며 휘두르기
+            return;
+        }
+
+        if (_guarding || _guardCooldown > 0f)
+            DrawShield();
+    }
+
+    /// <summary>검을 호를 그리며 휘두른다. 선딜에 감아올리고 판정에 베어 낸다.</summary>
+    private void DrawSlash(SkillDefinition skill)
+    {
+        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
+        float baseAngle = _attack.LockedFacing.Angle();
+        float t = EaseOut(_attack.PhaseProgress);
+
+        // 시작 각(뒤로 감아올림) → 끝 각(베어 내림).
+        float swing = _attack.Phase switch
+        {
+            SkillPhase.Windup => Mathf.Lerp(0f, -half * 1.2f, t),
+            SkillPhase.Active => Mathf.Lerp(-half * 1.2f, half, t),
+            _ => Mathf.Lerp(half, 0f, t),
+        };
+
+        float length = PlayerTuning.SwordLength * (skill.Heavy ? 1.25f : 1f);
+        Color color = _attack.IsActive
+            ? (skill.Heavy ? PlayerTuning.SwordHotColor : PlayerTuning.SwordColor)
+            : PlayerTuning.SwordColor.Darkened(0.3f);
+
+        Vector2 dir = Vector2.Right.Rotated(baseAngle + swing);
+        DrawLine(dir * 3f, dir * length, color, PlayerTuning.SwordWidth);
+
+        // 판정 중에는 베인 궤적을 남긴다 — 어디를 훑었는지 보이게.
+        if (_attack.IsActive)
+        {
+            float from = baseAngle - half * 1.2f;
+            float to = baseAngle + swing;
+            DrawArc(Vector2.Zero, length * 0.85f, from, to, 12,
+                new Color(color.R, color.G, color.B, 0.35f), 1.5f);
+        }
+    }
+
+    /// <summary>강타 — 검을 앞으로 내지른다. 돌진 방향과 같다.</summary>
+    private void DrawThrust(SkillDefinition skill)
+    {
+        Vector2 dir = _attack.LockedFacing;
+        float t = EaseOut(_attack.PhaseProgress);
+
+        float reach = _attack.Phase switch
+        {
+            SkillPhase.Windup => Mathf.Lerp(6f, 2f, t),     // 뒤로 당겨 겨눔
+            SkillPhase.Active => Mathf.Lerp(2f, 1f, t),
+            _ => Mathf.Lerp(1f, 6f, t),
+        };
+
+        float length = PlayerTuning.SwordLength * 1.3f;
+        Color color = _attack.IsActive ? PlayerTuning.SwordHotColor : PlayerTuning.SwordColor.Darkened(0.3f);
+
+        DrawLine(dir * reach, dir * (reach + length), color, PlayerTuning.SwordWidth + 1f);
+
+        // 돌진 중엔 뒤로 속도선을 남긴다.
+        if (_attack.IsActive)
+            DrawLine(-dir * 4f, -dir * 14f, new Color(1f, 1f, 1f, 0.25f), 2f);
+    }
+
+    /// <summary>함성 — 몸에서 퍼져 나가는 고리.</summary>
+    private void DrawWarcryRing()
+    {
+        float radius = _attack.Skill?.Stun?.RadiusPx ?? 0f;
+        if (radius <= 0f)
+            return;
+
+        float t = _attack.Phase == SkillPhase.Windup
+            ? _attack.PhaseProgress * 0.3f
+            : 0.3f + EaseOut(_attack.PhaseProgress) * 0.7f;
+
+        DrawArc(Vector2.Zero, radius * t, 0f, Mathf.Tau, 32,
+            new Color(1f, 0.8f, 0.4f, 1f - t), 2f);
+    }
+
+    /// <summary>
+    /// 방패. 바라보는 쪽에 세운다. 퍼펙트 창 동안은 밝게, 쿨다운 중에는 흐리게 —
+    /// 지금 막을 수 있는지가 색으로 보여야 한다.
+    /// </summary>
+    private void DrawShield()
+    {
+        var guard = GuardSkill()?.Guard;
+        Vector2 dir = _facing != Vector2.Zero ? _facing.Normalized() : Vector2.Right;
+        float angle = dir.Angle();
+
+        Color color;
+        if (_guardCooldown > 0f && !_guarding)
+            color = PlayerTuning.ShieldCooldownColor;
+        else if (guard != null && _guardElapsed <= guard.PerfectWindow)
+            color = PlayerTuning.ShieldPerfectColor;   // 퍼펙트 판정 창
+        else
+            color = PlayerTuning.ShieldColor;
+
+        // 방패를 바라보는 방향에 직사각형으로 세운다.
+        Vector2 center = dir * PlayerTuning.ShieldDistance;
+        Vector2 across = Vector2.Right.Rotated(angle + Mathf.Pi / 2f);
+        Vector2 along = dir;
+
+        float hw = PlayerTuning.ShieldWidth * 0.5f;
+        float hh = PlayerTuning.ShieldHeight * 0.5f;
+
+        var corners = new[]
+        {
+            center + across * hh + along * hw,
+            center - across * hh + along * hw,
+            center - across * hh - along * hw,
+            center + across * hh - along * hw,
+        };
+        DrawColoredPolygon(corners, color);
+    }
+
+    /// <summary>F2 — 판정 범위 반투명 표시. (§I)</summary>
+    private void DrawHitboxDebug()
     {
         if (!DebugFlags.ShowHitbox || !_attack.IsBusy || _attack.Skill?.Shape == null)
             return;
@@ -862,6 +1040,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         {
             nullified = true;
             _riposteTimer = guard.RiposteSeconds;
+            // 정확히 막았다 — 쿨다운을 초기화해 곧바로 다시 막을 수 있게 한다. (§E)
+            _perfectThisGuard = true;
+            _guardCooldown = 0f;
             CombatFeedback.Instance?.Popup(GlobalPosition, 0f, heavy: true, onPlayer: false);
             DebugLog.Add($"퍼펙트 가드 (반격 {guard.RiposteSeconds:0.##}s)");
             TryCounter(info, guard);

@@ -101,6 +101,13 @@ public sealed class SkillGuard
 
     /// <summary>카운터에 맞은 상대가 기절하는 시간(초).</summary>
     public float CounterStunSeconds { get; set; }
+
+    /// <summary>
+    /// 가드를 뗀 뒤의 쿨다운(초). 이 동안은 다시 가드를 올릴 수 없다.
+    /// 단, 퍼펙트 가드에 성공하면 쿨다운이 초기화된다 — K 남발로 퍼펙트를
+    /// 얻는 것을 막고, 정확히 막았을 때만 계속 막게 하려는 것. (§E)
+    /// </summary>
+    public float CooldownSeconds { get; set; }
 }
 
 public sealed class SkillDash
