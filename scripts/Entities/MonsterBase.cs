@@ -200,6 +200,9 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     protected bool PlayerIsAlive => Player != null && IsInstanceValid(Player) && Player.IsAlive;
 
+    /// <summary>훈련용 허수아비인가. 숙련 판정에서 같은 대상 감쇠를 면제받는다.</summary>
+    public virtual bool IsTrainingDummy => false;
+
     /// <summary>플래그·카운터는 반드시 인터페이스를 통해 건드린다. (CLAUDE.md 규칙 2)</summary>
     protected IPlayerContext Context => Player;
 
@@ -221,17 +224,25 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     // --- IDamageable -------------------------------------------------------
 
+    /// <summary>절대 죽지 않는가. 허수아비 같은 훈련용. HP 도 닳지 않는다.</summary>
+    protected virtual bool Immortal => false;
+
+    /// <summary>넉백에 밀리지 않는가. 제자리를 지켜야 하는 대상(허수아비).</summary>
+    protected virtual bool Immovable => false;
+
     public bool TakeDamage(in DamageInfo info)
     {
         if (!IsAlive)
             return false;
 
-        _hp -= info.Amount;
+        if (!Immortal)
+            _hp -= info.Amount;
         _flashTimer = CombatTuning.HitFlashTime;
         QueueRedraw();
 
-        bool killed = _hp <= 0f;
-        ApplyKnockback(info.Direction, info.Heavy);
+        bool killed = !Immortal && _hp <= 0f;
+        if (!Immovable)
+            ApplyKnockback(info.Direction, info.Heavy);
 
         if (killed)
         {

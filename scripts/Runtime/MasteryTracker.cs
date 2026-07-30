@@ -23,6 +23,12 @@ public struct SkillUseContext
     public float SelfHpRatio;
 
     public double NowSeconds;
+
+    /// <summary>
+    /// 허수아비 같은 훈련용 대상인가. 참이면 같은 대상 반복 감쇠를 적용하지 않는다.
+    /// 훈련장은 '한 대상만 계속 치는 것'이 정상 사용이기 때문. 최소 간격은 그대로 지킨다.
+    /// </summary>
+    public bool TrainingTarget;
 }
 
 /// <summary>RegisterUse 결과. Gain 이 0 이면 무효 사용이고 InvalidReason 에 사유가 담긴다.</summary>
@@ -137,13 +143,23 @@ public sealed class MasteryTracker
             return Invalid(id, "cooldown");
 
         // (3) 같은 대상 반복 — 연타 카운트 갱신.
-        bool sameTarget = state.LastTargetId == ctx.TargetInstanceId
-            && ctx.NowSeconds - state.LastTargetAt <= MasteryTuning.SameTargetStreakResetSeconds;
-        state.SameTargetStreak = sameTarget ? state.SameTargetStreak + 1 : 1;
-        state.LastTargetId = ctx.TargetInstanceId;
-        state.LastTargetAt = ctx.NowSeconds;
+        // 훈련용 대상(허수아비)은 감쇠에서 제외한다. 연타 상태도 건드리지 않아
+        // 실제 몹 사냥의 매크로 방어 카운트가 훈련으로 초기화되지 않게 한다.
+        float decay;
+        if (ctx.TrainingTarget)
+        {
+            decay = 1f;
+        }
+        else
+        {
+            bool sameTarget = state.LastTargetId == ctx.TargetInstanceId
+                && ctx.NowSeconds - state.LastTargetAt <= MasteryTuning.SameTargetStreakResetSeconds;
+            state.SameTargetStreak = sameTarget ? state.SameTargetStreak + 1 : 1;
+            state.LastTargetId = ctx.TargetInstanceId;
+            state.LastTargetAt = ctx.NowSeconds;
+            decay = SameTargetDecay(state.SameTargetStreak);
+        }
 
-        float decay = SameTargetDecay(state.SameTargetStreak);
         float levelFactor = LevelFactor(ctx.SelfLevel, ctx.TargetLevel);
         float gain = MasteryTuning.BaseGainPerValidUse * decay * levelFactor;
 
@@ -172,6 +188,37 @@ public sealed class MasteryTracker
             SameTargetStreak = state.SameTargetStreak,
             DecayFactor = decay * levelFactor,
         };
+    }
+
+    /// <summary>
+    /// 사용 판정과 무관하게 숙련을 한 번에 크게 준다. 보스 처치 보상 같은 것. (§F)
+    /// 임계값을 넘으면 진화도 함께 잡아 돌려준다.
+    /// </summary>
+    public MasteryResult AddBonus(string skillId, float amount, SkillDefinition def)
+    {
+        var state = GetOrCreate(skillId);
+        state.Value += amount;
+
+        string evolvedInto = null;
+        var evo = def?.Mastery?.Evolution;
+        if (evo != null && !state.EvolutionFired && evo.At > 0f
+            && state.Value >= evo.At && !string.IsNullOrEmpty(evo.Into))
+        {
+            state.EvolutionFired = true;
+            evolvedInto = evo.Into;
+        }
+
+        var result = new MasteryResult
+        {
+            SkillId = skillId,
+            Gain = amount,
+            Total = state.Value,
+            EvolvedInto = evolvedInto,
+            SameTargetStreak = 0,
+            DecayFactor = 1f,
+        };
+        UseRegistered?.Invoke(result);
+        return result;
     }
 
     /// <summary>연타 n회차의 감쇠 계수. Free 회까지 1.0, 이후 반감 주기마다 절반.</summary>

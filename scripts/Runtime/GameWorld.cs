@@ -90,6 +90,11 @@ public partial class GameWorld : Node2D
 
         _spawner.AddGroup(() => new Ironjaw(), WorldLayout.IronjawDen,
             MonsterTuning.DenIronjawCount, MonsterTuning.DenRespawnSeconds);
+
+        // 마을 훈련용 허수아비. 죽지 않으므로 스포너를 거치지 않고 직접 놓는다.
+        // 스폰 지점 바로 옆이라 새 캐릭터가 나오자마자 연습할 수 있다.
+        var dummy = new TrainingDummy { GlobalPosition = WorldLayout.SpawnPoint + new Vector2(40f, 0f) };
+        AddChild(dummy);
     }
 
     private void BuildUi()

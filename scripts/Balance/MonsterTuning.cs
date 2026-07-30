@@ -18,6 +18,12 @@ public sealed class MonsterStats
 
     /// <summary>이 거리 안에 플레이어가 들어오면 추적을 시작한다.</summary>
     public float AggroRange { get; init; }
+
+    /// <summary>
+    /// 처치 시 마지막 일격 스킬에 주는 숙련 보너스. 0 이면 없음.
+    /// 보스처럼 잡기 어려운 대상이 큰 성장으로 이어지게 하는 값. (§F)
+    /// </summary>
+    public float MasteryKillBonus { get; init; }
 }
 
 /// <summary>§D-2 몬스터 3종 수치. 여기 없는 몬스터 상수는 코드에 있으면 안 된다.</summary>
@@ -127,6 +133,8 @@ public static class MonsterTuning
         Radius = 16f,
         Color = new Color(0.82f, 0.24f, 0.22f),
         AggroRange = 260f,
+        // 보스 처치 = 마지막 일격 스킬 숙련 대폭 상승 (진화 임계값 300의 40%).
+        MasteryKillBonus = 120f,
     };
 
     public static class IronjawAttack
@@ -173,6 +181,20 @@ public static class MonsterTuning
         public static readonly int DeathsForFlag = 7;
         public static readonly string FlagDeathsReached = "died_to_ironjaw_x7";
     }
+
+    // --- 허수아비 — 마을 훈련용 -------------------------------------------
+
+    public static readonly MonsterStats TrainingDummy = new()
+    {
+        Id = "training_dummy",
+        Name = "허수아비",
+        MaxHp = 1f,          // 불사(Immortal)라 실제로는 쓰이지 않는다.
+        MoveSpeed = 0f,
+        Level = 1,
+        Radius = 8f,
+        Color = new Color(0.78f, 0.66f, 0.42f),   // 볏짚 색
+        AggroRange = 0f,
+    };
 
     // --- 스폰 (§G) ---------------------------------------------------------
 

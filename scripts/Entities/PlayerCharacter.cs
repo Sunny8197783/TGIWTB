@@ -675,6 +675,23 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 공격자와 피격자 양쪽이 같이 멈춘다. 이게 타격감의 80%. (§C-3)
         ApplyHitstop(hitstop);
         CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, heavy, killed);
+
+        // 처치 보너스 — 보스 같은 대상은 마지막 일격 스킬 숙련이 대폭 오른다. (§F)
+        if (killed && monster.Stats.MasteryKillBonus > 0f)
+            GrantKillBonus(skill, monster.Stats.MasteryKillBonus);
+    }
+
+    private void GrantKillBonus(SkillDefinition skill, float amount)
+    {
+        var result = Mastery.AddBonus(skill.Id, amount, skill);
+        SkillUsed?.Invoke(result);
+        DebugLog.Add($"처치 보너스 +{amount:0} → {skill.Id} 숙련 {result.Total:0.0}");
+
+        // 보너스로 진화 임계값을 넘겼으면 진화 연출이 안내문을 대신 띄운다.
+        if (!string.IsNullOrEmpty(result.EvolvedInto))
+            OnMasteryResult(result, skill);
+        else
+            CombatFeedback.Instance?.Announce($"{skill.Name} 숙련 대폭 상승!");
     }
 
     private void RegisterMastery(SkillDefinition skill, MonsterBase target, bool targetWasAlive)
@@ -689,6 +706,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             SelfLevel = Level,
             SelfHpRatio = HpRatio,
             NowSeconds = Time.GetTicksMsec() / 1000.0,
+            TrainingTarget = target.IsTrainingDummy,
         }, skill);
 
         SkillUsed?.Invoke(result);
