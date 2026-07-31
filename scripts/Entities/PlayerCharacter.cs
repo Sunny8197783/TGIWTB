@@ -991,40 +991,73 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         DrawCircle(Vector2.Zero, 5f * s, PlayerTuning.ShadowColor);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
 
+        // 색 슬롯 + 상태 틴트. 명암용 밝은/어두운 변형도 같이 만든다(광원 좌상단 가정).
         Color skin = Tinted(_appearance.Skin);
+        Color skinDark = Tinted(_appearance.Skin.Darkened(0.16f));
         Color hair = Tinted(_appearance.Hair);
+        Color hairLit = Tinted(_appearance.Hair.Lightened(0.28f));
         Color shirt = Tinted(_appearance.Shirt);
+        Color shirtLit = Tinted(_appearance.Shirt.Lightened(0.22f));
+        Color shirtDark = Tinted(_appearance.Shirt.Darkened(0.3f));
         Color pants = Tinted(_appearance.Pants);
+        Color pantsDark = Tinted(_appearance.Pants.Darkened(0.32f));
+        Color line = Tinted(PlayerTuning.OutlineColor);
+        Color belt = Tinted(PlayerTuning.BeltColor);
 
         int face = FaceDir();   // 0 아래(정면) 1 위(뒤) 2 좌 3 우
 
-        // 다리 (하의)
-        DrawRect(new Rect2(m.X - 3f * s, m.Y + 3f * s, 2.4f * s, 5f * s), pants);
-        DrawRect(new Rect2(m.X + 0.6f * s, m.Y + 3f * s, 2.4f * s, 5f * s), pants);
+        // 다리 + 부츠(아래쪽 그늘)
+        var legL = new Rect2(m.X - 3f * s, m.Y + 3f * s, 2.4f * s, 5f * s);
+        var legR = new Rect2(m.X + 0.6f * s, m.Y + 3f * s, 2.4f * s, 5f * s);
+        OutlinedRect(legL, pants, line);
+        OutlinedRect(legR, pants, line);
+        DrawRect(new Rect2(legL.Position.X, m.Y + 6.4f * s, legL.Size.X, 1.6f * s), pantsDark);
+        DrawRect(new Rect2(legR.Position.X, m.Y + 6.4f * s, legR.Size.X, 1.6f * s), pantsDark);
 
-        // 팔 (상의 소매) + 손 (피부)
-        DrawRect(new Rect2(m.X - 5.6f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s), shirt);
-        DrawRect(new Rect2(m.X + 3.8f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s), shirt);
+        // 팔 + 손
+        var armL = new Rect2(m.X - 5.6f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s);
+        var armR = new Rect2(m.X + 3.8f * s, m.Y - 2f * s, 1.8f * s, 5.5f * s);
+        OutlinedRect(armL, shirt, line);
+        OutlinedRect(armR, shirt, line);
         DrawRect(new Rect2(m.X - 5.6f * s, m.Y + 3f * s, 1.8f * s, 1.8f * s), skin);
         DrawRect(new Rect2(m.X + 3.8f * s, m.Y + 3f * s, 1.8f * s, 1.8f * s), skin);
 
-        // 몸통 (상의)
-        DrawRect(new Rect2(m.X - 4f * s, m.Y - 3f * s, 8f * s, 7f * s), shirt);
+        // 몸통(가슴 갑옷) — 외곽선 + 왼쪽 그늘 + 가슴판 하이라이트 + 벨트 + 버클
+        var torso = new Rect2(m.X - 4f * s, m.Y - 3f * s, 8f * s, 7f * s);
+        OutlinedRect(torso, shirt, line);
+        DrawRect(new Rect2(torso.Position.X, m.Y - 3f * s, 1.4f * s, 7f * s), shirtDark);
+        DrawRect(new Rect2(m.X - 1.6f * s, m.Y - 3f * s, 3.2f * s, 4.8f * s), shirtLit);
+        DrawRect(new Rect2(torso.Position.X, m.Y + 2.6f * s, torso.Size.X, 1.3f * s), belt);
+        DrawRect(new Rect2(m.X - 0.7f * s, m.Y + 2.7f * s, 1.4f * s, 1.1f * s), shirtLit);
 
-        // 머리 (피부)
+        // 어깨 패드 — 팔 위에 얹는 넓은 조각.
+        DrawRect(new Rect2(armL.Position.X - 0.5f * s, m.Y - 2.6f * s, armL.Size.X + 1f * s, 1.9f * s), shirtDark);
+        DrawRect(new Rect2(armR.Position.X - 0.5f * s, m.Y - 2.6f * s, armR.Size.X + 1f * s, 1.9f * s), shirtDark);
+
+        // 머리 — 외곽선 + 피부 + 턱 그늘
         Vector2 head = new(m.X, m.Y - 7f * s);
         float headR = 4f * s;
+        DrawCircle(head, headR + PlayerTuning.OutlineWidth, line);
         DrawCircle(head, headR, skin);
+        DrawArc(head, headR * 0.72f, 0.3f, Mathf.Pi - 0.3f, 10, skinDark, 1.1f * s);
 
-        // 머리카락 — 머리 위쪽을 덮는 두꺼운 호. 뒤를 볼 땐 더 내려 덮는다.
+        // 머리카락 + 하이라이트(위쪽 얇은 밝은 호)
         float hairInner = face == 1 ? 3.2f * s : 2.6f * s;
-        DrawArc(head, headR - hairInner * 0.5f, Mathf.Pi, Mathf.Tau, 14, hair, hairInner + 1.2f * s);
+        DrawArc(head, headR - hairInner * 0.5f, Mathf.Pi, Mathf.Tau, 16, hair, hairInner + 1.2f * s);
+        DrawArc(head, headR - hairInner * 0.35f, Mathf.Pi + 0.5f, Mathf.Tau - 0.5f, 10, hairLit, 1f * s);
         if (face == 1)   // 뒤통수 — 얼굴 대신 머리로 채운다
             DrawCircle(head, headR * 0.7f, hair);
 
         // 눈 — 바라보는 쪽에만. 뒤를 보면 안 그린다.
         if (face != 1)
             DrawEyes(head, headR, face, skin);
+    }
+
+    /// <summary>외곽선 있는 사각 파츠 — 살짝 큰 어두운 사각을 뒤에 깔고 색을 얹는다.</summary>
+    private void OutlinedRect(Rect2 rect, Color fill, Color outline)
+    {
+        DrawRect(rect.Grow(PlayerTuning.OutlineWidth), outline);
+        DrawRect(rect, fill);
     }
 
     private void DrawEyes(Vector2 head, float headR, int face, Color skin)

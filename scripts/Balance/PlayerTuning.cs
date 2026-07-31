@@ -42,6 +42,13 @@ public static class PlayerTuning
 
     public static readonly Color ShadowColor = new(0f, 0f, 0f, 0.28f);
 
+    /// <summary>파츠 외곽선 — 실루엣을 또렷하게(픽셀아트 룩). Grow 폭은 월드px.</summary>
+    public static readonly Color OutlineColor = new(0.07f, 0.07f, 0.10f);
+    public static readonly float OutlineWidth = 0.7f;
+
+    /// <summary>허리 벨트색(갑옷 디테일).</summary>
+    public static readonly Color BeltColor = new(0.24f, 0.16f, 0.10f);
+
     // 살아있는 느낌 — 스프라이트 애니메이션 전까지 도형에 넣는 '숨쉬기/걸음' 들썩임.
     // 스프라이트가 들어와도 이 오프셋은 그대로 위에 얹어 쓸 수 있다.
     public static readonly float IdleBobAmp = 1.1f;   // 대기 시 위아래 폭(px)
