@@ -24,6 +24,7 @@ public static class CombatTuning
     public const string GroupScreen = "화면";
     public const string GroupInput = "입력";
     public const string GroupMotion = "모션";
+    public const string GroupVfx = "이펙트";
 
     // --- §C-1 이동 --------------------------------------------------------
 
@@ -186,6 +187,24 @@ public static class CombatTuning
     /// <summary>몬스터 모션 배율. 몸집이 큰 놈일수록 크게 움직여야 읽힌다.</summary>
     public static readonly TuningEntry MotionMonsterScale =
         Ratio("motion.monster", GroupMotion, "몬스터 모션 배율", 1.6f, 0f, 4f, 0.1f);
+
+    // --- 스킬 이펙트 (VFX) -------------------------------------------------
+    // 도형 기반 연출. §C 에 없지만 매직 넘버를 코드에 두지 않으려 여기 모은다.
+
+    public static readonly TuningEntry VfxSlashLife =
+        Sec("vfx.slashLife", GroupVfx, "베기 궤적 지속", 0.18f, 0f, 0.6f, 0.005f);
+
+    public static readonly TuningEntry VfxSparkLife =
+        Sec("vfx.sparkLife", GroupVfx, "타격 스파크 지속", 0.16f, 0f, 0.5f, 0.005f);
+
+    public static readonly TuningEntry VfxShockLife =
+        Sec("vfx.shockLife", GroupVfx, "충격파 지속", 0.28f, 0f, 0.8f, 0.005f);
+
+    public static readonly TuningEntry VfxBashShock =
+        Px("vfx.bashShock", GroupVfx, "강타 충격파 반경", 46f, 0f, 160f, 1f);
+
+    public static readonly TuningEntry VfxWarcryShock =
+        Px("vfx.warcryShock", GroupVfx, "함성 충격파 반경", 66f, 0f, 220f, 1f);
 
     // --- §C-7 입력 ---------------------------------------------------------
 

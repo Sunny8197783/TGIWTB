@@ -35,6 +35,7 @@ public partial class CombatFeedback : Node2D
     {
         DamageDealt?.Invoke(damage);
         Popup(worldPosition, damage, heavy, onPlayer: false);
+        SparkAt(worldPosition, heavy);
 
         if (heavy)
             _camera?.ShakeHeavyHit();
@@ -66,6 +67,36 @@ public partial class CombatFeedback : Node2D
         AddChild(burst);
         burst.GlobalPosition = worldPosition;
         burst.Setup(color);
+    }
+
+    // --- 스킬 이펙트 (VFX) -------------------------------------------------
+
+    /// <summary>베기 궤적 초승달. 스윙이 판정에 들어갈 때 소환.</summary>
+    public void SlashAt(Vector2 worldPosition, float baseAngle, float fromOff, float toOff,
+        float inner, float outer, Color color)
+    {
+        var fx = new SlashArc();
+        AddChild(fx);
+        fx.GlobalPosition = worldPosition;
+        fx.Setup(baseAngle, fromOff, toOff, inner, outer, color, CombatTuning.VfxSlashLife);
+    }
+
+    /// <summary>타격 스파크. 유효타마다.</summary>
+    public void SparkAt(Vector2 worldPosition, bool heavy)
+    {
+        var fx = new HitSpark();
+        AddChild(fx);
+        fx.GlobalPosition = worldPosition;
+        fx.Setup(heavy, CombatTuning.VfxSparkLife);
+    }
+
+    /// <summary>충격파 링. 강타·함성 같은 큰 한 방.</summary>
+    public void ShockAt(Vector2 worldPosition, float radius, Color color)
+    {
+        var fx = new ShockRing();
+        AddChild(fx);
+        fx.GlobalPosition = worldPosition;
+        fx.Setup(radius, color, CombatTuning.VfxShockLife);
     }
 
     /// <summary>화면 중앙 한 줄. 조건 설명은 하지 않는다. (CLAUDE.md 규칙 4)</summary>

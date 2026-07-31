@@ -379,6 +379,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             // 스윙 시작 각도를 잡아 둔다. 판정은 여기서부터 훑어 나간다.
             _swingStartAngle = PoseFor(_attack.Skill, SkillPhase.Active, 0f).AngleOffset;
             _prevBladeAngle = _swingStartAngle;
+
+            SpawnSkillVfx(_attack.Skill);
         }
 
         if (_attack.IsActive)
@@ -386,6 +388,32 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             ProcessActiveHitbox();
             _prevBladeAngle = PoseFor(_attack.Skill, _attack.Phase, _attack.PhaseProgress).AngleOffset;
         }
+    }
+
+    /// <summary>스킬이 판정에 들어가는 순간의 연출 — 베기 궤적 / 함성 충격파.</summary>
+    private void SpawnSkillVfx(SkillDefinition skill)
+    {
+        var fb = CombatFeedback.Instance;
+        if (fb == null)
+            return;
+
+        // 함성 — 자신 중심 큰 충격파.
+        if (skill.Stun != null)
+        {
+            fb.ShockAt(GlobalPosition, CombatTuning.VfxWarcryShock, new Color(1f, 0.9f, 0.5f));
+            return;
+        }
+
+        // 강타(돌진) — 충격파는 명중 순간에(Strike) 낸다. 여기선 궤적 생략.
+        if (skill.Dash != null)
+            return;
+
+        // 베기류 — 스윙 초승달. 검 길이보다 크게 뻗어 시원하게. 색은 강타격이면 주황, 아니면 청백.
+        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
+        var pose = PoseFor(skill, SkillPhase.Active, 1f);
+        Color color = skill.Heavy ? new Color(1f, 0.8f, 0.45f) : new Color(0.85f, 1f, 1f);
+        fb.SlashAt(GlobalPosition, _attack.LockedFacing.Angle(),
+            _swingStartAngle, half, pose.Outer * 0.55f, pose.Outer * 1.8f, color);
     }
 
     private void StartLunge(SkillDefinition skill)
@@ -668,6 +696,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 공격자와 피격자 양쪽이 같이 멈춘다. 이게 타격감의 80%. (§C-3)
         ApplyHitstop(hitstop);
         CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, heavy, killed);
+
+        // 강타 명중 — 충격파 링.
+        if (skill.Dash != null)
+            CombatFeedback.Instance?.ShockAt(monster.GlobalPosition,
+                CombatTuning.VfxBashShock, new Color(1f, 0.6f, 0.3f));
 
         // 처치 보너스 — 보스 같은 대상은 마지막 일격 스킬 숙련이 대폭 오른다. (§F)
         if (killed && monster.Stats.MasteryKillBonus > 0f)
