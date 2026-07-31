@@ -206,6 +206,18 @@ public static class CombatTuning
     public static readonly TuningEntry VfxWarcryShock =
         Px("vfx.warcryShock", GroupVfx, "함성 충격파 반경", 66f, 0f, 220f, 1f);
 
+    public static readonly TuningEntry VfxDashWindLife =
+        Sec("vfx.dashWindLife", GroupVfx, "대시 바람 지속", 0.24f, 0f, 0.8f, 0.005f);
+
+    public static readonly TuningEntry VfxConeLife =
+        Sec("vfx.coneLife", GroupVfx, "강타 원뿔 지속", 0.22f, 0f, 0.8f, 0.005f);
+
+    public static readonly TuningEntry VfxConeLength =
+        Px("vfx.coneLength", GroupVfx, "강타 원뿔 길이", 46f, 0f, 160f, 1f);
+
+    public static readonly TuningEntry VfxConeHalfWidth =
+        Px("vfx.coneHalfWidth", GroupVfx, "강타 원뿔 폭", 13f, 0f, 60f, 0.5f);
+
     // --- §C-7 입력 ---------------------------------------------------------
 
     /// <summary>0.15s (9프레임) — 후딜 중에 누른 공격을 기억한다.</summary>

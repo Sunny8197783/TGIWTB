@@ -404,9 +404,12 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        // 강타(돌진) — 충격파는 명중 순간에(Strike) 낸다. 여기선 궤적 생략.
+        // 강타(돌진) — 돌진 방향으로 꼬깔(원뿔)을 뻗는다. 충격파는 명중 순간(Strike).
         if (skill.Dash != null)
+        {
+            fb.ConeAt(GlobalPosition, _attack.LockedFacing, new Color(1f, 0.75f, 0.4f));
             return;
+        }
 
         // 베기류 — 스윙 초승달. 검 길이보다 크게 뻗어 시원하게. 색은 강타격이면 주황, 아니면 청백.
         float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
@@ -830,6 +833,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _dashTimer = CombatTuning.DashDuration;
         _dashCooldownTimer = CombatTuning.DashCooldown;
         _dashInvulnTimer = DashInvulnSeconds();
+
+        CombatFeedback.Instance?.DashWindAt(GlobalPosition, _dashDirection,
+            new Color(0.85f, 0.95f, 1f));
     }
 
     /// <summary>

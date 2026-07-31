@@ -99,6 +99,25 @@ public partial class CombatFeedback : Node2D
         fx.Setup(radius, color, CombatTuning.VfxShockLife);
     }
 
+    /// <summary>대시 바람 가르기.</summary>
+    public void DashWindAt(Vector2 worldPosition, Vector2 direction, Color color)
+    {
+        var fx = new DashWind();
+        AddChild(fx);
+        fx.GlobalPosition = worldPosition;
+        fx.Setup(direction, color, CombatTuning.VfxDashWindLife);
+    }
+
+    /// <summary>강타 원뿔(꼬깔). 돌진 방향으로 뻗는다.</summary>
+    public void ConeAt(Vector2 worldPosition, Vector2 direction, Color color)
+    {
+        var fx = new BashCone();
+        AddChild(fx);
+        fx.GlobalPosition = worldPosition;
+        fx.Setup(direction, CombatTuning.VfxConeLength, CombatTuning.VfxConeHalfWidth,
+            color, CombatTuning.VfxConeLife);
+    }
+
     /// <summary>화면 중앙 한 줄. 조건 설명은 하지 않는다. (CLAUDE.md 규칙 4)</summary>
     public void Announce(string message)
     {

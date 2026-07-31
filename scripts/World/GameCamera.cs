@@ -12,8 +12,12 @@ public partial class GameCamera : Camera2D
     /// <summary>§G: weight = 8 * delta</summary>
     public static readonly float FollowWeight = 8.0f;
 
-    /// <summary>§G: 카메라 3배 확대</summary>
-    public static readonly float ZoomLevel = 3.0f;
+    /// <summary>
+    /// 카메라 확대. 기본 해상도를 1280x720 으로 올리면서 줌도 6배로 맞췄다.
+    /// 화면에 보이는 월드 범위(=viewport/zoom)는 그대로지만, 벡터 도형이
+    /// 2배 촘촘하게 그려져 훨씬 정교해진다(640→1280 업스케일 제거).
+    /// </summary>
+    public static readonly float ZoomLevel = 6.0f;
 
     private Node2D _target;
     private float _shakeAmplitude;
