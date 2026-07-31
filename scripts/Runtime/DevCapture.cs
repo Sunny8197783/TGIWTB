@@ -25,6 +25,7 @@ public partial class DevCapture : Node
     private const string ArgSeekKeys = "--capture-seek-keys=";
     private const string ArgPulse = "--capture-pulse=";
     private const string ArgSeekRate = "--capture-seek-rate=";
+    private const string ArgZoom = "--capture-zoom=";   // 카메라 줌 배율(작을수록 넓게)
     private const string ArgTune = "--capture-tune=";
 
     /// <summary>로그 트리거가 걸린 뒤 몇 프레임 있다 찍을지. 히트스톱이 끝나는 시점을 노린다.</summary>
@@ -61,6 +62,7 @@ public partial class DevCapture : Node
     private string _pulseAction;
     private int _pulseOnFrames;
     private int _pulsePeriod = 1;
+    private float _zoom;
 
     public static bool IsRequested()
     {
@@ -103,6 +105,8 @@ public partial class DevCapture : Node
                 ParsePulse(arg.Substring(ArgPulse.Length));
             else if (arg.StartsWith(ArgSeekRate, StringComparison.Ordinal))
                 _seekAttackInterval = Mathf.Max(1, arg.Substring(ArgSeekRate.Length).ToInt());
+            else if (arg.StartsWith(ArgZoom, StringComparison.Ordinal))
+                _zoom = arg.Substring(ArgZoom.Length).ToFloat();
             else if (arg.StartsWith(ArgTune, StringComparison.Ordinal))
                 ApplyTune(arg.Substring(ArgTune.Length));
             else if (arg.StartsWith(ArgSeekKeys, StringComparison.Ordinal))
@@ -327,6 +331,10 @@ public partial class DevCapture : Node
 
     public override void _Process(double delta)
     {
+        // 맵 전경 캡처용 줌아웃. 매 프레임 덮어써서 카메라의 기본 줌을 이긴다.
+        if (_zoom > 0f && GetParent() is GameWorld gw && gw.Camera != null)
+            gw.Camera.Zoom = new Vector2(_zoom, _zoom);
+
         foreach (string action in _hold)
         {
             if (InputMap.HasAction(action))

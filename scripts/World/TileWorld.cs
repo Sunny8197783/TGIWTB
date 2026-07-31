@@ -17,7 +17,16 @@ public partial class TileWorld : TileMapLayer
     private const int TileDenA = 4;
     private const int TileDenB = 5;
     private const int TileWall = 6;
-    private const int TileCount = 7;
+
+    // 건물(집) — 지붕색만 다른 플레이스홀더. 전부 충돌한다(못 지나감). (규칙 5)
+    private const int TileHouseA = 7;
+    private const int TileHouseB = 8;
+    private const int TileHouseC = 9;
+    private const int TileCount = 10;
+
+    /// <summary>벽이거나 건물이면 막힌 칸.</summary>
+    private static bool IsSolid(int tileX) => tileX == TileWall
+        || (tileX >= TileHouseA && tileX <= TileHouseC);
 
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
@@ -47,7 +56,7 @@ public partial class TileWorld : TileMapLayer
     {
         Vector2I cell = LocalToMap(ToLocal(worldPosition));
         return GetCellSourceId(cell) == SourceId
-            && GetCellAtlasCoords(cell).X != TileWall;
+            && !IsSolid(GetCellAtlasCoords(cell).X);
     }
 
     private static TileSet BuildTileSet()
@@ -73,17 +82,23 @@ public partial class TileWorld : TileMapLayer
         for (int x = 0; x < TileCount; x++)
             source.CreateTile(new Vector2I(x, 0));
 
-        // 벽 타일만 충돌 폴리곤을 가진다. 좌표는 타일 중심 기준.
+        // 막힌 타일(벽 + 건물)에 충돌 폴리곤을 붙인다. 좌표는 타일 중심 기준.
         float half = WorldLayout.TileSize * 0.5f;
-        TileData wall = source.GetTileData(new Vector2I(TileWall, 0), 0);
-        wall.SetCollisionPolygonsCount(PhysicsLayer, 1);
-        wall.SetCollisionPolygonPoints(PhysicsLayer, 0, new[]
+        var square = new[]
         {
             new Vector2(-half, -half),
             new Vector2(half, -half),
             new Vector2(half, half),
             new Vector2(-half, half),
-        });
+        };
+        for (int x = 0; x < TileCount; x++)
+        {
+            if (!IsSolid(x))
+                continue;
+            TileData data = source.GetTileData(new Vector2I(x, 0), 0);
+            data.SetCollisionPolygonsCount(PhysicsLayer, 1);
+            data.SetCollisionPolygonPoints(PhysicsLayer, 0, square);
+        }
 
         return tileSet;
     }
@@ -101,6 +116,11 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileDenA, WorldLayout.IronjawDen.FloorColor);
         Fill(image, TileDenB, Shade(WorldLayout.IronjawDen.FloorColor));
         Fill(image, TileWall, wallColor);
+
+        // 집 지붕색 3종 (참조 이미지의 다양한 지붕을 흉내낸 플레이스홀더)
+        Fill(image, TileHouseA, new Color(0.58f, 0.32f, 0.22f));   // 주황 기와
+        Fill(image, TileHouseB, new Color(0.32f, 0.36f, 0.56f));   // 청색 슬레이트
+        Fill(image, TileHouseC, new Color(0.46f, 0.30f, 0.50f));   // 보라 지붕
 
         return ImageTexture.CreateFromImage(image);
     }
@@ -130,7 +150,16 @@ public partial class TileWorld : TileMapLayer
         CarveZone(WorldLayout.Meadow, TileMeadowA, TileMeadowB);
         CarveZone(WorldLayout.IronjawDen, TileDenA, TileDenB);
 
-        // 3) 구역 사이 통로.
+        // 3) 마을에 집 배치 — 지붕색을 번갈아. 스폰 중앙(y≈34)과 허수아비는 피한다.
+        StampHouse(5, 8, 6, 5, TileHouseA);
+        StampHouse(14, 8, 6, 5, TileHouseB);
+        StampHouse(23, 8, 6, 5, TileHouseC);
+        StampHouse(5, 22, 6, 5, TileHouseC);
+        StampHouse(23, 22, 6, 5, TileHouseA);
+        StampHouse(9, 52, 6, 5, TileHouseB);
+        StampHouse(19, 52, 6, 5, TileHouseA);
+
+        // 4) 구역 사이 통로.
         CarveGate(WorldLayout.Town, WorldLayout.Meadow, TileMeadowA, TileMeadowB);
         CarveGate(WorldLayout.Meadow, WorldLayout.IronjawDen, TileDenA, TileDenB);
 
@@ -168,6 +197,21 @@ public partial class TileWorld : TileMapLayer
             for (int x = fromX; x < toX; x++)
                 SetFloor(x, y, tileA, tileB);
         }
+    }
+
+    /// <summary>집 하나 — 지붕색 블록 + 아래 가운데 2칸 문(바닥으로 뚫음).</summary>
+    private void StampHouse(int x, int y, int w, int h, int tile)
+    {
+        for (int yy = y; yy < y + h; yy++)
+        {
+            for (int xx = x; xx < x + w; xx++)
+                SetCell(new Vector2I(xx, yy), SourceId, new Vector2I(tile, 0));
+        }
+
+        int doorX = x + w / 2 - 1;
+        int doorY = y + h - 1;
+        SetFloor(doorX, doorY, TileTownA, TileTownB);
+        SetFloor(doorX + 1, doorY, TileTownA, TileTownB);
     }
 
     private void SetFloor(int x, int y, int tileA, int tileB)
