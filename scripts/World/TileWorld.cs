@@ -22,11 +22,17 @@ public partial class TileWorld : TileMapLayer
     private const int TileHouseA = 7;
     private const int TileHouseB = 8;
     private const int TileHouseC = 9;
-    private const int TileCount = 10;
 
-    /// <summary>벽이거나 건물이면 막힌 칸.</summary>
+    // 강(물) — 못 지나감. 다리 — 건널 수 있음.
+    private const int TileWaterA = 10;
+    private const int TileWaterB = 11;
+    private const int TileBridge = 12;
+    private const int TileCount = 13;
+
+    /// <summary>벽·건물·물이면 막힌 칸. 다리(TileBridge)는 통행 가능.</summary>
     private static bool IsSolid(int tileX) => tileX == TileWall
-        || (tileX >= TileHouseA && tileX <= TileHouseC);
+        || (tileX >= TileHouseA && tileX <= TileHouseC)
+        || tileX == TileWaterA || tileX == TileWaterB;
 
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
@@ -38,11 +44,16 @@ public partial class TileWorld : TileMapLayer
     private static readonly Rect2I[] MeadowPillars =
     {
         new(44, 14, 4, 4),
-        new(60, 30, 5, 3),
         new(48, 48, 3, 5),
         new(72, 20, 3, 6),
         new(70, 46, 6, 3),
     };
+
+    /// <summary>초원을 가로지르는 세로 강(물). 못 지나감.</summary>
+    private static readonly Rect2I MeadowRiver = new(56, 2, 4, 64);   // x56~59, y2~65
+
+    /// <summary>강을 건너는 다리 — 통로 높이에 맞춰 중앙에. (게이트 중앙 y=34)</summary>
+    private static readonly Rect2I MeadowBridge = new(56, 31, 4, 6);  // x56~59, y31~36
 
     public override void _Ready()
     {
@@ -122,6 +133,12 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileHouseB, new Color(0.32f, 0.36f, 0.56f));   // 청색 슬레이트
         Fill(image, TileHouseC, new Color(0.46f, 0.30f, 0.50f));   // 보라 지붕
 
+        // 강(물) 2색 + 다리(널빤지)
+        var water = new Color(0.20f, 0.42f, 0.62f);
+        Fill(image, TileWaterA, water);
+        Fill(image, TileWaterB, Shade(water));
+        Fill(image, TileBridge, new Color(0.52f, 0.38f, 0.22f));
+
         return ImageTexture.CreateFromImage(image);
     }
 
@@ -163,7 +180,7 @@ public partial class TileWorld : TileMapLayer
         CarveGate(WorldLayout.Town, WorldLayout.Meadow, TileMeadowA, TileMeadowB);
         CarveGate(WorldLayout.Meadow, WorldLayout.IronjawDen, TileDenA, TileDenB);
 
-        // 4) 초원 장애물.
+        // 5) 초원 장애물.
         foreach (Rect2I pillar in MeadowPillars)
         {
             for (int y = pillar.Position.Y; y < pillar.Position.Y + pillar.Size.Y; y++)
@@ -171,6 +188,30 @@ public partial class TileWorld : TileMapLayer
                 for (int x = pillar.Position.X; x < pillar.Position.X + pillar.Size.X; x++)
                     SetWall(x, y);
             }
+        }
+
+        // 6) 강 + 다리 — 다른 것 위에 덮어써야 하니 마지막에.
+        PaintRiver();
+    }
+
+    /// <summary>초원을 세로로 가르는 강(물)과, 중앙 통로의 다리를 찍는다.</summary>
+    private void PaintRiver()
+    {
+        Rect2I r = MeadowRiver;
+        for (int y = r.Position.Y; y < r.Position.Y + r.Size.Y; y++)
+        {
+            for (int x = r.Position.X; x < r.Position.X + r.Size.X; x++)
+            {
+                int tile = (x + y) % 2 == 0 ? TileWaterA : TileWaterB;
+                SetCell(new Vector2I(x, y), SourceId, new Vector2I(tile, 0));
+            }
+        }
+
+        Rect2I b = MeadowBridge;
+        for (int y = b.Position.Y; y < b.Position.Y + b.Size.Y; y++)
+        {
+            for (int x = b.Position.X; x < b.Position.X + b.Size.X; x++)
+                SetCell(new Vector2I(x, y), SourceId, new Vector2I(TileBridge, 0));
         }
     }
 
