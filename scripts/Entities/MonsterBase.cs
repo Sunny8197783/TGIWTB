@@ -20,7 +20,7 @@ public enum MonsterState
 /// 몬스터 공통 — 상태머신, 피해 수신, 넉백, 히트스톱, 흰색 플래시, 처치 연출.
 /// 개별 몬스터는 UpdateAi 와 DrawShape 만 채운다. (§D-2)
 /// </summary>
-public abstract partial class MonsterBase : CharacterBody2D, IDamageable
+public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnimationDriver
 {
     public const string Group = "monsters";
 
@@ -209,6 +209,24 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
 
     /// <summary>훈련용 허수아비인가. 숙련 판정에서 같은 대상 감쇠를 면제받는다.</summary>
     public virtual bool IsTrainingDummy => false;
+
+    // --- IAnimationDriver --------------------------------------------------
+    // 플레이어와 같은 상태머신을 몬스터도 그대로 쓴다. 읽기 전용이라 AI 로직에 영향 없음.
+
+    /// <summary>몬스터 상태머신을 애니메이션 상태 id 로 옮긴다.</summary>
+    public string CurrentAnimationState => State switch
+    {
+        MonsterState.Dead => AnimationStates.Dead,
+        MonsterState.Hurt => AnimationStates.Hurt,
+        MonsterState.Windup => AnimationStates.AttackWindup,
+        MonsterState.Attack => AnimationStates.AttackActive,
+        MonsterState.Recover => AnimationStates.AttackRecovery,
+        MonsterState.Chase => Velocity.Length() > 5f ? AnimationStates.Walk : AnimationStates.Idle,
+        _ => AnimationStates.Idle,
+    };
+
+    /// <summary>공격 판정이 도는 구간.</summary>
+    public bool AnimationHitboxActive => State == MonsterState.Attack;
 
     /// <summary>플래그·카운터는 반드시 인터페이스를 통해 건드린다. (CLAUDE.md 규칙 2)</summary>
     protected IPlayerContext Context => Player;
