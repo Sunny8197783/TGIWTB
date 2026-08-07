@@ -11,4 +11,7 @@ public static class DebugFlags
 
     /// <summary>F3 — 손맛 튜닝 슬라이더.</summary>
     public static bool ShowTuning;
+
+    /// <summary>애니메이션 상태 전이를 로그에 찍는다. F4.</summary>
+    public static bool ShowAnimStates;
 }

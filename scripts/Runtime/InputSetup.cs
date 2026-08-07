@@ -24,6 +24,7 @@ public partial class InputSetup : Node
     public const string DebugOverlay = "debug_overlay";   // F1
     public const string DebugHitbox = "debug_hitbox";     // F2
     public const string DebugTuning = "debug_tuning";     // F3
+    public const string DebugAnim = "debug_anim";         // F4 — 애니메이션 상태 전이 로그
     public const string QuickSave = "quick_save";         // F5
     public const string QuickLoad = "quick_load";         // F9
 
@@ -52,6 +53,7 @@ public partial class InputSetup : Node
         Bind(DebugOverlay, Key.F1);
         Bind(DebugHitbox, Key.F2);
         Bind(DebugTuning, Key.F3);
+        Bind(DebugAnim, Key.F4);
         Bind(QuickSave, Key.F5);
         Bind(QuickLoad, Key.F9);
     }

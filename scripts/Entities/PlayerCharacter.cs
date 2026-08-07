@@ -20,7 +20,7 @@ public enum PlayerState
 ///
 /// 시각 표현은 파란 사각형 ColorRect 하나. (§A 아트 방침)
 /// </summary>
-public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamageable
+public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamageable, IAnimationDriver
 {
     /// <summary>몬스터가 플레이어를 찾는 그룹 이름.</summary>
     public const string Group = "player";
@@ -1004,6 +1004,49 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         c.A *= _blinkAlpha;
         return c;
     }
+
+    // --- IAnimationDriver --------------------------------------------------
+    //
+    // 애니메이션 상태머신이 '읽기만' 하는 창구. 전투 로직은 여기 아무것도 의존하지 않으므로
+    // 머신을 떼어내도 게임은 그대로 돌아간다. (관찰자 방식)
+
+    /// <summary>지금 프레임의 애니메이션 상태. 우선순위: 사망 > 피격 > 스킬 > 대시 > 가드 > 이동.</summary>
+    public string CurrentAnimationState
+    {
+        get
+        {
+            if (_state == PlayerState.Dead)
+                return AnimationStates.Dead;
+            if (_knockbackTimer > 0f || _flashTimer > 0f)
+                return AnimationStates.Hurt;
+
+            if (_attack.IsBusy)
+            {
+                // 돌진이 붙은 스킬(강타)은 별도 상태 — 후딜이 캔슬 불가라 구분이 필요하다.
+                bool heavy = _attack.Skill?.Dash != null;
+                return _attack.Phase switch
+                {
+                    SkillPhase.Windup => heavy ? AnimationStates.HeavyWindup : AnimationStates.AttackWindup,
+                    SkillPhase.Active => heavy ? AnimationStates.HeavyActive : AnimationStates.AttackActive,
+                    SkillPhase.Recovery => heavy ? AnimationStates.HeavyRecovery : AnimationStates.AttackRecovery,
+                    _ => AnimationStates.Idle,
+                };
+            }
+
+            if (_state == PlayerState.Dash)
+                return AnimationStates.Dash;
+            if (_guarding)
+                return AnimationStates.GuardHold;
+
+            if (Velocity.Length() > 5f)
+                return IsRunning ? AnimationStates.Run : AnimationStates.Walk;
+
+            return AnimationStates.Idle;
+        }
+    }
+
+    /// <summary>판정 프레임이 열려 있는가. 실제 히트박스가 도는 구간과 정확히 같다.</summary>
+    public bool AnimationHitboxActive => _attack.IsActive;
 
     /// <summary>겉모습을 바꾸고 저장한다. (임시 데모 진입점 — C 키)</summary>
     private void RandomizeAppearance()

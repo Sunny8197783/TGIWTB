@@ -19,6 +19,7 @@ public partial class GameWorld : Node2D
     private MonsterSpawner _spawner;
     private DebugOverlay _overlay;
     private TuningPanel _tuning;
+    private AnimationStateMachine _anim;
     private Label _announceLabel;
     private float _announceTimer;
 
@@ -57,6 +58,13 @@ public partial class GameWorld : Node2D
         PopulateMonsters();
 
         BuildUi();
+
+        // 애니메이션 상태머신 — 플레이어 상태를 읽어 이름 붙은 상태로 분류하고 시그널을 쏜다.
+        // 전투 로직은 이걸 모르므로, 이 노드를 지워도 게임은 그대로 돌아간다. (관찰자)
+        _anim = new AnimationStateMachine();
+        AddChild(_anim);
+        _anim.Bind(_player);
+        _anim.StateEntered += id => { if (DebugFlags.ShowAnimStates) DebugLog.Add($"[anim] → {id}"); };
 
         _overlay = new DebugOverlay();
         AddChild(_overlay);
@@ -186,6 +194,12 @@ public partial class GameWorld : Node2D
                     item.QueueRedraw();
             }
 
+            GetViewport().SetInputAsHandled();
+        }
+        else if (@event.IsActionPressed(InputSetup.DebugAnim))
+        {
+            DebugFlags.ShowAnimStates = !DebugFlags.ShowAnimStates;
+            ShowAnnounce($"애니 상태 로그 {(DebugFlags.ShowAnimStates ? "ON" : "OFF")}");
             GetViewport().SetInputAsHandled();
         }
         else if (@event.IsActionPressed(InputSetup.DebugTuning))
