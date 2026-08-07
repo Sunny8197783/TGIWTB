@@ -39,7 +39,12 @@ public partial class PlayerSprite : Sprite2D
     };
 
     private readonly Texture2D[] _idle = new Texture2D[8];
-    private readonly Texture2D[][] _walk = new Texture2D[8][];
+
+    /// <summary>
+    /// 클립 이름 → [방향][프레임]. art/player/{클립}/{방향}/frame_NNN.png 규칙으로 읽는다.
+    /// 폴더가 없으면 그 클립은 등록되지 않고, 재생 요청 시 idle 로 폴백한다.
+    /// </summary>
+    private readonly System.Collections.Generic.Dictionary<string, Texture2D[][]> _clips = new();
 
     private float _animTime;
     private bool _loaded;
@@ -54,38 +59,87 @@ public partial class PlayerSprite : Sprite2D
         Load();
     }
 
+    /// <summary>있으면 읽고 없으면 건너뛰는 클립 목록. 에셋을 추가하면 여기만 늘리면 된다.</summary>
+    private static readonly string[] ClipNames = { "walk", "run", "dash", "slash", "heavy", "guard", "shout" };
+
     private void Load()
     {
         for (int i = 0; i < DirNames.Length; i++)
-        {
             _idle[i] = GD.Load<Texture2D>($"{Root}/idle/{DirNames[i]}.png");
-            _walk[i] = new Texture2D[8];
-            for (int f = 0; f < 8; f++)
-                _walk[i][f] = GD.Load<Texture2D>($"{Root}/walk/{DirNames[i]}/frame_{f:D3}.png");
-        }
+
+        foreach (string clip in ClipNames)
+            LoadClip(clip);
 
         _loaded = _idle[0] != null;
         if (!_loaded)
             GD.PushWarning("[PlayerSprite] art/player 를 불러오지 못했다 — 도형 피규어로 대체된다.");
+        else
+            GD.Print($"[PlayerSprite] clips={string.Join(",", _clips.Keys)}");
     }
+
+    /// <summary>클립 하나를 8방향 x N프레임으로 읽는다. 파일이 없으면 등록하지 않는다.</summary>
+    private void LoadClip(string clip)
+    {
+        var byDir = new Texture2D[8][];
+
+        for (int i = 0; i < DirNames.Length; i++)
+        {
+            var frames = new System.Collections.Generic.List<Texture2D>();
+            for (int f = 0; f < MaxFrames; f++)
+            {
+                string path = $"{Root}/{clip}/{DirNames[i]}/frame_{f:D3}.png";
+                if (!ResourceLoader.Exists(path))
+                    break;
+                var tex = GD.Load<Texture2D>(path);
+                if (tex == null)
+                    break;
+                frames.Add(tex);
+            }
+
+            if (frames.Count == 0)
+                return;                     // 이 클립은 에셋이 없다.
+            byDir[i] = frames.ToArray();
+        }
+
+        _clips[clip] = byDir;
+    }
+
+    /// <summary>한 클립에서 읽어 볼 최대 프레임 수. 실제 개수는 파일 존재로 정해진다.</summary>
+    private const int MaxFrames = 24;
 
     public bool IsLoaded => _loaded;
 
+    public bool HasClip(string clip) => _clips.ContainsKey(clip);
+
     /// <summary>
-    /// 매 프레임 갱신. facing 은 바라보는 방향, moving/running 은 걷기 프레임 진행에 쓴다.
+    /// 매 프레임 갱신. clip 은 재생할 애니메이션 이름("walk"/"run"/"slash"…),
+    /// progress 는 1회성 동작(공격 등)의 진행도 0~1. null 이면 루프 재생한다.
+    /// 클립이 없으면 idle 로 폴백하므로 에셋이 없어도 안전하다.
     /// </summary>
-    public void UpdateFrame(Vector2 facing, bool moving, bool running, float delta)
+    public void UpdateFrame(Vector2 facing, string clip, float? progress, float delta)
     {
         if (!_loaded)
             return;
 
         int dir = DirIndex(facing);
 
-        if (moving)
+        if (clip != null && _clips.TryGetValue(clip, out var byDir))
         {
-            _animTime += delta * (running ? RunFrameSpeedScale : 1f);
-            int frame = Mathf.PosMod((int)(_animTime / WalkFrameTime), 8);
-            Texture = _walk[dir][frame];
+            Texture2D[] frames = byDir[dir];
+
+            if (progress.HasValue)
+            {
+                // 1회성 동작 — 상태 진행도에 프레임을 직접 맞춘다. 되감기지 않는다.
+                int f = Mathf.Clamp((int)(progress.Value * frames.Length), 0, frames.Length - 1);
+                Texture = frames[f];
+            }
+            else
+            {
+                // 루프 — 이동 클립. 달리기는 프레임을 더 빨리 넘긴다.
+                _animTime += delta * (clip == "run" ? RunFrameSpeedScale : 1f);
+                int f = Mathf.PosMod((int)(_animTime / WalkFrameTime), frames.Length);
+                Texture = frames[f];
+            }
         }
         else
         {

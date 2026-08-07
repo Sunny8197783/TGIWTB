@@ -988,9 +988,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 스프라이트가 있으면 방향/걷기 프레임을 갱신하고, 상태 색과 점멸을 그대로 입힌다.
         if (_sprite != null && _sprite.IsLoaded)
         {
-            bool moving = _state == PlayerState.Normal && Velocity.Length() > 5f;
             Vector2 aim = _attack.IsBusy ? _attack.LockedFacing : _facing;
-            _sprite.UpdateFrame(aim, moving, IsRunning, dt);
+            (string clip, float? progress) = SpriteClip();
+            _sprite.UpdateFrame(aim, clip, progress, dt);
 
             // 공격 모션·들썩임을 스프라이트에도 실어 준다.
             _sprite.Offset = FigureMotionOffset() / _sprite.Scale.X;
@@ -1067,6 +1067,47 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     /// <summary>판정 프레임이 열려 있는가. 실제 히트박스가 도는 구간과 정확히 같다.</summary>
     public bool AnimationHitboxActive => _attack.IsActive;
+
+    /// <summary>
+    /// 지금 프레임에 재생할 스프라이트 클립과 진행도.
+    /// progress 가 있으면 1회성(선딜→판정→후딜 전체를 한 번 훑는다), null 이면 루프.
+    /// 에셋이 없는 클립은 PlayerSprite 가 idle 로 폴백한다.
+    /// </summary>
+    private (string clip, float? progress) SpriteClip()
+    {
+        if (_state == PlayerState.Dash)
+            return ("dash", null);
+
+        if (_attack.IsBusy)
+        {
+            var skill = _attack.Skill;
+            string clip = skill?.Stun != null ? "shout"
+                : skill?.Dash != null ? "heavy"
+                : "slash";
+
+            // 스킬 한 번을 클립 한 바퀴에 매핑한다 — 선딜/판정/후딜 비율 그대로.
+            float w = CombatTuning.AttackWindup;
+            float a = CombatTuning.AttackActive;
+            float r = CombatTuning.AttackRecovery;
+            float total = Mathf.Max(0.0001f, w + a + r);
+            float done = _attack.Phase switch
+            {
+                SkillPhase.Windup => w * _attack.PhaseProgress,
+                SkillPhase.Active => w + a * _attack.PhaseProgress,
+                SkillPhase.Recovery => w + a + r * _attack.PhaseProgress,
+                _ => 0f,
+            };
+            return (clip, done / total);
+        }
+
+        if (_guarding)
+            return ("guard", null);
+
+        if (_state == PlayerState.Normal && Velocity.Length() > 5f)
+            return (IsRunning ? "run" : "walk", null);
+
+        return (null, null);   // 대기 — idle
+    }
 
     /// <summary>겉모습을 바꾸고 저장한다. (임시 데모 진입점 — C 키)</summary>
     private void RandomizeAppearance()
