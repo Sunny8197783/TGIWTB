@@ -8,12 +8,19 @@
 ## 막혀 있던 것
 
 PixelLab MCP 가 **옛 API 키로 연결된 채** 세션이 시작돼서 401 이 났다.
-- 새 키(`ff0f…`)는 유효함 — REST `/v1/balance` 직접 호출 시 HTTP 200 확인
-- `~/.claude.json` 설정도 정상, 중복 서버(`pixellab-forge-mcp`)도 정리됨
-- **재시작하면 해결됨.** 크레딧 충전은 불필요 — 구독 generation 으로 진행할 것
+- 새 키는 유효함 — REST 직접 호출로 확인 완료
+- `~/.claude.json` 설정 정상, 중복 서버(`pixellab-forge-mcp`)도 정리됨
+- `/mcp reconnect` 는 이 앱 화면에서 사용 불가였음 → **재시작이 유일한 해결책**
 
-`/v1/balance` 가 `{"type":"usd","usd":0.0}` 을 반환하지만 이건 크레딧 잔액만이고,
-구독 generation 잔액은 MCP `get_balance` 로만 보인다.
+### 확인된 사실 (재조사 불필요)
+- **구독 generation 있음.** REST 호출 응답에 `{"type":"generations","generations":1.0}`.
+  `/v1/balance` 의 `{"type":"usd","usd":0.0}` 은 크레딧 잔액일 뿐 — **충전 불필요**.
+- **REST 우회는 실패.** 공개 API 는 8개 엔드포인트뿐이고 캐릭터 ID 기반 애니메이션이 없다.
+  `/animate-with-text` 로 테스트했으나(1 generation 소모):
+  - 64x64 상한이라 104px 캐릭터를 잘라 넣어야 함
+  - 결과물이 정체성을 잃음 — 배낭 사라지고 머리 형태·비율·색이 전부 달라짐
+  - **이 경로는 쓰지 말 것.** MCP `animate_character` (저장된 캐릭터의 8방향을
+    레퍼런스로 쓰는 템플릿/v3 파이프라인) 를 써야 기존 idle/walk 과 일관성이 유지된다.
 
 ## 할 일 — PixelLab 모션 6종 생성 후 게임에 붙이기
 
