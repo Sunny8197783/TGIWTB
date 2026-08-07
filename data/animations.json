@@ -1,6 +1,8 @@
 {
   "_comment": [
     "애니메이션 상태 메타데이터. 코어 코드를 고치지 않고 상태를 추가하기 위한 데이터 파일.",
+    "스프라이트 클립은 art/player/{클립}/{방향}/frame_NNN.png 에 있고 PlayerSprite 가 읽는다.",
+    "클립이 없으면 idle 로 폴백하므로 에셋이 일부만 있어도 안전하다.",
     "durationSeconds 가 null 인 상태는 지속시간이 CombatTuning(F3 슬라이더)에서 오며,",
     "tuningKey 로 그 항목을 가리킨다. 여기 숫자를 직접 박으면 F3 튜닝과 어긋나므로 금지.",
     "frames/fps 는 스프라이트가 들어왔을 때 쓸 값이고, 지금은 절차적 렌더라 표시용이다.",
@@ -15,7 +17,10 @@
       "durationSeconds": null,
       "frames": 4,
       "fps": 6,
-      "bob": { "amplitudePx": 1.1, "hz": 1.7 },
+      "bob": {
+        "amplitudePx": 1.1,
+        "hz": 1.7
+      },
       "moveScale": 1.0,
       "hitboxActive": false,
       "invulnerable": false,
@@ -28,12 +33,16 @@
       "durationSeconds": null,
       "frames": 6,
       "fps": 10,
-      "bob": { "amplitudePx": 1.4, "hz": 7.5 },
+      "bob": {
+        "amplitudePx": 1.4,
+        "hz": 7.5
+      },
       "moveScale": 1.0,
       "speedTuningKey": "move.speed",
       "hitboxActive": false,
       "invulnerable": false,
-      "note": "PlayerTuning.WalkBobAmp/WalkBobHz. 속도 5px/s 초과. 이동속도 90px/s."
+      "note": "PlayerTuning.WalkBobAmp/WalkBobHz. 속도 5px/s 초과. 이동속도 90px/s.",
+      "spriteClip": "walk"
     },
     {
       "id": "run",
@@ -42,13 +51,17 @@
       "durationSeconds": null,
       "frames": 6,
       "fps": 14,
-      "bob": { "amplitudePx": 2.0, "hz": 10.0 },
+      "bob": {
+        "amplitudePx": 2.0,
+        "hz": 10.0
+      },
       "moveScale": 1.0,
       "speedTuningKey": "move.runSpeed",
       "leanPx": 1.5,
       "hitboxActive": false,
       "invulnerable": false,
-      "note": "Shift 홀드. 140px/s. 가드 중이거나 공격 중에는 달릴 수 없다. 보폭이 넓고 전방으로 살짝 기운다."
+      "note": "Shift 홀드. 140px/s. 가드 중이거나 공격 중에는 달릴 수 없다. 보폭이 넓고 전방으로 살짝 기운다.",
+      "spriteClip": "run"
     },
     {
       "id": "dash",
@@ -66,7 +79,8 @@
       "invulnTuningKey": "dash.invuln",
       "cooldownTuningKey": "dash.cooldown",
       "vfx": "DashWind",
-      "note": "0.14s 지속, 320px/s. 무적 0.10s(시작부터). 쿨다운 0.6s. 히든 습득 시 무적 0.20s."
+      "note": "0.14s 지속, 320px/s. 무적 0.10s(시작부터). 쿨다운 0.6s. 히든 습득 시 무적 0.20s.",
+      "spriteClip": "dash"
     },
     {
       "id": "attack_windup",
@@ -83,7 +97,8 @@
       "invulnerable": false,
       "canTurn": true,
       "motionOffsetPx": -4.0,
-      "note": "0.08s. 이 구간에만 방향 전환 가능. 몸을 뒤로 4px 당김(예비 동작)."
+      "note": "0.08s. 이 구간에만 방향 전환 가능. 몸을 뒤로 4px 당김(예비 동작).",
+      "spriteClip": "slash"
     },
     {
       "id": "attack_active",
@@ -100,7 +115,8 @@
       "canTurn": false,
       "motionOffsetPx": 8.0,
       "vfx": "SlashArc",
-      "note": "0.10s. 히트박스 = 칼날이 훑은 스윕 아크(Hitbox.SweptArc). 방향 고정. 한 스윙 1히트."
+      "note": "0.10s. 히트박스 = 칼날이 훑은 스윕 아크(Hitbox.SweptArc). 방향 고정. 한 스윙 1히트.",
+      "spriteClip": "slash"
     },
     {
       "id": "attack_recovery",
@@ -117,7 +133,8 @@
       "canTurn": false,
       "cancelWindowRatio": 0.4,
       "cancelWindowTuningKey": "atk.cancel",
-      "note": "0.14s. 이동 불가. 뒤쪽 40%(0.056s)에서 선입력 시 콤보로 이어짐."
+      "note": "0.14s. 이동 불가. 뒤쪽 40%(0.056s)에서 선입력 시 콤보로 이어짐.",
+      "spriteClip": "slash"
     },
     {
       "id": "guard_hold",
@@ -134,7 +151,8 @@
       "perfectWindowSeconds": 0.12,
       "riposteSeconds": 0.5,
       "cooldownSeconds": 0.6,
-      "note": "sk_guard.json 이 원본. 올린 뒤 0.12s 안에 맞으면 퍼펙트(피해 0 + 카운터 2배 + 기절 0.9s). 떼면 쿨다운 0.6s, 퍼펙트 성공 시 쿨다운 초기화."
+      "note": "sk_guard.json 이 원본. 올린 뒤 0.12s 안에 맞으면 퍼펙트(피해 0 + 카운터 2배 + 기절 0.9s). 떼면 쿨다운 0.6s, 퍼펙트 성공 시 쿨다운 초기화.",
+      "spriteClip": "guard"
     },
     {
       "id": "heavy_windup",
@@ -151,7 +169,8 @@
       "invulnerable": false,
       "motionOffsetPx": -4.0,
       "vfx": "BashCone",
-      "note": "강타 선딜. 꼬깔 VFX 는 판정 진입 시 소환."
+      "note": "강타 선딜. 꼬깔 VFX 는 판정 진입 시 소환.",
+      "spriteClip": "heavy"
     },
     {
       "id": "heavy_active",
@@ -172,7 +191,8 @@
       "knockbackTuningKey": "kb.heavyDist",
       "shakeTuningKey": "shake.heavyAmp",
       "vfx": "ShockRing",
-      "note": "판정과 함께 전방 40px 돌진 — 경로 전체가 판정. 명중 시 즉시 정지 + 히트스톱 0.14s + 넉백 40px + 화면흔들림 4.5px + 충격파. 쿨다운 5.0s."
+      "note": "판정과 함께 전방 40px 돌진 — 경로 전체가 판정. 명중 시 즉시 정지 + 히트스톱 0.14s + 넉백 40px + 화면흔들림 4.5px + 충격파. 쿨다운 5.0s.",
+      "spriteClip": "heavy"
     },
     {
       "id": "heavy_recovery",
@@ -187,7 +207,8 @@
       "skillId": "sk_bash",
       "hitboxActive": false,
       "invulnerable": false,
-      "note": "강타 후딜 — 캔슬 불가(cancelable=false). 이 구간이 강타의 리스크."
+      "note": "강타 후딜 — 캔슬 불가(cancelable=false). 이 구간이 강타의 리스크.",
+      "spriteClip": "heavy"
     },
     {
       "id": "hurt",
