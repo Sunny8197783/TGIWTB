@@ -106,7 +106,13 @@ public partial class GoblinArcher : MonsterBase
             Vector2.Right.Rotated(angle + Mathf.Tau / 3f) * r,
             Vector2.Right.Rotated(angle - Mathf.Tau / 3f) * r,
         };
+
+        // 외곽선(살짝 큰 삼각형) + 본체 + 좌상단 하이라이트.
+        float k = (r + OutlineWidth) / r;
+        DrawColoredPolygon(new[] { points[0] * k, points[1] * k, points[2] * k }, OutlineColor);
         DrawColoredPolygon(points, color);
+        var hi = new Vector2(-r * 0.18f, -r * 0.22f);
+        DrawColoredPolygon(new[] { points[0] * 0.5f + hi, points[1] * 0.5f + hi, points[2] * 0.5f + hi }, Lit(color));
 
         DrawBow();
 

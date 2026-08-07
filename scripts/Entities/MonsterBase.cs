@@ -138,6 +138,13 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable
     /// <summary>도형으로만 그린다. 스프라이트 금지. (CLAUDE.md 규칙 5)</summary>
     protected abstract void DrawShape(Color color);
 
+    // 명암용 — 플레이어 피규어와 같은 방식(광원 좌상단). 피격 흰색이 들어와도
+    // Lightened/Darkened 가 자연스럽게 처리된다.
+    protected static readonly Color OutlineColor = new(0.06f, 0.06f, 0.08f);
+    protected static readonly float OutlineWidth = 1.0f;
+    protected static Color Lit(Color c) => c.Lightened(0.24f);
+    protected static Color Dark(Color c) => c.Darkened(0.3f);
+
     public override void _Draw()
     {
         // 공격 모션만큼 몸을 밀어서 그린다. 위치(물리)는 건드리지 않는다.

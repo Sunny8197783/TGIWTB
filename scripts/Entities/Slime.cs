@@ -131,10 +131,15 @@ public partial class Slime : MonsterBase
     private void Decelerate(float delta)
         => Velocity = Velocity.MoveToward(Vector2.Zero, Stats.MoveSpeed * delta * 4f);
 
-    /// <summary>초록 원 + 휘두르는 몽둥이. (§A 아트 방침)</summary>
+    /// <summary>초록 원 + 명암 + 휘두르는 몽둥이. (§A 아트 방침)</summary>
     protected override void DrawShape(Color color)
     {
-        DrawCircle(Vector2.Zero, Stats.Radius, color);
+        float r = Stats.Radius;
+        DrawCircle(Vector2.Zero, r + OutlineWidth, OutlineColor);   // 외곽선
+        DrawCircle(Vector2.Zero, r, color);                         // 본체
+        // 아래쪽 그늘(어두운 반달) + 좌상단 하이라이트.
+        DrawArc(Vector2.Zero, r * 0.62f, 0.25f, Mathf.Pi - 0.25f, 12, Dark(color), r * 0.55f);
+        DrawCircle(new Vector2(-r * 0.32f, -r * 0.32f), r * 0.42f, Lit(color));
         DrawClub();
 
         // 남은 체력을 원 아래 짧은 막대로. UI 없이도 진행이 보이게.

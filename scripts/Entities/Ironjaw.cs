@@ -212,7 +212,14 @@ public partial class Ironjaw : MonsterBase
     {
         float r = Stats.Radius;
         Color body = _enraged ? color.Lightened(0.2f) : color;
+
+        // 외곽선 + 본체 + 상단 하이라이트 + 하단/우측 그늘 (광원 좌상단).
+        DrawRect(new Rect2(-r - OutlineWidth, -r - OutlineWidth,
+            (r + OutlineWidth) * 2f, (r + OutlineWidth) * 2f), OutlineColor);
         DrawRect(new Rect2(-r, -r, r * 2f, r * 2f), body);
+        DrawRect(new Rect2(-r, -r, r * 2f, r * 0.7f), Lit(body));            // 위쪽 밝은 면
+        DrawRect(new Rect2(-r, r * 0.45f, r * 2f, r * 0.55f), Dark(body));   // 아래쪽 그늘
+        DrawRect(new Rect2(r * 0.5f, -r, r * 0.5f, r * 2f), Dark(body));     // 오른쪽 그늘
 
         // 선딜을 크게 알린다. 미니보스는 읽을 수 있어야 한다.
         if (State == MonsterState.Windup)
