@@ -55,6 +55,9 @@ public static class PlayerTuning
     public static readonly float IdleBobHz = 1.7f;    // 느리고 부드럽게
     public static readonly float WalkBobAmp = 1.4f;   // 걸을 때 폭
     public static readonly float WalkBobHz = 7.5f;    // 걸음 리듬
+    public static readonly float RunBobAmp = 2.0f;    // 달릴 때 — 보폭이 커진다
+    public static readonly float RunBobHz = 10.0f;
+    public static readonly float RunLeanPx = 1.5f;    // 달릴 때 전방으로 기우는 정도
 
     // 커스터마이즈 프리셋 — 색 슬롯이 고를 팔레트. 첫 항목이 기본값.
     public static readonly Color[] SkinTones =

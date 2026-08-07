@@ -36,6 +36,21 @@
       "note": "PlayerTuning.WalkBobAmp/WalkBobHz. 속도 5px/s 초과. 이동속도 90px/s."
     },
     {
+      "id": "run",
+      "loop": true,
+      "cancelable": true,
+      "durationSeconds": null,
+      "frames": 6,
+      "fps": 14,
+      "bob": { "amplitudePx": 2.0, "hz": 10.0 },
+      "moveScale": 1.0,
+      "speedTuningKey": "move.runSpeed",
+      "leanPx": 1.5,
+      "hitboxActive": false,
+      "invulnerable": false,
+      "note": "Shift 홀드. 140px/s. 가드 중이거나 공격 중에는 달릴 수 없다. 보폭이 넓고 전방으로 살짝 기운다."
+    },
+    {
       "id": "dash",
       "loop": false,
       "cancelable": false,

@@ -31,6 +31,13 @@ public static class CombatTuning
     public static readonly TuningEntry MoveSpeed =
         Custom("move.speed", GroupMove, "이동 속도", 90f, 0f, 300f, 1f, "px/s", isTime: false);
 
+    /// <summary>
+    /// 달리기 속도 140px/s (Shift 홀드). 걷기 90px/s 의 약 1.56배.
+    /// 대시(320px/s, 0.14s 버스트)와는 별개의 지속 이동.
+    /// </summary>
+    public static readonly TuningEntry RunSpeed =
+        Custom("move.runSpeed", GroupMove, "달리기 속도", 140f, 0f, 400f, 5f, "px/s", isTime: false);
+
     /// <summary>0.06s (4프레임)</summary>
     public static readonly TuningEntry AccelTime =
         Sec("move.accel", GroupMove, "가속 시간", 0.06f, 0f, 0.4f, 0.005f);

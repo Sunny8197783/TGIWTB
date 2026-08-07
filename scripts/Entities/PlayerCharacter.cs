@@ -84,8 +84,14 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private float _swingStartAngle;
     private float _prevBladeAngle;
 
-    /// <summary>시선 고정(Shift) 대상. 잡혀 있으면 이동과 무관하게 계속 바라본다.</summary>
+    /// <summary>시선 고정 대상. 잡혀 있으면 이동과 무관하게 계속 바라본다.</summary>
     private MonsterBase _lockTarget;
+
+    /// <summary>좌클릭 엣지 감지 — 누르고 있는 동안 매 프레임 재지정되지 않게.</summary>
+    private bool _lockClickHeld;
+
+    /// <summary>클릭으로 대상을 집을 때의 반지름 여유(px).</summary>
+    private static readonly float LockClickSlackPx = 10f;
 
     /// <summary>§C-8 에서 스킬에 묶인 키들. 버퍼가 감시하는 대상.</summary>
     private static readonly string[] SkillActions =
@@ -320,9 +326,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        // 후딜에는 이동 불가. (§C-2) 가드 중에는 40%. (§E)
+        // 후딜에는 이동 불가. (§C-2) 가드 중에는 40%. (§E) Shift 홀드면 달리기.
         Vector2 target = _attack.CanMove
-            ? input * CombatTuning.MoveSpeed * _attack.MoveScale * GuardMoveScale()
+            ? input * CurrentMoveSpeed() * _attack.MoveScale * GuardMoveScale()
             : Vector2.Zero;
 
         ApplyAcceleration(target, dt, _attack.CanMove && input != Vector2.Zero);
@@ -479,25 +485,45 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     public bool IsLockedOn => _lockTarget != null;
 
     /// <summary>
-    /// Shift 를 누르고 있으면 가장 가까운 적을 계속 바라본다.
-    /// 이동 입력이 방향을 덮지 않으므로 옆걸음·뒷걸음으로 거리를 재면서 싸울 수 있다.
-    /// 대상이 죽거나 멀어지면 다시 잡고, 잡을 게 없으면 지금 방향을 그대로 유지한다.
+    /// 시선 고정 — 홀드가 아니라 토글이다. (Shift 는 달리기로 넘어감)
+    ///   Tab       : 가장 가까운 적으로 고정 / 다시 누르면 해제
+    ///   좌클릭    : 클릭한 적으로 고정 (빈 곳을 클릭하면 해제)
+    /// 고정 중에는 이동 입력이 방향을 덮지 않아 옆걸음·뒷걸음으로 거리를 잰다.
+    /// 대상이 죽거나 멀어지면 가장 가까운 적으로 자동 재획득하고, 없으면 해제된다.
     /// </summary>
     private void UpdateLockOn()
     {
-        if (!Input.IsActionPressed(InputSetup.LockOn))
-        {
-            _lockTarget = null;
-            return;
-        }
-
         float range = CombatTuning.LockOnRange;
 
-        if (!IsValidLockTarget(_lockTarget, range))
-            _lockTarget = FindLockTarget(range);
+        // Tab 토글.
+        if (Input.IsActionJustPressed(InputSetup.LockOn))
+        {
+            _lockTarget = _lockTarget != null ? null : FindLockTarget(range);
+            AnnounceLock();
+        }
+
+        // 좌클릭으로 대상 지정 — 커서 아래 몬스터를 집는다.
+        if (Input.IsMouseButtonPressed(MouseButton.Left) && !_lockClickHeld)
+        {
+            _lockClickHeld = true;
+            _lockTarget = MonsterUnderCursor();
+            AnnounceLock();
+        }
+        else if (!Input.IsMouseButtonPressed(MouseButton.Left))
+        {
+            _lockClickHeld = false;
+        }
 
         if (_lockTarget == null)
             return;
+
+        // 죽었거나 사거리를 벗어나면 가장 가까운 적으로 갈아탄다. 없으면 해제.
+        if (!IsValidLockTarget(_lockTarget, range))
+        {
+            _lockTarget = FindLockTarget(range);
+            if (_lockTarget == null)
+                return;
+        }
 
         Vector2 toTarget = _lockTarget.GlobalPosition - GlobalPosition;
         if (toTarget.LengthSquared() <= 0.0001f)
@@ -506,6 +532,31 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 판정이 시작된 뒤에는 스킬 방향을 돌리지 않는다. (§C-7)
         _facing = toTarget.Normalized();
         _attack.Aim(_facing);
+    }
+
+    private void AnnounceLock()
+        => DebugLog.Add(_lockTarget != null ? $"시선 고정: {_lockTarget.Stats.Id}" : "시선 고정 해제");
+
+    /// <summary>마우스 커서 아래의 몬스터. 반지름에 여유를 둬 작은 적도 집기 쉽게.</summary>
+    private MonsterBase MonsterUnderCursor()
+    {
+        Vector2 world = GetGlobalMousePosition();
+        MonsterBase best = null;
+        float bestDistance = float.MaxValue;
+
+        foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
+        {
+            if (node is not MonsterBase monster || !IsInstanceValid(monster) || !monster.IsAlive)
+                continue;
+
+            float distance = world.DistanceTo(monster.GlobalPosition);
+            if (distance <= monster.Stats.Radius + LockClickSlackPx && distance < bestDistance)
+            {
+                bestDistance = distance;
+                best = monster;
+            }
+        }
+        return best;
     }
 
     private bool IsValidLockTarget(MonsterBase target, float range)
@@ -578,6 +629,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         _guarding = false;
     }
+
+    /// <summary>
+    /// 지금 프레임의 기본 이동 속도. Shift 를 누르고 있으면 달리기(140), 아니면 걷기(90).
+    /// 가드 중에는 달릴 수 없다 — 방패를 든 채 뛰면 가드의 대가가 사라진다.
+    /// </summary>
+    public bool IsRunning => Input.IsActionPressed(InputSetup.Run) && !_guarding && !_attack.IsBusy;
+
+    private float CurrentMoveSpeed()
+        => IsRunning ? CombatTuning.RunSpeed : CombatTuning.MoveSpeed;
 
     private float GuardMoveScale()
     {
@@ -979,11 +1039,20 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // '숨 쉬는/발 구르는' 느낌이 난다. (스프라이트 애니메이션 전까지의 생동감)
         if (!_attack.IsBusy)
         {
-            bool walking = _state == PlayerState.Normal && Velocity.Length() > 5f;
-            float amp = walking ? PlayerTuning.WalkBobAmp : PlayerTuning.IdleBobAmp;
-            float hz = walking ? PlayerTuning.WalkBobHz : PlayerTuning.IdleBobHz;
+            bool moving = _state == PlayerState.Normal && Velocity.Length() > 5f;
+            bool running = moving && IsRunning;
+
+            float amp = running ? PlayerTuning.RunBobAmp
+                : moving ? PlayerTuning.WalkBobAmp : PlayerTuning.IdleBobAmp;
+            float hz = running ? PlayerTuning.RunBobHz
+                : moving ? PlayerTuning.WalkBobHz : PlayerTuning.IdleBobHz;
+
             // 절댓값 sine — 바닥을 딛고 튀어오르는 것처럼 위로만 들썩인다.
             m.Y -= Mathf.Abs(Mathf.Sin(_animTime * hz * Mathf.Pi)) * amp * s;
+
+            // 달릴 때는 진행 방향으로 살짝 기운다.
+            if (running)
+                m += Velocity.Normalized() * (PlayerTuning.RunLeanPx * s);
         }
 
         // 그림자 — 발밑 납작한 타원. 위치감의 대부분을 만든다. (모션·들썩임 영향 없음)
