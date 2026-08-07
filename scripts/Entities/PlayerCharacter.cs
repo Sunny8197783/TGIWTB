@@ -34,6 +34,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// <summary>애니메이션 위상 누적. 대기·걸음 들썩임을 만든다.</summary>
     private float _animTime;
 
+    /// <summary>8방향 스프라이트. 에셋이 없으면 IsLoaded=false 라 도형 피규어로 폴백한다.</summary>
+    private PlayerSprite _sprite;
+
     private readonly RandomNumberGenerator _rng = new();
 
     private readonly HashSet<string> _flags = new();
@@ -147,13 +150,17 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void BuildShapes()
     {
-        // 충돌은 전투 판정용 크기 그대로. 시각 피규어는 _Draw 에서 그린다.
+        // 충돌은 전투 판정용 크기 그대로. 시각은 스프라이트(있으면) 또는 _Draw 도형.
         float size = PlayerTuning.BodySize;
         var shape = new CollisionShape2D
         {
             Shape = new RectangleShape2D { Size = new Vector2(size, size) },
         };
         AddChild(shape);
+
+        // art/player 에셋이 있으면 스프라이트로 그린다. 없으면 도형 피규어로 폴백.
+        _sprite = new PlayerSprite();
+        AddChild(_sprite);
     }
 
     /// <summary>새 게임 상태. 세이브가 없거나 로드가 실패했을 때의 폴백. (§H)</summary>
@@ -978,6 +985,19 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
         _blinkAlpha = blinkOff ? 0.25f : 1f;
 
+        // 스프라이트가 있으면 방향/걷기 프레임을 갱신하고, 상태 색과 점멸을 그대로 입힌다.
+        if (_sprite != null && _sprite.IsLoaded)
+        {
+            bool moving = _state == PlayerState.Normal && Velocity.Length() > 5f;
+            Vector2 aim = _attack.IsBusy ? _attack.LockedFacing : _facing;
+            _sprite.UpdateFrame(aim, moving, IsRunning, dt);
+
+            // 공격 모션·들썩임을 스프라이트에도 실어 준다.
+            _sprite.Offset = FigureMotionOffset() / _sprite.Scale.X;
+            _sprite.Modulate = Tinted(Colors.White);
+            _sprite.Visible = _state != PlayerState.Dead;
+        }
+
         Visible = _state != PlayerState.Dead;
     }
 
@@ -1073,14 +1093,20 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// 파츠가 색 슬롯별로 나뉘어 있어 꾸미기가 바로 얹힌다. 도형만. (규칙 5)
     /// 공격 모션(AttackMotionOffset)은 몸에만 싣고 그림자는 제자리에 둔다.
     /// </summary>
-    private void DrawFigure()
+    /// <summary>
+    /// 공격 모션 + 대기/걸음 들썩임을 합친 몸 오프셋.
+    /// 도형 피규어와 스프라이트가 같은 값을 써야 연출이 어긋나지 않는다.
+    /// </summary>
+    private Vector2 FigureMotionOffset()
     {
         float s = PlayerTuning.FigureScale;
         Vector2 m = AttackMotionOffset();
 
-        // 대기/걸음 들썩임 — 공격 중이 아닐 때만. 몸만 오르내리고 그림자는 제자리라
-        // '숨 쉬는/발 구르는' 느낌이 난다. (스프라이트 애니메이션 전까지의 생동감)
-        if (!_attack.IsBusy)
+        // 스프라이트에는 걷기 프레임이 따로 있으므로 들썩임은 대기 중에만 얹는다.
+        bool spriteWalking = _sprite != null && _sprite.IsLoaded
+            && _state == PlayerState.Normal && Velocity.Length() > 5f;
+
+        if (!_attack.IsBusy && !spriteWalking)
         {
             bool moving = _state == PlayerState.Normal && Velocity.Length() > 5f;
             bool running = moving && IsRunning;
@@ -1098,10 +1124,22 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
                 m += Velocity.Normalized() * (PlayerTuning.RunLeanPx * s);
         }
 
-        // 그림자 — 발밑 납작한 타원. 위치감의 대부분을 만든다. (모션·들썩임 영향 없음)
+        return m;
+    }
+
+    private void DrawFigure()
+    {
+        float s = PlayerTuning.FigureScale;
+        Vector2 m = FigureMotionOffset();
+
+        // 그림자 — 발밑 납작한 타원. 스프라이트를 쓸 때도 그림자는 여기서 그린다.
         DrawSetTransform(new Vector2(0f, 8f * s), 0f, new Vector2(1f, 0.4f));
         DrawCircle(Vector2.Zero, 5f * s, PlayerTuning.ShadowColor);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+
+        // 스프라이트가 몸을 그리면 도형 파츠는 건너뛴다(그림자만 남긴다).
+        if (_sprite != null && _sprite.IsLoaded)
+            return;
 
         // 색 슬롯 + 상태 틴트. 명암용 밝은/어두운 변형도 같이 만든다(광원 좌상단 가정).
         Color skin = Tinted(_appearance.Skin);
