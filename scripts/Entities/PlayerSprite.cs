@@ -15,8 +15,18 @@ public partial class PlayerSprite : Sprite2D
 {
     private const string Root = "res://art/player";
 
-    /// <summary>걷기 8프레임을 한 바퀴 도는 속도(초/프레임). 8프레임 = 0.64s 주기.</summary>
+    /// <summary>기본 프레임 간격(초). 걷기 8프레임 = 0.64s 주기.</summary>
     private static readonly float WalkFrameTime = 0.08f;
+
+    /// <summary>클립별 프레임 간격. 없으면 WalkFrameTime. 숨쉬기는 느려야 자연스럽다.</summary>
+    private static readonly System.Collections.Generic.Dictionary<string, float> FrameTime = new()
+    {
+        ["breathe"] = 0.22f,   // 5프레임 x 0.22 ≈ 1.1s 한 호흡
+        ["guard"] = 0.05f,     // 자세를 빨리 잡고 홀드
+    };
+
+    private float FrameTimeOf(string clip)
+        => FrameTime.TryGetValue(clip, out float t) ? t : WalkFrameTime;
 
     /// <summary>달릴 때는 같은 프레임을 더 빠르게 넘긴다.</summary>
     private static readonly float RunFrameSpeedScale = 1.6f;
@@ -60,7 +70,8 @@ public partial class PlayerSprite : Sprite2D
     }
 
     /// <summary>있으면 읽고 없으면 건너뛰는 클립 목록. 에셋을 추가하면 여기만 늘리면 된다.</summary>
-    private static readonly string[] ClipNames = { "walk", "run", "dash", "slash", "heavy", "guard", "shout" };
+    private static readonly string[] ClipNames =
+        { "breathe", "walk", "run", "dash", "punch", "heavy", "guard", "shout" };
 
     private void Load()
     {
@@ -112,8 +123,14 @@ public partial class PlayerSprite : Sprite2D
     public bool HasClip(string clip) => _clips.ContainsKey(clip);
 
     /// <summary>
-    /// 매 프레임 갱신. clip 은 재생할 애니메이션 이름("walk"/"run"/"slash"…),
-    /// progress 는 1회성 동작(공격 등)의 진행도 0~1. null 이면 루프 재생한다.
+    /// 한 번 재생하고 마지막 프레임에서 멈추는 클립. 방어처럼 '자세를 유지'하는 동작은
+    /// 계속 반복하면 들썩거려 보인다 — 자세를 잡고 그대로 버텨야 한다.
+    /// </summary>
+    private static readonly System.Collections.Generic.HashSet<string> HoldClips = new() { "guard" };
+
+    /// <summary>
+    /// 매 프레임 갱신. clip 은 재생할 애니메이션 이름("walk"/"run"/"punch"…),
+    /// progress 는 1회성 동작(공격 등)의 진행도 0~1. null 이면 루프(또는 홀드).
     /// 클립이 없으면 idle 로 폴백하므로 에셋이 없어도 안전하다.
     /// </summary>
     public void UpdateFrame(Vector2 facing, string clip, float? progress, float delta)
@@ -122,6 +139,13 @@ public partial class PlayerSprite : Sprite2D
             return;
 
         int dir = DirIndex(facing);
+
+        // 클립이 바뀌면 위상을 먼저 리셋한다 — 새 동작이 항상 첫 프레임부터 시작하도록.
+        if (clip != _lastClip)
+        {
+            _animTime = 0f;
+            _lastClip = clip;
+        }
 
         if (clip != null && _clips.TryGetValue(clip, out var byDir))
         {
@@ -133,22 +157,31 @@ public partial class PlayerSprite : Sprite2D
                 int f = Mathf.Clamp((int)(progress.Value * frames.Length), 0, frames.Length - 1);
                 Texture = frames[f];
             }
+            else if (HoldClips.Contains(clip))
+            {
+                // 홀드 — 자세를 잡고 마지막 프레임에서 정지한다. 클립이 바뀔 때 _animTime 이
+                // 리셋되므로(아래 else 절과 상태 전환) 다시 들어오면 처음부터 잡는다.
+                _animTime += delta;
+                int f = Mathf.Min((int)(_animTime / FrameTimeOf(clip)), frames.Length - 1);
+                Texture = frames[f];
+            }
             else
             {
-                // 루프 — 이동 클립. 달리기는 프레임을 더 빨리 넘긴다.
+                // 루프 — 이동/대기 클립. 달리기는 프레임을 더 빨리 넘긴다.
                 _animTime += delta * (clip == "run" ? RunFrameSpeedScale : 1f);
-                int f = Mathf.PosMod((int)(_animTime / WalkFrameTime), frames.Length);
+                int f = Mathf.PosMod((int)(_animTime / FrameTimeOf(clip)), frames.Length);
                 Texture = frames[f];
             }
         }
         else
         {
-            _animTime = 0f;
             Texture = _idle[dir];
         }
 
         Position = new Vector2(0f, FootOffsetY);
     }
+
+    private string _lastClip;
 
     /// <summary>방향 벡터 → 8방향 인덱스. south 가 0, 시계 반대로 45도씩.</summary>
     private static int DirIndex(Vector2 facing)

@@ -424,12 +424,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        // 베기류 — 스윙 초승달. 검 길이보다 크게 뻗어 시원하게. 색은 강타격이면 주황, 아니면 청백.
-        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
-        var pose = PoseFor(skill, SkillPhase.Active, 1f);
-        Color color = skill.Heavy ? new Color(1f, 0.8f, 0.45f) : new Color(0.85f, 1f, 1f);
-        fb.SlashAt(GlobalPosition, _attack.LockedFacing.Angle(),
-            _swingStartAngle, half, pose.Outer * 0.55f, pose.Outer * 1.8f, color);
+        // 근접 타격은 이펙트를 쓰지 않는다 — 주먹이 닿는 것 자체가 판정이고,
+        // 손맛은 히트스톱·넉백·화면 흔들림·스파크로 낸다. (이펙트가 동작을 가린다)
     }
 
     private void StartLunge(SkillDefinition skill)
@@ -1083,7 +1079,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             var skill = _attack.Skill;
             string clip = skill?.Stun != null ? "shout"
                 : skill?.Dash != null ? "heavy"
-                : "slash";
+                : "punch";
 
             // 스킬 한 번을 클립 한 바퀴에 매핑한다 — 선딜/판정/후딜 비율 그대로.
             float w = CombatTuning.AttackWindup;
@@ -1106,7 +1102,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (_state == PlayerState.Normal && Velocity.Length() > 5f)
             return (IsRunning ? "run" : "walk", null);
 
-        return (null, null);   // 대기 — idle
+        // 대기 — 숨쉬기 클립이 있으면 그걸 루프, 없으면 idle 한 장.
+        return ("breathe", null);
     }
 
     /// <summary>겉모습을 바꾸고 저장한다. (임시 데모 진입점 — C 키)</summary>
@@ -1143,11 +1140,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         float s = PlayerTuning.FigureScale;
         Vector2 m = AttackMotionOffset();
 
-        // 스프라이트에는 걷기 프레임이 따로 있으므로 들썩임은 대기 중에만 얹는다.
-        bool spriteWalking = _sprite != null && _sprite.IsLoaded
-            && _state == PlayerState.Normal && Velocity.Length() > 5f;
+        // 스프라이트가 그 동작의 프레임을 직접 갖고 있으면 도형 시절의 들썩임은 얹지 않는다.
+        // (걷기·달리기는 발이 프레임에 그려져 있고, 대기는 숨쉬기 클립이 대신한다.)
+        bool spriteHandlesMotion = _sprite != null && _sprite.IsLoaded;
 
-        if (!_attack.IsBusy && !spriteWalking)
+        if (!_attack.IsBusy && !spriteHandlesMotion)
         {
             bool moving = _state == PlayerState.Normal && Velocity.Length() > 5f;
             bool running = moving && IsRunning;
@@ -1301,18 +1298,22 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// </summary>
     private void DrawWeapon()
     {
+        // 스프라이트가 손에 든 것과 자세를 이미 그린다 — 도형 무기를 겹쳐 그리면
+        // 동작이 가려지고 두 개로 보인다. 스프라이트가 있으면 함성 고리만 남긴다.
+        bool hasSprite = _sprite != null && _sprite.IsLoaded;
+
         if (_attack.IsBusy && _attack.Skill != null)
         {
             var skill = _attack.Skill;
 
             if (skill.Stun != null)
                 DrawWarcryRing();          // 함성 — 퍼지는 고리
-            else
+            else if (!hasSprite)
                 DrawBlade(skill, PoseFor(skill, _attack.Phase, _attack.PhaseProgress));
             return;
         }
 
-        if (_guarding || _guardCooldown > 0f)
+        if ((_guarding || _guardCooldown > 0f) && !hasSprite)
             DrawShield();
     }
 

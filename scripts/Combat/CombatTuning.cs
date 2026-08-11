@@ -70,17 +70,21 @@ public static class CombatTuning
 
     // --- §C-2 공격 프레임 --------------------------------------------------
 
-    /// <summary>0.08s (5프레임). 이 동안 이동 속도가 WindupMoveScale 로 줄어든다.</summary>
+    // 스프라이트 애니메이션이 들어오면서 프레임 수(5~8)를 눈으로 읽을 시간이 필요해졌다.
+    // 명세값(0.08/0.10/0.16)은 도형 시절 기준이라 동작이 순식간에 지나가 버린다.
+    // 총 0.32s → 0.60s 로 늘려 예비동작→타격→마무리가 실제로 보이게 한다.
+
+    /// <summary>0.18s (11프레임). 예비 동작이 보이는 길이. 이 동안 이동 속도가 줄어든다.</summary>
     public static readonly TuningEntry AttackWindup =
-        Sec("atk.windup", GroupAttack, "선딜", 0.08f, 0.01f, 0.5f, 0.005f);
+        Sec("atk.windup", GroupAttack, "선딜", 0.18f, 0.01f, 0.5f, 0.005f);
 
-    /// <summary>0.10s (6프레임). 히트박스 활성 구간.</summary>
+    /// <summary>0.14s (8프레임). 히트박스 활성 구간.</summary>
     public static readonly TuningEntry AttackActive =
-        Sec("atk.active", GroupAttack, "판정", 0.10f, 0.01f, 0.5f, 0.005f);
+        Sec("atk.active", GroupAttack, "판정", 0.14f, 0.01f, 0.5f, 0.005f);
 
-    /// <summary>0.14s (8프레임). 이동 불가. 명세 0.16s 에서 살짝 줄여 콤보가 더 붙게 했다.</summary>
+    /// <summary>0.28s (17프레임). 이동 불가. 마무리 자세가 보이고 콤보 창도 넉넉해진다.</summary>
     public static readonly TuningEntry AttackRecovery =
-        Sec("atk.recovery", GroupAttack, "후딜", 0.14f, 0.01f, 0.8f, 0.005f);
+        Sec("atk.recovery", GroupAttack, "후딜", 0.28f, 0.01f, 0.8f, 0.005f);
 
     public static readonly TuningEntry WindupMoveScale =
         Ratio("atk.windupMove", GroupAttack, "선딜 이동 배율", 0.40f, 0f, 1f, 0.05f);
