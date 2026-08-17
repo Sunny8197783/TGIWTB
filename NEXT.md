@@ -1,65 +1,67 @@
-# 다음 세션에서 이어서 할 일
+# 다음 세션 인수인계
 
-## 지금 상태 (2026-08-07)
+## 지금 상태
 
-게임은 정상 동작. git 커밋 34개, 마지막 `a400eb8`.
-플레이어는 이미 8방향 스프라이트로 교체 완료 (`art/player/idle`, `art/player/walk`).
+게임 정상 동작. 작업 트리 깨끗. 실행은 바탕화면 `PixelMMO 실행.lnk` 또는
+`godot --path . --resolution 1280x720`.
 
-## 막혀 있던 것
+P1(전투 프로토타입) 완료 → P2 진행 중. 프로젝트 규칙은 `CLAUDE.md`.
 
-PixelLab MCP 가 **옛 API 키로 연결된 채** 세션이 시작돼서 401 이 났다.
-- 새 키는 유효함 — REST 직접 호출로 확인 완료
-- `~/.claude.json` 설정 정상, 중복 서버(`pixellab-forge-mcp`)도 정리됨
-- `/mcp reconnect` 는 이 앱 화면에서 사용 불가였음 → **재시작이 유일한 해결책**
+## 캐릭터 스프라이트 (PixelLab)
 
-### 확인된 사실 (재조사 불필요)
-- **구독 generation 있음.** REST 호출 응답에 `{"type":"generations","generations":1.0}`.
-  `/v1/balance` 의 `{"type":"usd","usd":0.0}` 은 크레딧 잔액일 뿐 — **충전 불필요**.
-- **REST 우회는 실패.** 공개 API 는 8개 엔드포인트뿐이고 캐릭터 ID 기반 애니메이션이 없다.
-  `/animate-with-text` 로 테스트했으나(1 generation 소모):
-  - 64x64 상한이라 104px 캐릭터를 잘라 넣어야 함
-  - 결과물이 정체성을 잃음 — 배낭 사라지고 머리 형태·비율·색이 전부 달라짐
-  - **이 경로는 쓰지 말 것.** MCP `animate_character` (저장된 캐릭터의 8방향을
-    레퍼런스로 쓰는 템플릿/v3 파이프라인) 를 써야 기존 idle/walk 과 일관성이 유지된다.
-
-## 할 일 — PixelLab 모션 6종 생성 후 게임에 붙이기
-
-캐릭터: `fe3099a0-dbf9-48d2-8e42-6af93e94d635`
+캐릭터 `fe3099a0-dbf9-48d2-8e42-6af93e94d635`
 사양: 104x104, 8방향, low top-down, template `mannequin`
-프롬프트(동일 캐릭터 유지용):
+프롬프트(동일 캐릭터 유지):
 > A novice adventurer in a clean white t-shirt and loose black shorts, standing in a
 > confident, ready-to-explore stance, simple athletic sneakers, clear silhouette with
 > crisp black outlines.
 
-| 모션 | 방식 | 붙을 애니 상태 |
+`art/player/{클립}/{방향}/frame_NNN.png` 규칙. `PlayerSprite.cs` 가 자동 로드하고,
+폴더가 없으면 idle 로 폴백한다. 클립 추가는 `ClipNames` 에 이름 한 줄.
+
+| 클립 | 프레임 | 생성 방식 |
 |---|---|---|
-| running | 템플릿 `running-8-frames` | `run` |
-| dash | 템플릿 `running-slide` | `dash` |
-| slash(베기) | v3 커스텀 `slashing with a sword` | `attack_windup/active/recovery` |
-| heavy(강타) | 템플릿 `surprise-uppercut` | `heavy_windup/active/recovery` |
-| guard(막기) | v3 커스텀 `raising shield to block` | `guard_hold` |
-| shout(포효) | v3 커스텀 `shouting with head back` | 함성 발동 시 |
+| breathe | 4 | `breathing-idle` 템플릿 |
+| walk | 8 | v3 (원본, 문제 없음) |
+| run | 9 | v3 정밀 프롬프트 (전력질주) |
+| dash | 6 | `running-slide` 템플릿 |
+| punch | 7 | v3 정밀 프롬프트 (스트레이트) |
+| heavy | 7 | `surprise-uppercut` 템플릿 |
+| guard | 5 | v3 정밀 프롬프트 (두 주먹 가드) |
+| shout | 6 | `fireball` 템플릿 |
 
-총 ~48 generations (104px 라 v3 는 방향당 2 일 수 있어 최대 70 예상).
+### 생성할 때 알아둘 것 (비싸게 배운 것)
 
-### 진행 순서 (중요)
-1. `get_balance` 로 구독 generation 잔액 확인
-2. **south 1방향만** 먼저 생성 → 기존 idle/walk 과 톤이 맞는지 사용자에게 보여주고 승인받기
-3. 승인 후 나머지 7방향 + 5개 모션
-4. `art/player/{상태}/{방향}/frame_NNN.png` 로 배치
-5. `PlayerSprite.cs` 에 상태별 텍스처 로딩 추가 (지금은 idle/walk 만 로드)
-6. 게임 실행해서 검증 + 커밋
+- **없는 소품을 프롬프트에 넣지 말 것.** "방패를 들고 막는다" 같이 캐릭터에 없는
+  물건을 요구하면 모델이 방향마다 다르게 상상해서 색·모양이 제각각이 된다.
+  몸동작만 구체적으로 서술하고 `no weapon, no shield, no object held` 를 붙인다.
+- **템플릿 모드**는 하나의 스켈레톤에서 8방향이 나와 일관되지만 표현이 밋밋하다.
+  **v3 커스텀**은 표현이 좋지만 방향마다 독립 생성된다 — 소품만 없으면 충분히 일관됐다.
+- 동시 작업 슬롯 8개. 한 번에 한 애니메이션(8방향)만 큐에 들어간다.
+- 결과 수령은 `https://api.pixellab.ai/mcp/characters/{id}/download` (zip).
+  전 작업이 끝날 때까지 HTTP 423 이므로 `curl --fail` 로 폴링한다.
+  zip 안 폴더 구조가 우리 규칙과 같아서 그대로 복사하면 된다.
+- 공개 REST API(`/v1/animate-with-text`)는 **쓰지 말 것** — 64x64 상한이고
+  캐릭터 정체성을 잃는다. 반드시 MCP `animate_character` 를 쓴다.
 
-한 번에 전부 태우지 말 것. 1방향 확인 → 승인 → 확장.
+### 검사
 
-## 관련 파일
-- `scripts/Entities/PlayerSprite.cs` — 8방향 스프라이트 렌더러 (여기에 상태 추가)
-- `scripts/Runtime/AnimationStateMachine.cs` — 상태머신 (13개 상태 이미 정의됨)
+`python tools/check_sprite_consistency.py` — 프레임 수 / 이펙트 오염 / 크기 편차.
+색 팔레트 전체 비교는 오탐이라 넣지 않았다(정면은 얼굴, 뒷면은 배낭이 보이므로
+방향마다 색 구성이 다른 게 정상). **동작이 자연스러운지는 결국 눈으로 봐야 한다.**
+
+## 아직 안 한 것 / 다음 후보
+
+- **칼·방패 State**: 무기를 든 별도 캐릭터 state 로 만들 예정
+  (`create_character_state` 로 같은 캐릭터의 변형 생성). 지금은 맨손만.
+- 몬스터 스프라이트 (슬라임/고블린/철턱은 아직 도형)
+- 커스터마이즈 UI (색 슬롯은 스프라이트로 대체돼 현재 무력)
+- 맵: 동굴 입구, 절벽
+
+## 핵심 파일
+
+- `scripts/Entities/PlayerSprite.cs` — 8방향 클립 렌더러 (클립별 프레임 간격, 홀드 클립)
+- `scripts/Entities/PlayerCharacter.cs` — `SpriteClip()` 이 상태→클립 매핑
+- `scripts/Runtime/AnimationStateMachine.cs` — 상태머신(관찰자, 시그널 4종)
 - `data/animations.json` — 상태 메타데이터
-- `art/player/metadata.json` — PixelLab 원본 메타데이터
-
-## 프로젝트 규칙
-`CLAUDE.md` 참고. 특히:
-- 수치는 코드에 하드코딩 금지, `data/**.json` + 로더
-- 전투 수치는 `scripts/Combat/CombatTuning.cs` 한 곳에
-- 커밋은 마일스톤 단위, 빌드 통과 필수
+- `scripts/Combat/CombatTuning.cs` — 전투 수치 전부 (F3 로 실시간 조정)
