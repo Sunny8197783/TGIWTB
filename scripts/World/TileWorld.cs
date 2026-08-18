@@ -1,5 +1,6 @@
 using Godot;
 using PixelMmo.Combat;
+using Village = PixelMmo.Runtime.WorldLayout.Village;
 
 namespace PixelMmo.Runtime;
 
@@ -10,8 +11,8 @@ namespace PixelMmo.Runtime;
 public partial class TileWorld : TileMapLayer
 {
     // 아틀라스 타일 인덱스 (x 좌표)
-    private const int TileTownA = 0;
-    private const int TileTownB = 1;
+    private const int TileGrassA = 0;      // 마을 잔디
+    private const int TileGrassB = 1;
     private const int TileMeadowA = 2;
     private const int TileMeadowB = 3;
     private const int TileDenA = 4;
@@ -27,12 +28,20 @@ public partial class TileWorld : TileMapLayer
     private const int TileWaterA = 10;
     private const int TileWaterB = 11;
     private const int TileBridge = 12;
-    private const int TileCount = 13;
 
-    /// <summary>벽·건물·물이면 막힌 칸. 다리(TileBridge)는 통행 가능.</summary>
+    // 마을 길(흙)과 광장(돌), 훈련장 울타리.
+    private const int TileDirtA = 13;
+    private const int TileDirtB = 14;
+    private const int TileStoneA = 15;
+    private const int TileStoneB = 16;
+    private const int TileFence = 17;
+    private const int TileCount = 18;
+
+    /// <summary>벽·건물·물·울타리면 막힌 칸. 다리(TileBridge)는 통행 가능.</summary>
     private static bool IsSolid(int tileX) => tileX == TileWall
         || (tileX >= TileHouseA && tileX <= TileHouseC)
-        || tileX == TileWaterA || tileX == TileWaterB;
+        || tileX == TileWaterA || tileX == TileWaterB
+        || tileX == TileFence;
 
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
@@ -120,8 +129,8 @@ public partial class TileWorld : TileMapLayer
         var image = Image.CreateEmpty(size * TileCount, size, false, Image.Format.Rgba8);
 
         var wallColor = new Color(0.10f, 0.10f, 0.13f);
-        Fill(image, TileTownA, WorldLayout.Town.FloorColor);
-        Fill(image, TileTownB, Shade(WorldLayout.Town.FloorColor));
+        Fill(image, TileGrassA, WorldLayout.Town.FloorColor);
+        Fill(image, TileGrassB, Shade(WorldLayout.Town.FloorColor));
         Fill(image, TileMeadowA, WorldLayout.Meadow.FloorColor);
         Fill(image, TileMeadowB, Shade(WorldLayout.Meadow.FloorColor));
         Fill(image, TileDenA, WorldLayout.IronjawDen.FloorColor);
@@ -138,6 +147,15 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileWaterA, water);
         Fill(image, TileWaterB, Shade(water));
         Fill(image, TileBridge, new Color(0.52f, 0.38f, 0.22f));
+
+        // 마을 길(다져진 흙)과 광장(포장돌), 훈련장 울타리(나무).
+        var dirt = new Color(0.44f, 0.34f, 0.22f);
+        Fill(image, TileDirtA, dirt);
+        Fill(image, TileDirtB, Shade(dirt));
+        var stone = new Color(0.46f, 0.46f, 0.50f);
+        Fill(image, TileStoneA, stone);
+        Fill(image, TileStoneB, Shade(stone));
+        Fill(image, TileFence, new Color(0.40f, 0.28f, 0.16f));
 
         return ImageTexture.CreateFromImage(image);
     }
@@ -163,18 +181,12 @@ public partial class TileWorld : TileMapLayer
         }
 
         // 2) 구역 내부를 바닥으로 판다.
-        CarveZone(WorldLayout.Town, TileTownA, TileTownB);
+        CarveZone(WorldLayout.Town, TileGrassA, TileGrassB);
         CarveZone(WorldLayout.Meadow, TileMeadowA, TileMeadowB);
         CarveZone(WorldLayout.IronjawDen, TileDenA, TileDenB);
 
-        // 3) 마을에 집 배치 — 지붕색을 번갈아. 스폰 중앙(y≈34)과 허수아비는 피한다.
-        StampHouse(5, 8, 6, 5, TileHouseA);
-        StampHouse(14, 8, 6, 5, TileHouseB);
-        StampHouse(23, 8, 6, 5, TileHouseC);
-        StampHouse(5, 22, 6, 5, TileHouseC);
-        StampHouse(23, 22, 6, 5, TileHouseA);
-        StampHouse(9, 52, 6, 5, TileHouseB);
-        StampHouse(19, 52, 6, 5, TileHouseA);
+        // 3) 마을.
+        PaintVillage();
 
         // 4) 구역 사이 통로.
         CarveGate(WorldLayout.Town, WorldLayout.Meadow, TileMeadowA, TileMeadowB);
@@ -193,6 +205,76 @@ public partial class TileWorld : TileMapLayer
         // 6) 강 + 다리 — 다른 것 위에 덮어써야 하니 마지막에.
         PaintRiver();
     }
+
+    /// <summary>
+    /// 초보자 마을을 찍는다. 잔디 위에 길 → 광장 → 집 → 훈련장 → 우물 순으로 덮는다.
+    /// 뒤에 오는 것이 앞의 것을 가리므로 순서가 곧 우선순위다.
+    /// </summary>
+    private void PaintVillage()
+    {
+        FillRect(Village.MainRoad, TileDirtA, TileDirtB);
+        FillRect(Village.CrossRoad, TileDirtA, TileDirtB);
+        FillRect(Village.Plaza, TileStoneA, TileStoneB);
+
+        // 집 — 지붕색 3종을 돌려 쓴다. 한 줄에 같은 색이 붙지 않는다.
+        int[] roofs = { TileHouseA, TileHouseB, TileHouseC };
+        for (int i = 0; i < Village.Houses.Length; i++)
+        {
+            Rect2I h = Village.Houses[i];
+            StampHouse(h.Position.X, h.Position.Y, h.Size.X, h.Size.Y, roofs[i % roofs.Length]);
+        }
+
+        PaintTrainingYard();
+
+        // 우물 — 광장 돌바닥 위에 올린다.
+        FillSolid(Village.Well, TileWaterA);
+    }
+
+    /// <summary>훈련장 — 안은 흙바닥, 테두리는 울타리. 서쪽에 출입구를 낸다.</summary>
+    private void PaintTrainingYard()
+    {
+        Rect2I y = Village.TrainingYard;
+
+        FillRect(y, TileDirtA, TileDirtB);
+
+        int x0 = y.Position.X, y0 = y.Position.Y;
+        int x1 = x0 + y.Size.X - 1, y1 = y0 + y.Size.Y - 1;
+        for (int x = x0; x <= x1; x++)
+        {
+            SetCellTile(x, y0, TileFence);
+            SetCellTile(x, y1, TileFence);
+        }
+        for (int yy = y0; yy <= y1; yy++)
+        {
+            SetCellTile(x0, yy, TileFence);
+            SetCellTile(x1, yy, TileFence);
+        }
+
+        // 서쪽 출입구 — 큰길 쪽에서 걸어 들어온다.
+        for (int yy = Village.YardGateY; yy < Village.YardGateY + Village.YardGateHeight; yy++)
+            SetFloor(x0, yy, TileDirtA, TileDirtB);
+    }
+
+    private void FillRect(Rect2I r, int tileA, int tileB)
+    {
+        for (int y = r.Position.Y; y < r.Position.Y + r.Size.Y; y++)
+        {
+            for (int x = r.Position.X; x < r.Position.X + r.Size.X; x++)
+                SetFloor(x, y, tileA, tileB);
+        }
+    }
+
+    private void FillSolid(Rect2I r, int tile)
+    {
+        for (int y = r.Position.Y; y < r.Position.Y + r.Size.Y; y++)
+        {
+            for (int x = r.Position.X; x < r.Position.X + r.Size.X; x++)
+                SetCellTile(x, y, tile);
+        }
+    }
+
+    private void SetCellTile(int x, int y, int tile)
+        => SetCell(new Vector2I(x, y), SourceId, new Vector2I(tile, 0));
 
     /// <summary>초원을 세로로 가르는 강(물)과, 중앙 통로의 다리를 찍는다.</summary>
     private void PaintRiver()
@@ -249,10 +331,11 @@ public partial class TileWorld : TileMapLayer
                 SetCell(new Vector2I(xx, yy), SourceId, new Vector2I(tile, 0));
         }
 
+        // 문 앞은 밟고 다니는 자리라 흙으로 둔다 — 집이 길을 향한다는 표시.
         int doorX = x + w / 2 - 1;
         int doorY = y + h - 1;
-        SetFloor(doorX, doorY, TileTownA, TileTownB);
-        SetFloor(doorX + 1, doorY, TileTownA, TileTownB);
+        SetFloor(doorX, doorY, TileDirtA, TileDirtB);
+        SetFloor(doorX + 1, doorY, TileDirtA, TileDirtB);
     }
 
     private void SetFloor(int x, int y, int tileA, int tileB)

@@ -77,6 +77,8 @@ public partial class GameWorld : Node2D
         if (SaveSystem.Instance != null && !SaveSystem.Instance.LoadInto(_player))
             _player.ResetToNewGame();
 
+        RescueIfStuck();
+
         // 하니스가 시작 좌표를 옮길 수 있으므로 구역 판정보다 먼저 붙인다.
         if (DevCapture.IsRequested())
             AddChild(new DevCapture());
@@ -100,9 +102,29 @@ public partial class GameWorld : Node2D
             MonsterTuning.DenIronjawCount, MonsterTuning.DenRespawnSeconds);
 
         // 마을 훈련용 허수아비. 죽지 않으므로 스포너를 거치지 않고 직접 놓는다.
-        // 스폰 지점 바로 옆이라 새 캐릭터가 나오자마자 연습할 수 있다.
-        var dummy = new TrainingDummy { GlobalPosition = WorldLayout.SpawnPoint + new Vector2(40f, 0f) };
+        // 광장에서 큰길을 따라 남동쪽 훈련장 안에 있다.
+        var dummy = new TrainingDummy { GlobalPosition = WorldLayout.Village.TrainingDummySpot };
         AddChild(dummy);
+    }
+
+    /// <summary>
+    /// 불러온 좌표가 지금 맵에서 못 서는 자리면 부활 지점으로 되돌린다.
+    ///
+    /// 맵 형태를 고치면 예전 세이브의 좌표가 벽 속이나 딴 구역이 될 수 있다.
+    /// 그때 플레이어가 지형에 갇히는 대신 마을 광장에서 다시 시작하게 한다.
+    /// </summary>
+    private void RescueIfStuck()
+    {
+        if (_player == null || _tiles == null)
+            return;
+
+        Vector2 at = _player.GlobalPosition;
+        if (WorldLayout.WorldBounds.HasPoint(at) && _tiles.IsWalkable(at))
+            return;
+
+        _player.GlobalPosition = WorldLayout.SpawnPoint;
+        _player.Velocity = Vector2.Zero;
+        DebugLog.Add($"세이브 좌표 {at.X:0}/{at.Y:0} 가 지금 맵에서 막힌 자리라 마을로 돌려보냈다.");
     }
 
     private void BuildUi()
@@ -172,6 +194,7 @@ public partial class GameWorld : Node2D
         else if (@event.IsActionPressed(InputSetup.QuickLoad))
         {
             bool ok = SaveSystem.Instance?.LoadInto(_player) ?? false;
+            RescueIfStuck();
             ShowAnnounce(ok ? "불러왔다." : "불러올 것이 없다.");
             _camera.Follow(_player);
             GetViewport().SetInputAsHandled();
