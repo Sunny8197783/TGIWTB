@@ -21,15 +21,41 @@ public partial class PlayerSprite : Sprite2D
     /// <summary>클립별 프레임 간격. 없으면 WalkFrameTime. 숨쉬기는 느려야 자연스럽다.</summary>
     private static readonly System.Collections.Generic.Dictionary<string, float> FrameTime = new()
     {
-        ["breathe"] = 0.22f,   // 5프레임 x 0.22 ≈ 1.1s 한 호흡
-        ["guard"] = 0.05f,     // 자세를 빨리 잡고 홀드
+        ["breathe"] = 0.22f,   // 4프레임 x 0.22 ≈ 0.9s 한 호흡
+        ["guard"] = 0.16f,     // 4프레임 x 0.16 ≈ 0.64s — 자세를 유지한 채 숨만 쉰다
     };
 
     private float FrameTimeOf(string clip)
         => FrameTime.TryGetValue(clip, out float t) ? t : WalkFrameTime;
 
-    /// <summary>달릴 때는 같은 프레임을 더 빠르게 넘긴다.</summary>
-    private static readonly float RunFrameSpeedScale = 1.6f;
+    /// <summary>
+    /// 순환 클립의 '루프 시작 프레임'. 앞쪽 구간은 처음 한 번만 지나가고 그 뒤로는
+    /// 여기서부터 반복한다.
+    ///
+    /// PixelLab v3 는 항상 서 있는 회전 이미지에서 출발하므로, 순환 동작이라도 앞
+    /// 한두 프레임은 '자세를 잡는' 구간이 된다. 그대로 돌리면 방어는 한 바퀴마다
+    /// 가드를 풀었다 다시 잡고, 질주는 한 바퀴마다 멈칫한다. 그 구간을 진입 동작으로
+    /// 쓰고 나머지만 순환시키면 둘 다 사라진다.
+    /// </summary>
+    private static readonly System.Collections.Generic.Dictionary<string, int> LoopStart = new()
+    {
+        ["run"] = 2,     // 0~1 은 출발 자세, 2~7 여섯 프레임이 실제 질주 한 사이클
+        ["guard"] = 2,   // 0~1 은 가드를 올리는 동작, 2~3 이 자세를 유지한 채 쉬는 숨
+    };
+
+    private int LoopStartOf(string clip)
+        => LoopStart.TryGetValue(clip, out int i) ? i : 0;
+
+    /// <summary>
+    /// 달릴 때는 같은 프레임을 더 빠르게 넘긴다.
+    ///
+    /// 질주 클립이 9프레임 전체 순환에서 8프레임 중 뒤 6프레임 순환으로 바뀌면서
+    /// 같은 배율이면 한 사이클이 0.45s → 0.30s 로 확 짧아진다. 그 정도면 다리가
+    /// 버둥거리는 것처럼 보이고 오히려 힘이 빠진다. 한 사이클 0.36s (6 x 0.06s) 가
+    /// 되도록 잡았다 — 이전보다 빠르지만 보폭 하나하나는 읽힌다.
+    /// 0.08(기본 간격) / 0.06 = 1.33
+    /// </summary>
+    private static readonly float RunFrameSpeedScale = 1.33f;
 
     /// <summary>에셋 캔버스가 104px 인데 캐릭터 실물은 약 28x51px. 게임 스케일에 맞춘 배율.</summary>
     private static readonly float SpriteScale = 0.55f;
@@ -71,7 +97,7 @@ public partial class PlayerSprite : Sprite2D
 
     /// <summary>있으면 읽고 없으면 건너뛰는 클립 목록. 에셋을 추가하면 여기만 늘리면 된다.</summary>
     private static readonly string[] ClipNames =
-        { "breathe", "walk", "run", "dash", "punch", "heavy", "guard", "shout" };
+        { "breathe", "walk", "run", "dash", "punch", "heavy", "guard", "block", "shout" };
 
     private void Load()
     {
@@ -123,10 +149,14 @@ public partial class PlayerSprite : Sprite2D
     public bool HasClip(string clip) => _clips.ContainsKey(clip);
 
     /// <summary>
-    /// 한 번 재생하고 마지막 프레임에서 멈추는 클립. 방어처럼 '자세를 유지'하는 동작은
-    /// 계속 반복하면 들썩거려 보인다 — 자세를 잡고 그대로 버텨야 한다.
+    /// 한 번 재생하고 마지막 프레임에서 멈추는 클립.
+    ///
+    /// 지금은 비어 있다. 방어(guard)는 '자세를 잡는 동작'이 아니라 자세를 유지한 채
+    /// 숨만 쉬는 4프레임 순환으로 다시 만들었기 때문에, 반복해도 들썩거리지 않는다.
+    /// 피격 반동은 별도의 block 클립이 진행도로 한 번만 재생한다.
+    /// 자세를 잡고 굳어야 하는 클립이 새로 생기면 여기에 이름만 넣으면 된다.
     /// </summary>
-    private static readonly System.Collections.Generic.HashSet<string> HoldClips = new() { "guard" };
+    private static readonly System.Collections.Generic.HashSet<string> HoldClips = new();
 
     /// <summary>
     /// 매 프레임 갱신. clip 은 재생할 애니메이션 이름("walk"/"run"/"punch"…),
@@ -169,7 +199,14 @@ public partial class PlayerSprite : Sprite2D
             {
                 // 루프 — 이동/대기 클립. 달리기는 프레임을 더 빨리 넘긴다.
                 _animTime += delta * (clip == "run" ? RunFrameSpeedScale : 1f);
-                int f = Mathf.PosMod((int)(_animTime / FrameTimeOf(clip)), frames.Length);
+
+                int i = (int)(_animTime / FrameTimeOf(clip));
+                int start = LoopStartOf(clip);
+                int f = (start <= 0 || start >= frames.Length)
+                    ? Mathf.PosMod(i, frames.Length)
+                    : (i < frames.Length
+                        ? i                                       // 첫 바퀴: 진입 구간부터 전부
+                        : start + Mathf.PosMod(i - frames.Length, frames.Length - start));
                 Texture = frames[f];
             }
         }

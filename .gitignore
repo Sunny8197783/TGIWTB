@@ -13,3 +13,4 @@ obj/
 # Godot export output
 build/
 export/
+tools/__pycache__/

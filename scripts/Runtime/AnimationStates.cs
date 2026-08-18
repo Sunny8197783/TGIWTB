@@ -14,6 +14,7 @@ public static class AnimationStates
     public const string AttackActive = "attack_active";
     public const string AttackRecovery = "attack_recovery";
     public const string GuardHold = "guard_hold";
+    public const string GuardBlock = "guard_block";
     public const string HeavyWindup = "heavy_windup";
     public const string HeavyActive = "heavy_active";
     public const string HeavyRecovery = "heavy_recovery";

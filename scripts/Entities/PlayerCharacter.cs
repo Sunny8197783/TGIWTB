@@ -67,6 +67,16 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private float _bufferTimer;
 
     private bool _guarding;
+
+    /// <summary>
+    /// 막기 반동 클립(block)이 남은 시간. 가드 중에 맞으면 이 시간만큼 block 을 한 번
+    /// 재생하고 다시 방어 자세(guard)로 돌아간다. 전투 수치가 아니라 연출 길이라
+    /// CombatTuning 이 아닌 여기에 둔다.
+    /// </summary>
+    private float _blockTimer;
+
+    /// <summary>막기 반동 재생 시간. 6프레임 = 0.30s (60fps 기준 18프레임).</summary>
+    private const float BlockClipSeconds = 0.30f;
     private float _guardElapsed;
     private float _riposteTimer;
 
@@ -200,6 +210,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _guardElapsed = 0f;
         _guardCooldown = 0f;
         _perfectThisGuard = false;
+        _blockTimer = 0f;
         _riposteTimer = 0f;
         _buffTimer = 0f;
         _buffAttackMultiplier = 1f;
@@ -261,6 +272,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _flashTimer -= dt;
         if (_riposteTimer > 0f)
             _riposteTimer -= dt;
+        if (_blockTimer > 0f)
+            _blockTimer -= dt;
 
         if (_buffTimer > 0f)
         {
@@ -1052,7 +1065,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             if (_state == PlayerState.Dash)
                 return AnimationStates.Dash;
             if (_guarding)
-                return AnimationStates.GuardHold;
+                return _blockTimer > 0f ? AnimationStates.GuardBlock : AnimationStates.GuardHold;
 
             if (Velocity.Length() > 5f)
                 return IsRunning ? AnimationStates.Run : AnimationStates.Walk;
@@ -1095,6 +1108,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             };
             return (clip, done / total);
         }
+
+        // 막은 직후에는 반동 클립을 한 번 재생하고(진행도로 되감기 없이) 방어 자세로 돌아간다.
+        if (_blockTimer > 0f && _guarding)
+            return ("block", 1f - _blockTimer / BlockClipSeconds);
 
         if (_guarding)
             return ("guard", null);
@@ -1519,6 +1536,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         var guard = GuardSkill()?.Guard;
         if (!_guarding || guard == null)
             return info.Amount;
+
+        // 막아냈다는 사실 자체를 몸으로 보여준다 — 퍼펙트든 아니든 반동은 똑같이 난다.
+        _blockTimer = BlockClipSeconds;
 
         if (_guardElapsed <= guard.PerfectWindow)
         {
