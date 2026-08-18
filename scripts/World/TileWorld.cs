@@ -65,6 +65,11 @@ public partial class TileWorld : TileMapLayer
     private WangTileset _dirtStone;
     private bool _terrainReady;
 
+    /// <summary>집·우물 스프라이트가 있는가. 없으면 예전 도형 블록으로 간다.</summary>
+    private bool _propsReady;
+
+    private VillageProps _props;
+
     /// <summary>같은 구역 안에서 체커보드로 밝기를 살짝 흔든다 — 움직임이 눈에 보이게.</summary>
     private static readonly float CheckerShade = 0.06f;
 
@@ -88,13 +93,27 @@ public partial class TileWorld : TileMapLayer
         Name = "TileWorld";
         // 실제 픽셀아트 타일이 들어오므로 확대할 때 뭉개지면 안 된다.
         TextureFilter = TextureFilterEnum.Nearest;
+
+        _propsReady = VillageProps.AssetsPresent();
+
         TileSet = BuildTileSet();
         Paint();
+
+        if (_propsReady)
+        {
+            _props = new VillageProps();
+            AddChild(_props);               // 타일 뒤에 붙어 바닥 위에 그려진다.
+        }
     }
 
     /// <summary>해당 월드 좌표가 벽이 아닌가.</summary>
     public bool IsWalkable(Vector2 worldPosition)
     {
+        // 집·우물은 타일이 아니라 스프라이트 + 충돌체다. 바닥 타일만 보면
+        // 집터가 '설 수 있는 자리'로 보이므로 소품에게 먼저 묻는다.
+        if (_props != null && _props.IsBlocked(worldPosition))
+            return false;
+
         Vector2I cell = LocalToMap(ToLocal(worldPosition));
         int source = GetCellSourceId(cell);
 
@@ -267,18 +286,23 @@ public partial class TileWorld : TileMapLayer
         FillRect(Village.PlazaSkirt, TileDirtA, TileDirtB);
         FillRect(Village.Plaza, TileStoneA, TileStoneB);
 
-        // 집 — 지붕색 3종을 돌려 쓴다. 한 줄에 같은 색이 붙지 않는다.
+        // 집. 스프라이트가 있으면 바닥(문 앞 흙)만 찍고 건물은 VillageProps 가 얹는다.
+        // 없으면 예전처럼 지붕색 블록으로 대신한다.
         int[] roofs = { TileHouseA, TileHouseB, TileHouseC };
         for (int i = 0; i < Village.Houses.Length; i++)
         {
             Rect2I h = Village.Houses[i];
-            StampHouse(h.Position.X, h.Position.Y, h.Size.X, h.Size.Y, roofs[i % roofs.Length]);
+            if (_propsReady)
+                StampDoorstep(h);
+            else
+                StampHouse(h.Position.X, h.Position.Y, h.Size.X, h.Size.Y, roofs[i % roofs.Length]);
         }
 
         PaintTrainingYard();
 
-        // 우물 — 광장 돌바닥 위에 올린다.
-        FillSolid(Village.Well, TileWaterA);
+        // 우물. 스프라이트가 있으면 광장 돌바닥을 그대로 두고 그 위에 얹는다.
+        if (!_propsReady)
+            FillSolid(Village.Well, TileWaterA);
 
         // 도형으로 칠해 둔 바닥을 실제 픽셀아트로 다시 칠한다.
         ApplyVillageTerrain();
@@ -492,6 +516,18 @@ public partial class TileWorld : TileMapLayer
             for (int x = fromX; x < toX; x++)
                 SetFloor(x, y, tileA, tileB);
         }
+    }
+
+    /// <summary>
+    /// 집이 스프라이트일 때의 바닥. 집터는 잔디 그대로 두고 문 앞 두 칸만 흙으로
+    /// 다진다 — 집이 어느 쪽을 보고 서 있는지 바닥으로도 읽히게.
+    /// </summary>
+    private void StampDoorstep(Rect2I h)
+    {
+        int doorX = h.Position.X + h.Size.X / 2 - 1;
+        int doorY = h.Position.Y + h.Size.Y - 1;
+        SetFloor(doorX, doorY, TileDirtA, TileDirtB);
+        SetFloor(doorX + 1, doorY, TileDirtA, TileDirtB);
     }
 
     /// <summary>집 하나 — 지붕색 블록 + 아래 가운데 2칸 문(바닥으로 뚫음).</summary>

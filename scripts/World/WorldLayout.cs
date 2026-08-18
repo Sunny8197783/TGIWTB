@@ -140,6 +140,9 @@ public static class WorldLayout
 
         /// <summary>훈련장 한가운데 — 허수아비 자리.</summary>
         public static Vector2 TrainingDummySpot => TileCenter(36, 50);
+
+        // 집·우물이 실제로 막는 범위는 여기서 정하지 않는다 — 그림의 불투명 영역에서
+        // 뽑아야 '보이는 것이 막는 것'과 같아진다. VillageProps 가 계산하고 소유한다.
     }
 
     public static ZoneDef ZoneAt(Vector2 worldPosition)
