@@ -46,6 +46,25 @@ public partial class TileWorld : TileMapLayer
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
 
+    // --- 마을 바닥의 실제 픽셀아트 (PixelLab Wang 타일셋) ---
+    //
+    // 도형 타일로 먼저 칠해 놓은 마을 바닥을, 같은 자리에 코너 지형으로 다시 칠한다.
+    // 에셋이 없으면 이 단계를 건너뛰고 도형 그대로 둔다 — 게임은 그대로 돌아간다.
+    /// <summary>바닥 지형. 숫자가 클수록 위에 얹히는 것 — 정점 판정에서 큰 쪽이 이긴다.</summary>
+    private const int TerrainNone = -1;
+    private const int TerrainGrass = 0;
+    private const int TerrainDirt = 1;
+    private const int TerrainStone = 2;
+
+    private const int GrassDirtSourceId = 1;
+    private const int DirtStoneSourceId = 2;
+
+    private const string TilesRoot = "res://art/tiles";
+
+    private WangTileset _grassDirt;
+    private WangTileset _dirtStone;
+    private bool _terrainReady;
+
     /// <summary>같은 구역 안에서 체커보드로 밝기를 살짝 흔든다 — 움직임이 눈에 보이게.</summary>
     private static readonly float CheckerShade = 0.06f;
 
@@ -67,6 +86,8 @@ public partial class TileWorld : TileMapLayer
     public override void _Ready()
     {
         Name = "TileWorld";
+        // 실제 픽셀아트 타일이 들어오므로 확대할 때 뭉개지면 안 된다.
+        TextureFilter = TextureFilterEnum.Nearest;
         TileSet = BuildTileSet();
         Paint();
     }
@@ -75,11 +96,17 @@ public partial class TileWorld : TileMapLayer
     public bool IsWalkable(Vector2 worldPosition)
     {
         Vector2I cell = LocalToMap(ToLocal(worldPosition));
-        return GetCellSourceId(cell) == SourceId
-            && !IsSolid(GetCellAtlasCoords(cell).X);
+        int source = GetCellSourceId(cell);
+
+        // Wang 지형 소스에는 바닥만 들어 있다 — 충돌 폴리곤도 없다.
+        // (마을 바닥을 지형으로 다시 칠하면 소스 번호가 바뀌므로 여기서 함께 본다.)
+        if (source == GrassDirtSourceId || source == DirtStoneSourceId)
+            return true;
+
+        return source == SourceId && !IsSolid(GetCellAtlasCoords(cell).X);
     }
 
-    private static TileSet BuildTileSet()
+    private TileSet BuildTileSet()
     {
         var tileSet = new TileSet
         {
@@ -120,7 +147,30 @@ public partial class TileWorld : TileMapLayer
             data.SetCollisionPolygonPoints(PhysicsLayer, 0, square);
         }
 
+        AddVillageTerrains(tileSet);
         return tileSet;
+    }
+
+    /// <summary>
+    /// 마을 바닥용 Wang 타일셋 두 벌(잔디↔흙, 흙↔돌)을 붙인다.
+    ///
+    /// 두 벌이 흙을 공유한다. 생성할 때 흙을 base_tile_id 로 체인해 뒀으므로
+    /// 두 시트의 흙 그림이 같고, 광장 둘레(PlazaSkirt)에서 자연스럽게 이어진다.
+    ///
+    /// 한 벌이라도 없으면 아예 쓰지 않는다. 절반만 실제 아트인 상태보다
+    /// 전부 도형인 편이 낫고, 무엇보다 게임이 멈추지 않는다.
+    /// </summary>
+    private void AddVillageTerrains(TileSet tileSet)
+    {
+        _grassDirt = WangTileset.Load(tileSet, GrassDirtSourceId,
+            $"{TilesRoot}/grass_dirt_metadata.json", $"{TilesRoot}/grass_dirt_image.png");
+
+        _dirtStone = WangTileset.Load(tileSet, DirtStoneSourceId,
+            $"{TilesRoot}/dirt_stone_metadata.json", $"{TilesRoot}/dirt_stone_image.png");
+
+        _terrainReady = _grassDirt != null && _dirtStone != null;
+        if (!_terrainReady)
+            GD.Print("[TileWorld] 마을 타일셋이 없어 도형 바닥으로 간다.");
     }
 
     private static ImageTexture BuildAtlasTexture()
@@ -214,6 +264,7 @@ public partial class TileWorld : TileMapLayer
     {
         FillRect(Village.MainRoad, TileDirtA, TileDirtB);
         FillRect(Village.CrossRoad, TileDirtA, TileDirtB);
+        FillRect(Village.PlazaSkirt, TileDirtA, TileDirtB);
         FillRect(Village.Plaza, TileStoneA, TileStoneB);
 
         // 집 — 지붕색 3종을 돌려 쓴다. 한 줄에 같은 색이 붙지 않는다.
@@ -228,6 +279,127 @@ public partial class TileWorld : TileMapLayer
 
         // 우물 — 광장 돌바닥 위에 올린다.
         FillSolid(Village.Well, TileWaterA);
+
+        // 도형으로 칠해 둔 바닥을 실제 픽셀아트로 다시 칠한다.
+        ApplyVillageTerrain();
+    }
+
+    /// <summary>
+    /// 마을 바닥을 실제 픽셀아트로 다시 칠한다.
+    ///
+    /// 방금 찍어 둔 도형 타일을 그대로 '어디가 무슨 지형인지'의 정답표로 쓴다 —
+    /// 배치 로직을 두 벌 유지하지 않기 위함이다. 집·울타리·우물처럼 막힌 칸은
+    /// 지형이 없으므로 건너뛰고, 그 자리엔 도형 타일이 그대로 남는다.
+    ///
+    /// Wang 타일은 '칸'이 아니라 '네 모서리'로 정해진다. 그래서 칸 지형에서
+    /// 정점 지형을 먼저 뽑고(맞닿은 칸 중 가장 위 지형이 이긴다), 각 칸의
+    /// 네 정점으로 타일을 고른다. 이러면 경계가 칸 경계가 아니라 칸 한가운데를
+    /// 지나가서 길이 자연스럽게 휜다.
+    /// </summary>
+    private void ApplyVillageTerrain()
+    {
+        if (!_terrainReady)
+            return;
+
+        Rect2I town = WorldLayout.Town.Tiles;
+        int w = town.Size.X, h = town.Size.Y;
+        int ox = town.Position.X, oy = town.Position.Y;
+
+        // 1) 칸 지형표. 막힌 칸은 TerrainNone.
+        var cell = new int[w, h];
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+                cell[x, y] = TerrainOfCell(ox + x, oy + y);
+        }
+
+        // 2) 정점 지형표 (w+1) x (h+1). 정점에 닿은 네 칸 중 가장 위 지형이 이긴다.
+        //    막힌 칸은 지형이 없으므로 판정에서 빠지고, 아무 것도 없으면 잔디로 둔다.
+        var vertex = new int[w + 1, h + 1];
+        for (int vy = 0; vy <= h; vy++)
+        {
+            for (int vx = 0; vx <= w; vx++)
+            {
+                int best = TerrainNone;
+                for (int dy = -1; dy <= 0; dy++)
+                {
+                    for (int dx = -1; dx <= 0; dx++)
+                    {
+                        int cx = vx + dx, cy = vy + dy;
+                        if (cx < 0 || cy < 0 || cx >= w || cy >= h)
+                            continue;
+                        if (cell[cx, cy] > best)
+                            best = cell[cx, cy];
+                    }
+                }
+                vertex[vx, vy] = best < 0 ? TerrainGrass : best;
+            }
+        }
+
+        // 3) 칸마다 네 정점으로 타일을 고른다.
+        int painted = 0, skipped = 0;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                if (cell[x, y] == TerrainNone)
+                    continue;                       // 집·울타리·우물은 도형 그대로.
+
+                if (PaintWangCell(ox + x, oy + y,
+                        vertex[x, y], vertex[x + 1, y], vertex[x, y + 1], vertex[x + 1, y + 1]))
+                    painted++;
+                else
+                    skipped++;
+            }
+        }
+
+        GD.Print($"[TileWorld] 마을 바닥 {painted}칸 픽셀아트로 교체"
+            + (skipped > 0 ? $", {skipped}칸은 도형 유지(지형 조합 없음)" : ""));
+    }
+
+    /// <summary>도형 타일을 보고 그 칸의 바닥 지형을 되읽는다. 막힌 칸은 TerrainNone.</summary>
+    private int TerrainOfCell(int x, int y) => GetCellAtlasCoords(new Vector2I(x, y)).X switch
+    {
+        TileGrassA or TileGrassB => TerrainGrass,
+        TileDirtA or TileDirtB => TerrainDirt,
+        TileStoneA or TileStoneB => TerrainStone,
+        _ => TerrainNone,
+    };
+
+    /// <summary>
+    /// 네 코너 지형으로 Wang 타일 하나를 찍는다.
+    /// 잔디와 돌이 한 칸에서 만나면 해당 타일셋이 없다 — 그 칸은 손대지 않는다.
+    /// (광장을 흙 마당으로 감쌌기 때문에 정상 배치에서는 생기지 않는다.)
+    /// </summary>
+    private bool PaintWangCell(int x, int y, int nw, int ne, int sw, int se)
+    {
+        int lo = Mathf.Min(Mathf.Min(nw, ne), Mathf.Min(sw, se));
+        int hi = Mathf.Max(Mathf.Max(nw, ne), Mathf.Max(sw, se));
+
+        WangTileset set;
+        int upper;
+        if (hi <= TerrainDirt)               // 잔디 / 흙
+        {
+            set = _grassDirt;
+            upper = TerrainDirt;
+        }
+        else if (lo >= TerrainDirt)          // 흙 / 돌
+        {
+            set = _dirtStone;
+            upper = TerrainStone;
+        }
+        else
+        {
+            return false;                    // 잔디 + 돌 — 전환 타일셋이 없다.
+        }
+
+        int wang = (nw == upper ? 8 : 0) + (ne == upper ? 4 : 0)
+                 + (sw == upper ? 2 : 0) + (se == upper ? 1 : 0);
+        if (!set.Has(wang))
+            return false;
+
+        SetCell(new Vector2I(x, y), set.SourceId, set.Atlas(wang));
+        return true;
     }
 
     /// <summary>훈련장 — 안은 흙바닥, 테두리는 울타리. 서쪽에 출입구를 낸다.</summary>

@@ -105,6 +105,15 @@ public static class WorldLayout
         /// <summary>세로 길. 마을을 남북으로 관통한다.</summary>
         public static readonly Rect2I CrossRoad = new(22, 2, 4, 64);
 
+        /// <summary>
+        /// 광장 둘레의 흙 마당. 돌바닥이 잔디에 직접 닿지 않게 하는 완충대다.
+        ///
+        /// Wang 타일셋은 '두 지형 사이의 전환'만 담는다. 돌이 잔디에도 닿으면
+        /// 잔디↔돌 타일셋이 한 벌 더 필요해진다. 돌을 흙으로만 감싸면
+        /// 잔디↔흙, 흙↔돌 두 벌로 마을 전체를 덮을 수 있다.
+        /// </summary>
+        public static readonly Rect2I PlazaSkirt = new(16, 26, 16, 16);
+
         /// <summary>광장 — 두 길의 교차점을 덮는 돌바닥.</summary>
         public static readonly Rect2I Plaza = new(17, 27, 14, 14);
 
