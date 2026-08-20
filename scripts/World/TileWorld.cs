@@ -152,7 +152,44 @@ public partial class TileWorld : TileMapLayer
         // 여기서 만들기만 하고 트리에 붙이지는 않는다 — GameWorld 가 자기 자식으로
         // 받아 가야 플레이어와 같은 Y 정렬 묶음에 들어간다.
         if (_propsReady)
+        {
             _props = new VillageProps(_town.Props);
+            ReportBlockedRoads();
+        }
+    }
+
+    /// <summary>
+    /// 길 위인데 막혀 있는 칸을 센다.
+    ///
+    /// "건물에 닿지도 않았는데 막힌다"는 건 눈으로는 잘 안 보인다 — 걸어 보다
+    /// 우연히 걸려야 안다. 건물 충돌은 그림에서 뽑으므로 캔버스가 크거나
+    /// 그림이 캔버스 밖으로 삐져나오면 길을 덮을 수 있다. 그러면 여기 숫자가 뛴다.
+    /// </summary>
+    private void ReportBlockedRoads()
+    {
+        Rect2I town = WorldLayout.Town.Tiles;
+        int roads = 0, blocked = 0;
+        var worst = new Vector2I(-1, -1);
+
+        for (int y = 0; y < town.Size.Y; y++)
+        {
+            for (int x = 0; x < town.Size.X; x++)
+            {
+                if (!_town.IsRoadCell(x, y))
+                    continue;
+                roads++;
+
+                if (_props.IsBlocked(WorldLayout.TileCenter(town.Position.X + x, town.Position.Y + y)))
+                {
+                    blocked++;
+                    if (worst.X < 0)
+                        worst = new Vector2I(town.Position.X + x, town.Position.Y + y);
+                }
+            }
+        }
+
+        string where = worst.X < 0 ? "" : $" (처음: {worst.X},{worst.Y})";
+        GD.Print($"[TileWorld] 길 {roads}칸 중 막힌 칸 {blocked}칸{where}");
     }
 
     /// <summary>해당 월드 좌표가 벽이 아닌가.</summary>
@@ -288,9 +325,10 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileFence, new Color(0.40f, 0.28f, 0.16f));
 
         // 성벽 3단 — 볕 드는 흉벽 / 몸통 / 그늘. 색만으로 두께가 읽힌다.
-        Fill(image, TileTownWallTop, new Color(0.62f, 0.60f, 0.55f));
-        Fill(image, TileTownWall, new Color(0.47f, 0.45f, 0.42f));
-        Fill(image, TileTownWallBase, new Color(0.31f, 0.30f, 0.29f));
+        // 단색으로 칠하면 회색 띠일 뿐이라 돌 쌓은 결을 직접 그려 넣는다.
+        Masonry(image, TileTownWallTop, new Color(0.62f, 0.60f, 0.55f));
+        Masonry(image, TileTownWall, new Color(0.47f, 0.45f, 0.42f));
+        Masonry(image, TileTownWallBase, new Color(0.31f, 0.30f, 0.29f));
 
         return ImageTexture.CreateFromImage(image);
     }
@@ -299,6 +337,53 @@ public partial class TileWorld : TileMapLayer
     {
         int size = WorldLayout.TileSize;
         image.FillRect(new Rect2I(tileIndex * size, 0, size, size), color);
+    }
+
+    /// <summary>돌 한 켜의 높이(px). 32px 타일에 네 켜가 들어간다.</summary>
+    private const int MasonryCourse = 8;
+
+    /// <summary>돌 하나의 폭(px).</summary>
+    private const int MasonryBlock = 11;
+
+    /// <summary>
+    /// 성벽 타일에 돌 쌓은 결을 그린다.
+    ///
+    /// 성벽은 팔각이라 대각선 구간이 있어서, 스프라이트를 늘어놓는 방식으로는
+    /// 이음매가 어긋난다. 타일 한 장에 무늬를 넣으면 어느 방향이든 그대로 이어진다.
+    /// 켜마다 반 칸씩 어긋나게 쌓고 돌마다 밝기를 흔들어, 32px 안에서도
+    /// '쌓아 올린 것'으로 읽히게 한다. 무늬는 좌표로만 정해지므로 매번 같다.
+    /// </summary>
+    private static void Masonry(Image image, int tileIndex, Color baseColor)
+    {
+        int size = WorldLayout.TileSize;
+        int ox = tileIndex * size;
+
+        var mortar = new Color(baseColor.R * 0.62f, baseColor.G * 0.62f, baseColor.B * 0.64f);
+        image.FillRect(new Rect2I(ox, 0, size, size), mortar);
+
+        for (int y = 0; y < size; y++)
+        {
+            int course = y / MasonryCourse;
+            if (y % MasonryCourse == 0)
+                continue;                                  // 가로 줄눈
+
+            // 켜마다 반 칸 어긋나게 — 벽돌이 일자로 서면 격자무늬가 된다.
+            int shift = (course % 2) * (MasonryBlock / 2);
+
+            for (int x = 0; x < size; x++)
+            {
+                int block = (x + shift) / MasonryBlock;
+                if ((x + shift) % MasonryBlock == 0)
+                    continue;                              // 세로 줄눈
+
+                // 돌마다 밝기를 조금씩 흔든다. 좌표 해시라 실행할 때마다 같다.
+                float jitter = ((block * 7 + course * 13) % 5 - 2) * 0.035f;
+                image.SetPixel(ox + x, y, new Color(
+                    Mathf.Clamp(baseColor.R + jitter, 0f, 1f),
+                    Mathf.Clamp(baseColor.G + jitter, 0f, 1f),
+                    Mathf.Clamp(baseColor.B + jitter, 0f, 1f)));
+            }
+        }
     }
 
     private static Color Shade(Color color)

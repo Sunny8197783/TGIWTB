@@ -48,6 +48,8 @@ public partial class VillageProps : Node2D
     private static readonly Dictionary<string, int> BaseBandOverride = new()
     {
         ["tree_conifer"] = 14,
+        ["tree_oak"] = 14,
+        ["orchard_tree"] = 12,
         ["tree_stump"] = 14,
     };
 
@@ -108,8 +110,8 @@ public partial class VillageProps : Node2D
         "bench", "laundry_line", "veg_patch", "chickens", "hand_cart", "fence_section",
         "log_pile", "training_dummy", "weapon_rack",
 
-        // 성 밖
-        "tree_conifer", "bridge", "farm_plot",
+        // 성 밖 — 숲 / 농지 / 목초지
+        "tree_conifer", "tree_oak", "farm_plot", "orchard_tree", "haystack", "boulder",
     };
 
     /// <summary>

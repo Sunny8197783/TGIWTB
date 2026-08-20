@@ -91,9 +91,19 @@ public sealed class TownGenerator
     private const float RingA = 0.32f;   // 시장 거리 (포석)
     private const float RingB = 0.49f;   // 주거 순환로 (흙)
     private const float RingC = 0.69f;   // 바깥 순환로 (흙)
-    private const int RingWidth = 2;
+    /// <summary>
+    /// 순환로 폭. Wang 타일은 경계를 칸 한가운데로 지나가게 그리므로, 2로 두면
+    /// 화면에서는 4칸짜리 길로 보인다. 골목까지 겹치면 마을 바닥이 흙밭이 된다.
+    /// 1이면 화면에서 3칸 — 마차 한 대 지날 뒷길로 읽힌다.
+    /// </summary>
+    private const int RingWidth = 1;
 
-    private const int AvenueHalfWidth = 2;    // 성문으로 뻗는 대로 (포석, 5칸)
+    /// <summary>
+    /// 성문으로 뻗는 대로의 반폭. 2(=5칸)로 두면 게임 안에서 봤을 때 거리가 아니라
+    /// 광장처럼 보인다 — 화면에 40칸밖에 안 들어오는데 그 중 5칸이 한 길이다.
+    /// 3칸이면 마차가 지나갈 큰길로 읽히면서 양옆에 집이 들어설 땅이 남는다.
+    /// </summary>
+    private const int AvenueHalfWidth = 1;
 
     /// <summary>
     /// 골목 갈래. 안쪽은 둘레가 짧아 갈래를 늘리면 골목끼리 붙어 버린다 —
@@ -158,6 +168,9 @@ public sealed class TownGenerator
     // ── 결과 ─────────────────────────────────────────────────────
     public Surface[,] Ground { get; }
     public List<PropPlacement> Props { get; } = new();
+
+    /// <summary>그 칸이 사람이 다니는 길인가. TileWorld 가 길 막힘을 검사할 때 쓴다.</summary>
+    public bool IsRoadCell(int x, int y) => Inside(x, y) && _road[x, y];
 
     public Vector2 TrainingDummySpot { get; private set; }
     public Rect2I TrainingYard { get; private set; }
@@ -672,38 +685,38 @@ public sealed class TownGenerator
     private void ReserveTraining()
     {
         int x = (int)(_cx - _radius * 0.66f);
-        int y = (int)(_cy - 9);
+        int y = (int)(_cy - 8);
 
-        var pad = new Rect2I(x - 1, y - 2, 18, 15);
+        var pad = new Rect2I(x - 1, y - 2, 15, 13);
         BlobGround(pad, Surface.Dirt);      // 네모로 깔면 갈색 상자가 하나 놓인 것처럼 보인다
         Take(pad);
 
         Props.Add(new PropPlacement(Abs(new Rect2I(x, y, 5, 4)), "training_hall"));
 
-        var yard = new Rect2I(x + 7, y, 8, 11);
+        var yard = new Rect2I(x + 6, y, 7, 9);
         TrainingYard = Abs(yard);
-        YardGateY = TrainingYard.Position.Y + 4;
+        YardGateY = TrainingYard.Position.Y + 3;
         TrainingDummySpot = WorldLayout.TileCenter(
-            TrainingYard.Position.X + 4, TrainingYard.Position.Y + 7);
+            TrainingYard.Position.X + 3, TrainingYard.Position.Y + 6);
 
-        // 훈련소 앞마당 — 무기 거치대와 통. 울타리 안(TrainingYard)은 실제로
-        // 싸우는 자리라 가장자리만 채우고 가운데는 비워 둔다.
+        // 훈련소 앞마당.
         Props.Add(new PropPlacement(Abs(new Rect2I(x, y + 5, 2, 2)), "weapon_rack"));
         Props.Add(new PropPlacement(Abs(new Rect2I(x + 3, y + 5, 2, 2)), "barrels"));
         Props.Add(new PropPlacement(Abs(new Rect2I(x, y + 8, 2, 2)), "training_dummy"));
         Props.Add(new PropPlacement(Abs(new Rect2I(x + 3, y + 8, 2, 2)), "crates"));
 
-        Props.Add(new PropPlacement(
-            new Rect2I(TrainingYard.Position.X + 1, TrainingYard.Position.Y + 1, 2, 2),
-            "training_dummy"));
-        Props.Add(new PropPlacement(
-            new Rect2I(TrainingYard.Position.X + 5, TrainingYard.Position.Y + 1, 2, 2),
-            "training_dummy"));
-        Props.Add(new PropPlacement(
-            new Rect2I(TrainingYard.Position.X + 5, TrainingYard.Position.Y + 8, 2, 2),
-            "weapon_rack"));
+        // 울타리 안 — 가운데는 실제로 싸우는 자리라 비우고 가장자리를 두른다.
+        Yard(1, 1, "training_dummy");
+        Yard(4, 1, "training_dummy");
+        Yard(1, 7, "weapon_rack");
+        Yard(4, 7, "barrels");
+        Yard(5, 4, "crates");
 
         FenceYard(yard);
+
+        void Yard(int ox, int oy, string texture)
+            => Props.Add(new PropPlacement(new Rect2I(
+                TrainingYard.Position.X + ox, TrainingYard.Position.Y + oy, 2, 2), texture));
     }
 
     /// <summary>
@@ -881,10 +894,15 @@ public sealed class TownGenerator
         { "laundry_line", "flower_pots", "crates", "barrels" };
 
     private static readonly string[] YardStuff =
-        { "veg_patch", "chickens", "hand_cart", "fence_section", "firewood", "log_pile" };
+    {
+        "veg_patch", "chickens", "hand_cart", "fence_section", "firewood", "log_pile",
+        "orchard_tree", "haystack", "flower_pots", "crates",
+    };
 
     private void FillYards()
     {
+        FillCourtyardSheds();
+
         for (int y = 1; y < _h - 2; y++)
         {
             for (int x = 1; x < _w - 2; x++)
@@ -897,7 +915,7 @@ public sealed class TownGenerator
                     : NextTo(x, y, Surface.Dirt) ? AlleyClutter
                     : YardStuff;
 
-                if (_rng.Randf() > 0.5f)
+                if (_rng.Randf() > 0.80f)
                     continue;
 
                 var rect = new Rect2I(x, y, 2, 2);
@@ -912,6 +930,46 @@ public sealed class TownGenerator
         }
 
         ScatterTrees();
+    }
+
+    /// <summary>
+    /// 안마당의 헛간·창고. 실제 마을에서 집 뒤 마당은 비어 있지 않다 —
+    /// 장작광, 닭장, 헛간이 들어차 있다. 길에 접하지 않으니 정면 규칙에서
+    /// 빠지고, 그래서 뒷골목의 밀도를 여기서 벌어야 한다.
+    /// </summary>
+    private void FillCourtyardSheds()
+    {
+        for (int y = 2; y < _h - 2; y++)
+        {
+            for (int x = 2; x < _w - 2; x++)
+            {
+                if (!IsInsideWall(x, y) || _taken[x, y] || Ground[x, y] != Surface.Grass)
+                    continue;
+
+                // **바로 위 칸이 건물**일 때만 세운다. '근처에 건물이 있으면'으로
+                // 느슨하게 잡았더니 마당마다 똑같은 헛간이 버섯처럼 돋아났다.
+                // 집 뒤에 딱 붙어야 헛간으로 읽힌다.
+                if (!_building[x, y - 1] || _rng.Randf() > 0.34f)
+                    continue;
+
+                // 길가는 이미 앞줄이 차지했다. 여기는 마당 안쪽만.
+                if (NextTo(x, y, Surface.Stone) || NextTo(x, y, Surface.Dirt))
+                    continue;
+
+                var rect = new Rect2I(x, y, 1, 1);
+                if (!IsFree(rect))
+                    continue;
+
+                // Raise 를 쓰면 이 헛간도 '건물'로 기록돼서, 바로 아래 칸이 다시
+                // 조건을 만족한다 — 헛간이 아래로 줄줄이 이어져 잔디밭을 가로지른다.
+                // 그래서 자리만 잡고 건물로는 세지 않는다.
+                Take(rect);
+                Props.Add(new PropPlacement(Abs(rect),
+                    _rng.Randf() < 0.5f ? "roof_s01" : Any(FrontS).Texture));
+                _placed++;
+                x += 1;
+            }
+        }
     }
 
     private bool NextToBuilding(int x, int y)
@@ -952,7 +1010,7 @@ public sealed class TownGenerator
         {
             for (int x = 2; x < _w - 3; x += 3)
             {
-                if (!IsInsideWall(x, y) || _rng.Randf() > 0.14f)
+                if (!IsInsideWall(x, y) || _rng.Randf() > 0.22f)
                     continue;
                 if (NextTo(x, y, Surface.Stone) || NextTo(x, y, Surface.Dirt))
                     continue;
@@ -961,71 +1019,109 @@ public sealed class TownGenerator
                 if (!IsFree(rect) || Ground[x, y] != Surface.Grass)
                     continue;
 
+                // 마을 안은 활엽수가 어울린다. 침엽수는 성벽 밖 숲의 몫이다.
                 Take(rect);
-                Props.Add(new PropPlacement(Abs(rect), "tree_conifer"));
+                Props.Add(new PropPlacement(
+                    Abs(rect), _rng.Randf() < 0.7f ? "tree_oak" : "tree_conifer"));
             }
         }
     }
 
     /// <summary>
-    /// 성벽 바깥. 좌측은 침엽수림, 우측은 강과 나무다리, 우상단은 밭.
-    /// 마을이 허공에 뜬 섬처럼 보이지 않으려면 벽 밖에도 사연이 있어야 한다.
+    /// 성벽 바깥. 마을이 허공에 뜬 섬처럼 보이지 않으려면 벽 밖에도 사연이 있어야 한다.
+    ///
+    /// 예전에는 여기에 강을 팠는데, 성벽(반지름 0.84)과 맵 끝 사이가 7칸뿐이라
+    /// 강도 밭도 지도 밖으로 밀려나 아무 것도 안 보였다. 강은 어차피 옆 구역(초원)에
+    /// 이미 있으므로 지우고, 좁은 띠를 방위별로 나눠 쓰기로 했다.
+    ///
+    ///   서·북서 : 침엽수림 (마을을 등지고 어두운 숲)
+    ///   북동·동 : 밭과 과수원 (마을을 먹여 살리는 곳)
+    ///   남·남동 : 목초지 — 건초더미와 바위
     /// </summary>
     private void PaintOutside()
     {
         float wall = _radius * WallRadius;
 
-        // 우측 강 — 세로로 흐른다. 성문 앞 길과 만나는 자리에 다리를 놓는다.
-        int riverX = (int)(_cx + _radius * 0.90f);
-        if (riverX + 5 < _w)
+        for (int y = 1; y < _h - 3; y += 2)
         {
-            for (int y = 0; y < _h; y++)
-            {
-                for (int x = riverX; x < Mathf.Min(_w, riverX + 5); x++)
-                {
-                    if (Ground[x, y] == Surface.Dirt)
-                        continue;                       // 성문 앞 길은 남긴다(다리 자리)
-                    Ground[x, y] = Surface.Water;
-                    _taken[x, y] = true;
-                }
-            }
-            Props.Add(new PropPlacement(
-                Abs(new Rect2I(riverX - 1, (int)_cy - 1, 7, 3)), "bridge", solid: false));
-        }
-
-        // 좌측 침엽수림 — 벽에서 떨어진 바깥쪽에 빽빽하게.
-        for (int y = 1; y < _h - 4; y += 3)
-        {
-            for (int x = 1; x < _w - 3; x += 3)
+            for (int x = 1; x < _w - 3; x += 2)
             {
                 float dx = x - _cx, dy = y - _cy;
-                if (OctDist(dx, dy) < wall + 3f || dx > -_radius * 0.30f)
-                    continue;
-                if (_rng.Randf() > 0.55f)
-                    continue;
+                if (OctDist(dx, dy) < wall + 2f)
+                    continue;                          // 성벽에 바짝 붙이지 않는다
+                if (Ground[x, y] != Surface.Grass)
+                    continue;                          // 성문 앞 길은 비운다
 
-                var rect = new Rect2I(x, y, 2, 3);
-                if (!IsFree(rect) || Ground[x, y] != Surface.Grass)
-                    continue;
-                Take(rect);
-                Props.Add(new PropPlacement(Abs(rect), "tree_conifer"));
-            }
-        }
+                float deg = Mathf.RadToDeg(Mathf.Atan2(-dy, dx));
+                if (deg < 0f)
+                    deg += 360f;
 
-        // 우상단 밭 — 강 이쪽 편, 성벽 바깥.
-        int fx = (int)(_cx + wall + 3);
-        for (int row = 0; row < 3; row++)
-        {
-            for (int col = 0; col < 2; col++)
-            {
-                var rect = new Rect2I(fx + col * 5, 3 + row * 4, 4, 3);
-                if (!IsFree(rect))
-                    continue;
-                Take(rect);
-                Props.Add(new PropPlacement(Abs(rect), "farm_plot", solid: false));
+                if (deg >= 120f && deg < 250f)
+                    Forest(x, y);
+                else if (deg >= 250f && deg < 340f)
+                    Pasture(x, y);
+                else
+                    Farmland(x, y);
             }
         }
     }
+
+    /// <summary>서쪽 숲 — 빽빽할수록 좋다. 마을 뒤가 캄캄해야 성벽이 의미를 갖는다.</summary>
+    private void Forest(int x, int y)
+    {
+        if (_rng.Randf() > 0.62f)
+            return;
+
+        var rect = new Rect2I(x, y, 2, 3);
+        if (!IsFree(rect))
+            return;
+        Take(rect);
+        Props.Add(new PropPlacement(
+            Abs(rect), _rng.Randf() < 0.75f ? "tree_conifer" : "tree_oak"));
+    }
+
+    /// <summary>동쪽 농지 — 밭 구획과 과수원, 울타리.</summary>
+    private void Farmland(int x, int y)
+    {
+        float roll = _rng.Randf();
+        if (roll > 0.55f)
+            return;
+
+        if (roll < 0.18f)
+        {
+            var plot = new Rect2I(x, y, 4, 3);
+            if (IsFree(plot))
+            {
+                Take(plot);
+                Props.Add(new PropPlacement(Abs(plot), "farm_plot", solid: false));
+                return;
+            }
+        }
+
+        var rect = new Rect2I(x, y, 2, 2);
+        if (!IsFree(rect))
+            return;
+        Take(rect);
+        Props.Add(new PropPlacement(Abs(rect),
+            PickOne("orchard_tree", "orchard_tree", "veg_patch", "fence_section", "haystack")));
+    }
+
+    /// <summary>남쪽 목초지 — 건초더미와 바위, 드문드문 나무.</summary>
+    private void Pasture(int x, int y)
+    {
+        if (_rng.Randf() > 0.42f)
+            return;
+
+        var rect = new Rect2I(x, y, 2, 2);
+        if (!IsFree(rect))
+            return;
+        Take(rect);
+        Props.Add(new PropPlacement(Abs(rect),
+            PickOne("haystack", "boulder", "fence_section", "log_pile", "tree_oak")));
+    }
+
+    private string PickOne(params string[] options)
+        => options[_rng.RandiRange(0, options.Length - 1)];
 
     // ── 격자 도우미 ──────────────────────────────────────────────
 
