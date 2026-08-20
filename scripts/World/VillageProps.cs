@@ -39,6 +39,7 @@ public partial class VillageProps : Node2D
     private static readonly string[] RequiredTextures =
     {
         "gatehouse", "fountain", "tree_conifer", "bridge", "farm_plot", "wall_section",
+        "training_dummy", "weapon_rack", "fence_section", "log_pile", "tree_stump",
     };
 
     /// <summary>쓸 그림이 전부 있는가.</summary>

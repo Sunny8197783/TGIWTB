@@ -109,16 +109,18 @@ public sealed class TownGenerator
     // ── 형태 (마을 반지름에 대한 비율) ────────────────────────────
     // 성벽을 마을 가장자리까지 밀면 벽 바깥에 아무 것도 못 놓는다.
     // 명세가 벽 밖에 숲·강·밭을 요구하므로 안쪽으로 당겨 바깥 여백을 만든다.
-    private const float WallRadius = 0.70f;
+    private const float WallRadius = 0.80f;
     private const int WallThickness = 3;
 
-    private const float PlazaRadius = 0.20f;
-    private const float InnerRingRadius = 0.36f;
-    private const float OuterRingRadius = 0.56f;
+    private const float PlazaRadius = 0.18f;
+    // 광장·순환로·대로가 서로 붙으면 중앙이 한 덩어리 포석이 되고, 구역에 남는
+    // 띠가 조각난다. 사이를 벌려 구역마다 실제 면적을 준다.
+    private const float InnerRingRadius = 0.38f;
+    private const float OuterRingRadius = 0.60f;
 
-    private const int AvenueHalfWidth = 3;    // 성문으로 뻗는 대로 (돌)
+    private const int AvenueHalfWidth = 2;    // 성문으로 뻗는 대로 (돌)
     private const int LaneHalfWidth = 1;      // 대각선 골목 (흙)
-    private const int InnerRingWidth = 4;
+    private const int InnerRingWidth = 3;
     private const int OuterRingWidth = 3;
 
     /// <summary>팔각형을 만드는 대각선 절단 계수. 작으면 팔각, 1이면 마름모에 가깝다.</summary>
@@ -138,6 +140,7 @@ public sealed class TownGenerator
     private readonly bool[,] _taken;
     private readonly RandomNumberGenerator _rng = new();
     private readonly Dictionary<string, int> _shopCount = new();
+    private int _converted;
 
     public TownGenerator(Rect2I town)
     {
@@ -165,6 +168,7 @@ public sealed class TownGenerator
         PlacePlazaFurniture();
         PlaceGates();
 
+        PaintDistrictGround();
         PaintOutside();
 
         // 1단계는 "길과 지형만 있는 빈 마을"이다. 건물은 3~4단계에서 놓는다.
@@ -247,6 +251,66 @@ public sealed class TownGenerator
             }
         }
     }
+
+    /// <summary>
+    /// 구역별 바닥. 2단계는 건물이 없으므로, 바닥과 소품만으로 구역이 읽혀야 한다.
+    /// 훈련장과 벌목장은 사람이 밟아 풀이 없어진 흙 마당이고, 나머지는 잔디를 둔다.
+    /// </summary>
+    private void PaintDistrictGround()
+    {
+        for (int y = 0; y < _h; y++)
+        {
+            for (int x = 0; x < _w; x++)
+            {
+                if (Ground[x, y] != Surface.Grass)
+                    continue;                    // 길·광장·성벽은 그대로
+
+                District district = DistrictAt(x, y);
+                if (district == District.Training || district == District.Logging)
+                {
+                    Ground[x, y] = Surface.Dirt;
+                    _converted++;
+                }
+            }
+        }
+
+        PlaceDistrictProps();
+        GD.Print($"[Town] 훈련장·벌목장 마당 {_converted}칸");
+    }
+
+    /// <summary>
+    /// 구역을 알리는 비건물 소품. 훈련장은 허수아비·목책·무기 거치대,
+    /// 벌목장은 통나무 더미·그루터기. 건물은 3~4단계 몫이다.
+    /// </summary>
+    private void PlaceDistrictProps()
+    {
+        // 마당 흙은 순환로 흙과 같은 재질이라 바닥만으로는 구역이 구분되지 않는다.
+        // 구역을 읽히게 하는 건 결국 그 안에 무엇이 서 있느냐다 — 촘촘히 놓는다.
+        for (int y = 2; y < _h - 4; y += 3)
+        {
+            for (int x = 2; x < _w - 4; x += 3)
+            {
+                District district = DistrictAt(x, y);
+                if (district != District.Training && district != District.Logging)
+                    continue;
+                if (Ground[x, y] != Surface.Dirt || _rng.Randf() > 0.55f)
+                    continue;
+
+                string texture = district == District.Training
+                    ? PickOne("training_dummy", "weapon_rack", "fence_section")
+                    : PickOne("log_pile", "tree_stump", "log_pile");
+
+                var rect = new Rect2I(x, y, 3, 2);
+                if (!IsFree(rect))
+                    continue;
+                Take(rect);
+                Props.Add(new PropPlacement(Abs(rect), texture));
+            }
+        }
+    }
+
+    private string PickOne(params string[] options)
+        => options[_rng.RandiRange(0, options.Length - 1)];
 
     /// <summary>
     /// 성벽 바깥. 좌측은 침엽수림, 우측은 강과 나무다리, 우상단은 밭.
@@ -380,19 +444,34 @@ public sealed class TownGenerator
 
     // ── 건물 ─────────────────────────────────────────────────────
 
-    private enum District { Market, Guild, Residential, Poor }
+    /// <summary>
+    /// 구역. 명세의 방위를 그대로 따른다 —
+    /// 중앙 광장 둘레 상업, 남~남서 주거(가장 밀도 높음), 서 훈련장,
+    /// 북동 길드, 동 벌목장.
+    /// </summary>
+    public enum District { None, Market, Residential, Training, Guild, Logging }
 
-    private District DistrictAt(int x, int y)
+    public District DistrictAt(int x, int y)
     {
         float dx = x - _cx, dy = y - _cy;
         float d = OctDist(dx, dy) / _radius;
 
-        if (d < InnerRingRadius + 0.08f)
-            return District.Market;              // 광장을 두르는 상점가
-        if (dx > 0f && dy < 0f)
-            return District.Guild;               // 북동 길드 구역
-        if (dx < 0f && dy > 0f && d > 0.72f)
-            return District.Poor;                // 남서 바깥 — 허름한 집
+        if (d >= WallRadius - 0.02f)
+            return District.None;                        // 성벽 바깥
+        // 상업 구역은 광장을 두르는 띠까지만. 여기를 넓게 잡으면 나머지 구역이
+        // 성벽과 순환로 사이 몇 타일로 눌려 구역이 눈에 안 보인다.
+        if (d < PlazaRadius + 0.10f)
+            return District.Market;
+
+        // 각도로 부채꼴을 가른다. 0도가 동쪽, 시계 반대 방향.
+        float deg = Mathf.RadToDeg(Mathf.Atan2(-dy, dx));
+        if (deg < 0f)
+            deg += 360f;
+
+        if (deg >= 22.5f && deg < 67.5f)   return District.Guild;      // 북동
+        if (deg >= 157.5f && deg < 202.5f) return District.Training;   // 서
+        if (deg < 22.5f || deg >= 337.5f)  return District.Logging;    // 동
+        if (deg >= 202.5f && deg < 315f)   return District.Residential; // 남서~남
         return District.Residential;
     }
 
@@ -406,7 +485,8 @@ public sealed class TownGenerator
             ? Manor
             : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
 
-        District.Poor => Shacks[_rng.RandiRange(0, Shacks.Length - 1)],
+        District.Training or District.Logging
+            => Shacks[_rng.RandiRange(0, Shacks.Length - 1)],
 
         _ => _rng.Randf() < 0.22f
             ? TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)]
