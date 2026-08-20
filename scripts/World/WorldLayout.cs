@@ -34,13 +34,12 @@ public static class WorldLayout
     public const int TileSize = 16;
 
     /// <summary>
-    /// 2336 / 16. 마을을 30 → 44 → 56 타일로 넓히면서 초원·굴을 오른쪽으로 밀었다.
-    /// 주택가·부촌·상점가·빈민가·훈련소가 각각 한 구획씩 차지하려면 이 정도는 있어야 한다.
+    /// 마을이 56x64 → 188x188 로 커지면서(넓이 약 10배) 월드도 같이 커졌다.
+    /// 이 규모는 손으로 건물을 놓을 수 없어서 TownGenerator 가 거리와 필지를 만든다.
     /// </summary>
-    public const int WidthTiles = 146;
+    public const int WidthTiles = 336;
 
-    /// <summary>1088 / 16 — 명세의 1080 에 가장 가까운 타일 배수.</summary>
-    public const int HeightTiles = 68;
+    public const int HeightTiles = 192;
 
     public static readonly Vector2 WorldSizePx = new(WidthTiles * TileSize, HeightTiles * TileSize);
 
@@ -57,7 +56,7 @@ public static class WorldLayout
     {
         Id = "town",
         DisplayName = "초보자 마을",
-        Tiles = new Rect2I(2, 2, 56, 64),
+        Tiles = new Rect2I(2, 2, 188, 188),
         Safe = true,
         // 마을 바닥은 잔디다. 길·광장은 TileWorld 가 그 위에 덮는다.
         FloorColor = new Color(0.22f, 0.34f, 0.20f),
@@ -67,7 +66,7 @@ public static class WorldLayout
     {
         Id = "meadow",
         DisplayName = "초원",
-        Tiles = new Rect2I(60, 2, 52, 64),
+        Tiles = new Rect2I(192, 2, 100, 188),
         Safe = false,
         FloorColor = new Color(0.16f, 0.26f, 0.18f),
     };
@@ -76,7 +75,7 @@ public static class WorldLayout
     {
         Id = "ironjaw_den",
         DisplayName = "철턱의 굴",
-        Tiles = new Rect2I(114, 2, 30, 64),
+        Tiles = new Rect2I(294, 2, 40, 188),
         Safe = false,
         FloorColor = new Color(0.26f, 0.16f, 0.16f),
     };

@@ -70,6 +70,10 @@ public partial class TileWorld : TileMapLayer
     private bool _propsReady;
 
     private VillageProps _props;
+    private TownGenerator _town;
+
+    /// <summary>훈련장 허수아비 자리. GameWorld 가 개체를 놓을 때 쓴다.</summary>
+    public Vector2 TrainingDummySpot => _town?.TrainingDummySpot ?? WorldLayout.SpawnPoint;
 
     /// <summary>같은 구역 안에서 체커보드로 밝기를 살짝 흔든다 — 움직임이 눈에 보이게.</summary>
     private static readonly float CheckerShade = 0.06f;
@@ -77,22 +81,35 @@ public partial class TileWorld : TileMapLayer
     // 초원 안의 것들은 초원 왼쪽 끝을 기준으로 잡는다.
     // 예전에는 절대 좌표라, 마을을 넓혀 초원을 오른쪽으로 밀었을 때 강과 바위가
     // 마을 한복판에 남아 있었다. 구역이 움직이면 같이 움직여야 한다.
-    private static int MeadowX(int offset) => WorldLayout.Meadow.Tiles.Position.X + offset;
+    private static Rect2I MeadowTiles => WorldLayout.Meadow.Tiles;
+    private static int MeadowX(float frac)
+        => MeadowTiles.Position.X + (int)(MeadowTiles.Size.X * frac);
+    private static int MeadowY(float frac)
+        => MeadowTiles.Position.Y + (int)(MeadowTiles.Size.Y * frac);
 
     /// <summary>초원에 박아 둘 장애물 기둥. 이동에 리듬을 준다.</summary>
     private static Rect2I[] MeadowPillars => new Rect2I[]
     {
-        new(MeadowX(10), 14, 4, 4),
-        new(MeadowX(14), 48, 3, 5),
-        new(MeadowX(38), 20, 3, 6),
-        new(MeadowX(36), 46, 6, 3),
+        new(MeadowX(0.12f), MeadowY(0.15f), 5, 5),
+        new(MeadowX(0.18f), MeadowY(0.70f), 4, 6),
+        new(MeadowX(0.72f), MeadowY(0.22f), 4, 7),
+        new(MeadowX(0.66f), MeadowY(0.68f), 7, 4),
     };
 
-    /// <summary>초원을 가로지르는 세로 강(물). 못 지나감.</summary>
-    private static Rect2I MeadowRiver => new(MeadowX(22), 2, 4, 64);
+    /// <summary>초원을 세로로 가르는 강(물). 못 지나감. 구역 높이 전체를 덮는다.</summary>
+    private static Rect2I MeadowRiver
+        => new(MeadowX(0.42f), MeadowTiles.Position.Y, 4, MeadowTiles.Size.Y);
 
-    /// <summary>강을 건너는 다리 — 동쪽 통로 높이(y31~36)에 맞춘다.</summary>
-    private static Rect2I MeadowBridge => new(MeadowX(22), 31, 4, 6);
+    /// <summary>강을 건너는 다리 — 마을에서 나오는 통로 높이에 맞춘다.</summary>
+    private static Rect2I MeadowBridge
+    {
+        get
+        {
+            int centerY = WorldLayout.Town.Tiles.Position.Y + WorldLayout.Town.Tiles.Size.Y / 2;
+            return new Rect2I(MeadowX(0.42f), centerY - WorldLayout.GateHeight / 2,
+                4, WorldLayout.GateHeight);
+        }
+    }
 
     public override void _Ready()
     {
@@ -100,10 +117,9 @@ public partial class TileWorld : TileMapLayer
         // 실제 픽셀아트 타일이 들어오므로 확대할 때 뭉개지면 안 된다.
         TextureFilter = TextureFilterEnum.Nearest;
 
-        // 손으로 놓은 사각형이 서른 개가 넘는다. 겹치면 화면에서는 '조금 이상한'
-        // 정도로만 보여서 놓치기 쉬우므로 시작할 때 한 번 훑는다.
-        foreach (string problem in VillagePlan.Validate())
-            GD.PushWarning($"[VillagePlan] {problem}");
+        // 마을을 만든다. 188x188 에 건물이 수백 채라 손으로 놓을 수 없다.
+        _town = new TownGenerator(WorldLayout.Town.Tiles);
+        _town.Generate();
 
         _propsReady = VillageProps.AssetsPresent();
 
@@ -112,7 +128,7 @@ public partial class TileWorld : TileMapLayer
 
         if (_propsReady)
         {
-            _props = new VillageProps();
+            _props = new VillageProps(_town.Props);
             AddChild(_props);               // 타일 뒤에 붙어 바닥 위에 그려진다.
         }
     }
@@ -298,29 +314,33 @@ public partial class TileWorld : TileMapLayer
     /// </summary>
     private void PaintVillage()
     {
-        // 거리와 골목. 적힌 순서대로 덮으므로 뒤에 오는 큰길이 위로 온다.
-        foreach (PathDef path in VillagePlan.Paths)
+        // 생성기가 만든 바닥표를 그대로 찍는다.
+        Rect2I town = WorldLayout.Town.Tiles;
+        for (int y = 0; y < town.Size.Y; y++)
         {
-            switch (path.Surface)
+            for (int x = 0; x < town.Size.X; x++)
             {
-                case Surface.Dirt: FillRect(path.Tiles, TileDirtA, TileDirtB); break;
-                case Surface.Stone: FillRect(path.Tiles, TileStoneA, TileStoneB); break;
-                default: FillRect(path.Tiles, TileGrassA, TileGrassB); break;
+                int tx = town.Position.X + x, ty = town.Position.Y + y;
+                switch (_town.Ground[x, y])
+                {
+                    case Surface.Dirt: SetFloor(tx, ty, TileDirtA, TileDirtB); break;
+                    case Surface.Stone: SetFloor(tx, ty, TileStoneA, TileStoneB); break;
+                    default: SetFloor(tx, ty, TileGrassA, TileGrassB); break;
+                }
             }
         }
 
         PaintTrainingYard();
 
         // 건물·소품은 VillageProps 가 스프라이트로 얹는다. 그림이 없을 때만
-        // 예전처럼 지붕색 블록으로 자리를 표시한다 — 게임은 그대로 돌아가야 한다.
+        // 지붕색 블록으로 자리를 표시한다 — 게임은 그대로 돌아가야 한다.
         if (!_propsReady)
         {
             int[] roofs = { TileHouseA, TileHouseB, TileHouseC };
-            for (int i = 0; i < VillagePlan.Props.Length; i++)
-                FillSolid(VillagePlan.Props[i].Tiles, roofs[i % roofs.Length]);
+            for (int i = 0; i < _town.Props.Count; i++)
+                FillSolid(_town.Props[i].Tiles, roofs[i % roofs.Length]);
         }
 
-        // 도형으로 칠해 둔 바닥을 실제 픽셀아트로 다시 칠한다.
         ApplyVillageTerrain();
     }
 
@@ -465,7 +485,7 @@ public partial class TileWorld : TileMapLayer
     /// <summary>훈련장 — 안은 흙바닥, 테두리는 울타리. 서쪽에 출입구를 낸다.</summary>
     private void PaintTrainingYard()
     {
-        Rect2I y = VillagePlan.TrainingYard;
+        Rect2I y = _town.TrainingYard;
 
         FillRect(y, TileDirtA, TileDirtB);
 
@@ -483,7 +503,7 @@ public partial class TileWorld : TileMapLayer
         }
 
         // 서쪽 출입구 — 큰길 쪽에서 걸어 들어온다.
-        for (int yy = VillagePlan.YardGateY; yy < VillagePlan.YardGateY + VillagePlan.YardGateHeight; yy++)
+        for (int yy = _town.YardGateY; yy < _town.YardGateY + TownGenerator.YardGateHeight; yy++)
             SetFloor(x0, yy, TileDirtA, TileDirtB);
     }
 

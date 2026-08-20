@@ -29,28 +29,51 @@ public partial class VillageProps : Node2D
     /// <summary>실제로 막는 자리(월드 px).</summary>
     private readonly List<Rect2> _solid = new();
 
-    /// <summary>계획에 적힌 그림이 전부 있는가.</summary>
+    /// <summary>
+    /// 텍스처별 불투명 경계 캐시. 소품이 수백 개인데 같은 그림을 계속 쓰므로,
+    /// 캐시하지 않으면 같은 픽셀을 수백 번 다시 훑어 로딩이 눈에 띄게 느려진다.
+    /// </summary>
+    private static readonly Dictionary<string, Rect2> BoundsCache = new();
+
+    /// <summary>생성기가 쓰는 그림 이름 전부.</summary>
+    private static readonly string[] RequiredTextures =
+    {
+        "cottage_a", "cottage_b", "cottage_c",
+        "townhouse_a", "townhouse_b", "manor",
+        "shack_a", "shack_b", "backalley_door",
+        "shop_blacksmith", "shop_general", "shop_alchemist",
+        "shop_armor", "shop_bakery", "shop_inn",
+        "training_hall", "fountain", "notice_board",
+        "market_stall_a", "market_stall_b", "barrels",
+        "tree_oak", "tree_poplar",
+    };
+
+    /// <summary>쓸 그림이 전부 있는가.</summary>
     public static bool AssetsPresent()
     {
-        foreach (PropDef prop in VillagePlan.Props)
+        foreach (string name in RequiredTextures)
         {
-            if (!ResourceLoader.Exists($"{Root}/{prop.Texture}.png"))
+            if (!ResourceLoader.Exists($"{Root}/{name}.png"))
             {
-                GD.Print($"[VillageProps] {prop.Texture}.png 이 없다 — 도형 배치로 간다.");
+                GD.Print($"[VillageProps] {name}.png 이 없다 — 도형 배치로 간다.");
                 return false;
             }
         }
         return true;
     }
 
+    private readonly List<PropPlacement> _plan;
+
+    public VillageProps(List<PropPlacement> plan) => _plan = plan;
+
     public override void _Ready()
     {
         Name = "VillageProps";
 
-        foreach (PropDef prop in VillagePlan.Props)
+        foreach (PropPlacement prop in _plan)
             Place(prop);
 
-        GD.Print($"[VillageProps] 소품 {VillagePlan.Props.Length}개, 막는 것 {_solid.Count}개");
+        GD.Print($"[VillageProps] 소품 {_plan.Count}개, 막는 것 {_solid.Count}개");
     }
 
     /// <summary>그 월드 좌표가 소품에 막혀 있는가. TileWorld.IsWalkable 이 묻는다.</summary>
@@ -64,7 +87,7 @@ public partial class VillageProps : Node2D
         return false;
     }
 
-    private void Place(PropDef prop)
+    private void Place(PropPlacement prop)
     {
         var texture = GD.Load<Texture2D>($"{Root}/{prop.Texture}.png");
         if (texture == null)
@@ -73,12 +96,12 @@ public partial class VillageProps : Node2D
             return;
         }
 
-        Rect2 opaque = OpaqueBounds(texture);
+        Rect2 opaque = OpaqueBounds(prop.Texture, texture);
         Vector2 half = texture.GetSize() * 0.5f;
         Vector2 center = CenterOf(prop.Tiles);
 
         // 건물·나무는 아래를 맞춘다 — 캔버스 여백 때문에 문이나 밑동이 떠 보이지 않도록.
-        if (prop.BottomAlign && opaque.Size.Y > 0f)
+        if (opaque.Size.Y > 0f)
         {
             float footBottom = (prop.Tiles.Position.Y + prop.Tiles.Size.Y) * WorldLayout.TileSize;
             center.Y = footBottom - (opaque.Position.Y + opaque.Size.Y) + half.Y;
@@ -110,7 +133,17 @@ public partial class VillageProps : Node2D
     }
 
     /// <summary>불투명 픽셀을 감싸는 최소 사각형. 전부 투명이면 크기 0.</summary>
-    private static Rect2 OpaqueBounds(Texture2D texture)
+    private static Rect2 OpaqueBounds(string name, Texture2D texture)
+    {
+        if (BoundsCache.TryGetValue(name, out Rect2 cached))
+            return cached;
+
+        Rect2 result = Measure(texture);
+        BoundsCache[name] = result;
+        return result;
+    }
+
+    private static Rect2 Measure(Texture2D texture)
     {
         Image image = texture.GetImage();
         if (image == null)
