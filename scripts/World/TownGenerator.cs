@@ -76,32 +76,33 @@ public sealed class TownGenerator
     /// 건물을 세울지. 단계별로 진행하는 중이라 1~2단계에서는 꺼 둔다 —
     /// 도로망과 구역이 먼저 확정돼야 건물 배치가 의미가 있다.
     /// </summary>
-    public const bool BuildingsEnabled = false;
+    public const bool BuildingsEnabled = true;
 
-    // ── 건물 ─────────────────────────────────────────────────────
-    private static readonly BuildingKind[] Cottages =
+    // ── 건물 키트 (3단계 결과) ───────────────────────────────────
+    // 32px 그리드 기준 발자국: S 1x1, M 2x2, L 3x3, XL 6x5.
+    // 크기 위계가 이 키트의 핵심이다 — 전부 비슷하면 마을이 납작해진다.
+    private static readonly BuildingKind[] Small =
     {
-        new("cottage_a", 6, 5), new("cottage_b", 6, 5), new("cottage_c", 6, 5),
+        new("kit_s_shed", 1, 1), new("kit_s02", 1, 1), new("kit_s03", 1, 1),
+        new("kit_s04", 1, 1), new("kit_s05", 1, 1), new("kit_s06", 1, 1),
+        new("kit_s07", 1, 1), new("kit_s08", 1, 1),
     };
 
-    private static readonly BuildingKind[] TownHouses =
+    private static readonly BuildingKind[] Medium =
     {
-        new("townhouse_a", 5, 6), new("townhouse_b", 5, 6),
+        new("kit_m_cottage", 2, 2), new("kit_m01", 2, 2), new("kit_m02", 2, 2),
+        new("kit_m03", 2, 2), new("kit_m04", 2, 2), new("kit_m05", 2, 2),
+        new("kit_m06", 2, 2), new("kit_m07", 2, 2), new("kit_m08", 2, 2),
+        new("kit_m09", 2, 2), new("kit_m10", 2, 2), new("kit_m11", 2, 2),
     };
 
-    private static readonly BuildingKind[] Shacks =
+    private static readonly BuildingKind[] Large =
     {
-        new("shack_a", 5, 4), new("shack_b", 5, 4),
+        new("kit_l_shop", 3, 3), new("kit_l02", 3, 3), new("kit_l03", 3, 3),
+        new("kit_l04", 3, 3), new("kit_l05", 3, 3), new("kit_l06", 3, 3),
     };
 
-    private static readonly BuildingKind[] Shops =
-    {
-        new("shop_blacksmith", 7, 6), new("shop_general", 7, 6),
-        new("shop_alchemist", 7, 6), new("shop_armor", 7, 6),
-        new("shop_bakery", 7, 6), new("shop_inn", 8, 7),
-    };
-
-    private static readonly BuildingKind Manor = new("manor", 12, 9);
+    private static readonly BuildingKind GuildHall = new("kit_xl_guild", 6, 5);
 
     /// <summary>상점 종류당 최대 채수. 대장간이 열 곳이면 마을이 아니다.</summary>
     private const int MaxPerShop = 2;
@@ -175,10 +176,7 @@ public sealed class TownGenerator
         if (!BuildingsEnabled)
             return;
 
-        GrowBuildings(roadFrontOnly: true);
-        for (int pass = 0; pass < 4; pass++)
-            GrowBuildings(roadFrontOnly: false);
-
+        PlaceBuildings();
         ScatterTrees();
     }
 
@@ -212,10 +210,15 @@ public sealed class TownGenerator
                 // 마름모가 나온다. 명세는 원형 순환로다.
                 float ringDist = Mathf.Sqrt(dx * dx + dy * dy);
 
-                // 골목은 곧은 대각선이 아니라 휘어야 한다. 중심에서 멀어질수록
-                // 어긋나게 흔들어 준다.
-                float wobble = Mathf.Sin(ringDist * 0.22f) * 3.2f;
-                bool onLane = Mathf.Abs(Mathf.Abs(dx) - Mathf.Abs(dy) + wobble) <= LaneHalfWidth;
+                // 골목은 22.5도마다 하나씩, 모두 16갈래. 대각선 넷만 있으면 건물이
+                // 접할 면이 모자라 마을이 성겨진다 — 명세의 "좁은 골목 다수"다.
+                // 반지름에 따라 흔들어 곧은 방사선으로 보이지 않게 한다.
+                // 흔들림은 골목 폭보다 작아야 한다. 크면 판정 폭이 통째로 벌어져
+                // 마을 절반이 길이 된다.
+                float wobble = Mathf.Sin(ringDist * 0.22f) * 0.8f;
+                float spoke = Mathf.Atan2(dy, dx) / (Mathf.Pi / 4f);   // 8갈래
+                float offset = Mathf.Abs(spoke - Mathf.Round(spoke)) * (Mathf.Pi / 4f) * ringDist;
+                bool onLane = offset + wobble <= LaneHalfWidth;
 
                 if (d > wall)
                 {
@@ -396,13 +399,13 @@ public sealed class TownGenerator
         int x = (int)(_cx - _radius * 0.62f);
         int y = (int)(_cy - 11);
 
-        var pad = new Rect2I(x - 2, y - 3, 30, 26);
+        var pad = new Rect2I(x - 1, y - 2, 18, 16);
         FillGround(pad, Surface.Dirt);
         Take(pad);
 
         Props.Add(new PropPlacement(Abs(new Rect2I(x, y, 10, 7)), "training_hall"));
 
-        var yard = new Rect2I(x + 12, y + 1, 14, 18);
+        var yard = new Rect2I(x + 11, y + 1, 6, 11);
         TrainingYard = Abs(yard);
         YardGateY = TrainingYard.Position.Y + 7;
         TrainingDummySpot = WorldLayout.TileCenter(
@@ -418,14 +421,14 @@ public sealed class TownGenerator
         int x = (int)(_cx + _radius * 0.44f);
         int y = (int)(_cy - 10);
 
-        var yard = new Rect2I(x, y, 22, 22);
+        var yard = new Rect2I(x, y, 14, 14);
         FillGround(yard, Surface.Dirt);
         Take(yard);
 
         for (int i = 0; i < 6; i++)
         {
-            int px = x + 2 + _rng.RandiRange(0, 16);
-            int py = y + 2 + _rng.RandiRange(0, 16);
+            int px = x + 1 + _rng.RandiRange(0, 10);
+            int py = y + 1 + _rng.RandiRange(0, 10);
             Props.Add(new PropPlacement(Abs(new Rect2I(px, py, 3, 3)), "barrels"));
         }
     }
@@ -469,35 +472,42 @@ public sealed class TownGenerator
             deg += 360f;
 
         if (deg >= 22.5f && deg < 67.5f)   return District.Guild;      // 북동
-        if (deg >= 157.5f && deg < 202.5f) return District.Training;   // 서
-        if (deg < 22.5f || deg >= 337.5f)  return District.Logging;    // 동
+        if (deg >= 168f && deg < 192f)     return District.Training;   // 서
+        if (deg < 12f || deg >= 348f)      return District.Logging;    // 동
         if (deg >= 202.5f && deg < 315f)   return District.Residential; // 남서~남
         return District.Residential;
     }
 
-    private BuildingKind Pick(District district) => district switch
+    /// <summary>
+    /// 무엇을 세울지. 광장에서 멀어질수록 작아진다 — 중심은 2층 상점,
+    /// 중간은 민가, 바깥은 창고·헛간. 명세의 크기 위계를 배치로도 지킨다.
+    /// </summary>
+    private BuildingKind Pick(int x, int y, District district)
     {
-        District.Market => _rng.Randf() < 0.45f
-            ? PickShop()
-            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
+        float d = OctDist(x - _cx, y - _cy) / _radius;
 
-        District.Guild => _rng.Randf() < 0.18f
-            ? Manor
-            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
+        if (district == District.Market && d < 0.34f)
+            return _rng.Randf() < 0.6f ? PickShop() : Medium[_rng.RandiRange(0, Medium.Length - 1)];
 
-        District.Training or District.Logging
-            => Shacks[_rng.RandiRange(0, Shacks.Length - 1)],
+        if (d < 0.52f)
+            return _rng.Randf() < 0.15f
+                ? PickShop()
+                : Medium[_rng.RandiRange(0, Medium.Length - 1)];
 
-        _ => _rng.Randf() < 0.22f
-            ? TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)]
-            : Cottages[_rng.RandiRange(0, Cottages.Length - 1)],
-    };
+        if (d < 0.66f)
+            return _rng.Randf() < 0.35f
+                ? Small[_rng.RandiRange(0, Small.Length - 1)]
+                : Medium[_rng.RandiRange(0, Medium.Length - 1)];
 
+        return Small[_rng.RandiRange(0, Small.Length - 1)];   // 바깥일수록 작고 성기게
+    }
+
+    /// <summary>상점은 종류당 두 채까지. 같은 대장간이 늘어서면 마을이 아니다.</summary>
     private BuildingKind PickShop()
     {
         for (int tries = 0; tries < 8; tries++)
         {
-            BuildingKind shop = Shops[_rng.RandiRange(0, Shops.Length - 1)];
+            BuildingKind shop = Large[_rng.RandiRange(0, Large.Length - 1)];
             _shopCount.TryGetValue(shop.Texture, out int used);
             if (used < MaxPerShop)
             {
@@ -505,76 +515,137 @@ public sealed class TownGenerator
                 return shop;
             }
         }
-        return TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)];
+        return Medium[_rng.RandiRange(0, Medium.Length - 1)];
     }
 
+    /// <summary>성벽에서 이만큼은 띄운다. 벽에 딱 붙는 건물은 없어야 한다.</summary>
+    private const int WallClearance = 2;
+
     /// <summary>
-    /// 집을 한 겹 자라게 한다.
+    /// 건물을 세운다. 4단계 배치 규칙을 전부 여기서 강제한다.
     ///
-    /// roadFrontOnly 면 아래가 길에 닿는 자리에만 세운다 — 첫 겹이 거리를 따라
-    /// 늘어서게 하는 것이 목적이다. 다음 겹부터는 이미 선 집 옆에도 붙을 수 있어,
-    /// 거리에서 안쪽으로 번지듯 무리가 커진다. 격자로 찍는 것과 달리 길의 모양을
-    /// 따라가므로 굽은 길·방사형 길에서도 자연스럽다.
+    ///   1) 문이 있는 정면이 반드시 도로에 접한다. 도로를 등지고 선 건물은 없다.
+    ///   2) 건물 사이 간격을 1~2타일로 불규칙하게 준다. 일정 간격이면 줄 세운 티가 난다.
+    ///   3) 도로 양쪽에서 세우므로 좁은 길에서는 마주 보는 골목이 생긴다.
+    ///   4) 광장에서 멀어질수록 작아지고 성겨진다 (Pick 과 아래 확률).
+    ///   5) 성벽과는 최소 두 칸을 띄운다.
     /// </summary>
-    private void GrowBuildings(bool roadFrontOnly)
+    private void PlaceBuildings()
     {
+        PlaceGuildHall();
+
         for (int y = 1; y < _h - 1; y++)
         {
             for (int x = 1; x < _w - 1; x++)
             {
-                if (!IsInsideWall(x, y))
-                    continue;                    // 성벽 밖에는 집을 짓지 않는다
+                if (!HasWallClearance(x, y))
+                    continue;
 
                 District district = DistrictAt(x, y);
-                BuildingKind kind = Pick(district);
+                if (district == District.None
+                    || district == District.Training || district == District.Logging)
+                    continue;
+
+                // 바깥으로 갈수록 성기게 — 같은 자리라도 세울 확률이 낮다.
+                float d = OctDist(x - _cx, y - _cy) / _radius;
+                if (_rng.Randf() > Mathf.Lerp(0.95f, 0.45f, Mathf.Clamp(d / WallRadius, 0f, 1f)))
+                    continue;
+
+                BuildingKind kind = Pick(x, y, district);
                 var rect = new Rect2I(x, y, kind.W, kind.H);
 
-                // 여백 없이 자리만 본다. Grow(1) 로 여백을 요구하면 길이 이미
-                // 점유 상태라 건물이 길에 절대 못 붙고, 마을이 성기게 흩어진다.
-                // 집은 길에 어깨를 대고 서야 거리가 생긴다.
-                if (!IsFree(rect) || !FrontsSomething(rect, roadFrontOnly))
+                if (!IsFree(rect) || !FrontsRoad(rect))
                     continue;
 
                 Take(rect);
-
-                // 문 앞 두 칸만 다진 흙. 건물을 통째로 흙으로 감싸면 마을이
-                // 공사장처럼 보인다 — 바탕은 풀이어야 한다.
-                FillGroundSoft(new Rect2I(x + kind.W / 2 - 1, y + kind.H, 2, 1), Surface.Dirt);
-
                 Props.Add(new PropPlacement(Abs(rect), kind.Texture));
-                x += kind.W;                       // 어깨를 맞대고 다음 자리로
+
+                // 어깨를 맞대지 않고 1~2칸 불규칙하게 띄운다.
+                x += kind.W + _rng.RandiRange(1, 2);
             }
         }
     }
 
-    /// <summary>집 아래가 길이거나(첫 겹), 옆에 이미 집이 있는가(다음 겹).</summary>
-    private bool FrontsSomething(Rect2I rect, bool roadOnly)
+    /// <summary>길드홀 — 북동 길드 구역에 딱 한 채. 마을에서 가장 큰 건물이다.</summary>
+    private void PlaceGuildHall()
     {
-        int belowY = rect.Position.Y + rect.Size.Y;
-        for (int x = rect.Position.X; x < rect.Position.X + rect.Size.X; x++)
+        // 무작위로 찔러 보면 조건(길드 구역 + 빈터 + 아래가 도로 + 성벽 이격)이
+        // 겹치는 자리를 놓치기 쉽다. 전수로 훑고 가장 안쪽 자리를 고른다 —
+        // 길드홀은 마을에서 가장 큰 건물이라 눈에 띄는 자리에 서야 한다.
+        // 1차는 정면 접도까지 요구하고, 못 찾으면 어느 면이든 도로에 닿으면 받는다.
+        // 길드홀은 발자국이 6x5 라 환상 도로 사이 띠에 정면까지 맞추기가 빠듯하다.
+        if (TryPlaceGuild(strict: true) || TryPlaceGuild(strict: false))
+            return;
+
+        GD.PushWarning("[Town] 길드홀 자리를 못 찾았다 — 길드 구역에 빈 터가 없다.");
+    }
+
+    private bool TryPlaceGuild(bool strict)
+    {
+        var best = new Rect2I();
+        float bestDist = float.MaxValue;
+
+        for (int y = 1; y < _h - GuildHall.H - 1; y++)
         {
-            for (int dy = 0; dy <= 2; dy++)
+            for (int x = 1; x < _w - GuildHall.W - 1; x++)
             {
-                int y = belowY + dy;
-                if (Inside(x, y) && (Ground[x, y] == Surface.Stone || Ground[x, y] == Surface.Dirt))
-                    return true;
+                if (DistrictAt(x, y) != District.Guild || !HasWallClearance(x, y))
+                    continue;
+
+                var rect = new Rect2I(x, y, GuildHall.W, GuildHall.H);
+                if (!IsFree(rect))
+                    continue;
+                if (strict ? !FrontsRoad(rect) : !TouchesRoad(rect))
+                    continue;
+
+                float d = OctDist(x - _cx, y - _cy);
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    best = rect;
+                }
             }
         }
 
-        if (roadOnly)
+        if (bestDist >= float.MaxValue)
             return false;
 
-        // 이미 선 집에 어깨를 붙인다. (길·성벽은 Ground 로 걸러진다)
-        for (int y = rect.Position.Y - 2; y < rect.Position.Y + rect.Size.Y + 2; y++)
+        Take(best);
+        Props.Add(new PropPlacement(Abs(best), GuildHall.Texture));
+        return true;
+    }
+
+    /// <summary>사각형 어느 면이든 도로에 닿는가.</summary>
+    private bool TouchesRoad(Rect2I r)
+    {
+        for (int y = r.Position.Y - 1; y <= r.Position.Y + r.Size.Y; y++)
         {
-            for (int x = rect.Position.X - 2; x < rect.Position.X + rect.Size.X + 2; x++)
+            for (int x = r.Position.X - 1; x <= r.Position.X + r.Size.X; x++)
             {
-                if (Inside(x, y) && _taken[x, y] && Ground[x, y] == Surface.Grass)
+                if (Inside(x, y) && (Ground[x, y] == Surface.Stone || Ground[x, y] == Surface.Dirt))
                     return true;
             }
         }
         return false;
     }
+
+    /// <summary>
+    /// 문이 있는 아랫줄이 도로에 닿는가. 이걸 통과해야만 건물이 선다 —
+    /// 도로를 등진 건물이 하나도 없게 만드는 유일한 장치다.
+    /// </summary>
+    private bool FrontsRoad(Rect2I rect)
+    {
+        int y = rect.Position.Y + rect.Size.Y;
+        for (int x = rect.Position.X; x < rect.Position.X + rect.Size.X; x++)
+        {
+            if (Inside(x, y) && (Ground[x, y] == Surface.Stone || Ground[x, y] == Surface.Dirt))
+                return true;
+        }
+        return false;
+    }
+
+    private bool HasWallClearance(int x, int y)
+        => OctDist(x - _cx, y - _cy) < _radius * WallRadius - WallThickness - WallClearance;
 
     /// <summary>남은 풀밭에 나무를 흩는다. 집 사이가 허전하면 마을이 헐거워 보인다.</summary>
     private void ScatterTrees()
@@ -586,13 +657,12 @@ public sealed class TownGenerator
                 if (_rng.Randf() > 0.18f)
                     continue;
 
-                bool poplar = _rng.Randf() < 0.4f;
-                var rect = new Rect2I(x, y, poplar ? 3 : 4, 5);
+                var rect = new Rect2I(x, y, 2, 3);
                 if (!IsFree(rect) || Ground[x, y] != Surface.Grass)
                     continue;
 
                 Take(rect);
-                Props.Add(new PropPlacement(Abs(rect), poplar ? "tree_poplar" : "tree_oak"));
+                Props.Add(new PropPlacement(Abs(rect), "tree_conifer"));
             }
         }
     }
