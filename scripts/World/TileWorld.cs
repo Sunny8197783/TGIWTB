@@ -57,16 +57,19 @@ public partial class TileWorld : TileMapLayer
     private const int TerrainGrass = 0;
     private const int TerrainDirt = 1;
     private const int TerrainStone = 2;
+    private const int TerrainWater = 3;
 
     private const int GrassDirtSourceId = 1;
     private const int DirtStoneSourceId = 2;
     private const int GrassStoneSourceId = 3;
+    private const int GrassWaterSourceId = 4;
 
-    private const string TilesRoot = "res://art/tiles";
+    private const string TilesRoot = "res://art/tiles32";
 
     private WangTileset _grassDirt;
     private WangTileset _dirtStone;
     private WangTileset _grassStone;
+    private WangTileset _grassWater;
     private bool _terrainReady;
 
     /// <summary>집·우물 스프라이트가 있는가. 없으면 예전 도형 블록으로 간다.</summary>
@@ -152,6 +155,8 @@ public partial class TileWorld : TileMapLayer
         if (source == GrassDirtSourceId || source == DirtStoneSourceId
             || source == GrassStoneSourceId)
             return true;
+        if (source == GrassWaterSourceId)
+            return false;      // 강은 못 건넌다 — 다리로만.
 
         return source == SourceId && !IsSolid(GetCellAtlasCoords(cell).X);
     }
@@ -218,12 +223,16 @@ public partial class TileWorld : TileMapLayer
             $"{TilesRoot}/grass_dirt_metadata.json", $"{TilesRoot}/grass_dirt_image.png");
 
         _dirtStone = WangTileset.Load(tileSet, DirtStoneSourceId,
-            $"{TilesRoot}/dirt_stone_metadata.json", $"{TilesRoot}/dirt_stone_image.png");
+            $"{TilesRoot}/dirt_cobble_metadata.json", $"{TilesRoot}/dirt_cobble_image.png");
 
         _grassStone = WangTileset.Load(tileSet, GrassStoneSourceId,
-            $"{TilesRoot}/grass_stone_metadata.json", $"{TilesRoot}/grass_stone_image.png");
+            $"{TilesRoot}/grass_cobble_metadata.json", $"{TilesRoot}/grass_cobble_image.png");
 
-        _terrainReady = _grassDirt != null && _dirtStone != null && _grassStone != null;
+        _grassWater = WangTileset.Load(tileSet, GrassWaterSourceId,
+            $"{TilesRoot}/grass_water_metadata.json", $"{TilesRoot}/grass_water_image.png");
+
+        _terrainReady = _grassDirt != null && _dirtStone != null
+            && _grassStone != null && _grassWater != null;
         if (!_terrainReady)
             GD.Print("[TileWorld] 마을 타일셋이 없어 도형 바닥으로 간다.");
     }
@@ -329,6 +338,7 @@ public partial class TileWorld : TileMapLayer
                 {
                     case Surface.Dirt: SetFloor(tx, ty, TileDirtA, TileDirtB); break;
                     case Surface.Stone: SetFloor(tx, ty, TileStoneA, TileStoneB); break;
+                    case Surface.Water: SetFloor(tx, ty, TileWaterA, TileWaterB); break;
                     case Surface.Wall: SetCellTile(tx, ty, TileTownWall); break;
                     default: SetFloor(tx, ty, TileGrassA, TileGrassB); break;
                 }
@@ -428,6 +438,7 @@ public partial class TileWorld : TileMapLayer
         TileGrassA or TileGrassB => TerrainGrass,
         TileDirtA or TileDirtB => TerrainDirt,
         TileStoneA or TileStoneB => TerrainStone,
+        TileWaterA or TileWaterB => TerrainWater,
         _ => TerrainNone,
     };
 
@@ -438,10 +449,10 @@ public partial class TileWorld : TileMapLayer
     /// </summary>
     private bool PaintWangCell(int x, int y, int nw, int ne, int sw, int se)
     {
-        // Wang 타일셋 한 벌은 지형 두 개짜리다. 한 칸 네 모서리에 셋이 다 모이면
-        // 맞는 타일이 없으므로, 가운데인 흙을 돌로 올려 두 개로 줄인다.
-        // (흙 골목이 돌 거리에 붙는 자리라 이음매가 포장으로 읽혀도 어색하지 않다.)
-        if (HasAllThree(nw, ne, sw, se))
+        // Wang 타일셋 한 벌은 지형 두 개짜리다. 네 모서리에 셋 이상이 모이면 맞는
+        // 타일이 없으므로 가운데인 흙을 돌로 올려 두 개로 줄인다. (흙 골목이 돌
+        // 거리에 붙는 자리라 이음매가 포장으로 읽혀도 어색하지 않다.)
+        if (DistinctCount(nw, ne, sw, se) > 2)
         {
             nw = Promote(nw); ne = Promote(ne);
             sw = Promote(sw); se = Promote(se);
@@ -450,24 +461,21 @@ public partial class TileWorld : TileMapLayer
         int lo = Mathf.Min(Mathf.Min(nw, ne), Mathf.Min(sw, se));
         int hi = Mathf.Max(Mathf.Max(nw, ne), Mathf.Max(sw, se));
 
-        WangTileset set;
-        int upper;
-        if (hi <= TerrainDirt)                            // 잔디 / 흙
+        // 가진 전환 네 쌍 중에서 고른다. 없는 쌍(흙↔물, 돌↔물)은 배치로 막는다 —
+        // 강은 잔디에만 닿게 판다.
+        WangTileset set = (lo, hi) switch
         {
-            set = _grassDirt;
-            upper = TerrainDirt;
-        }
-        else if (lo >= TerrainDirt)                       // 흙 / 돌
-        {
-            set = _dirtStone;
-            upper = TerrainStone;
-        }
-        else                                              // 잔디 / 돌
-        {
-            set = _grassStone;
-            upper = TerrainStone;
-        }
+            (TerrainGrass, TerrainGrass) or (TerrainGrass, TerrainDirt)
+                or (TerrainDirt, TerrainDirt) => _grassDirt,
+            (TerrainDirt, TerrainStone) or (TerrainStone, TerrainStone) => _dirtStone,
+            (TerrainGrass, TerrainStone) => _grassStone,
+            (TerrainGrass, TerrainWater) or (TerrainWater, TerrainWater) => _grassWater,
+            _ => null,
+        };
+        if (set == null)
+            return false;
 
+        int upper = hi == lo ? UpperOf(set) : hi;
         int wang = (nw == upper ? 8 : 0) + (ne == upper ? 4 : 0)
                  + (sw == upper ? 2 : 0) + (se == upper ? 1 : 0);
         if (!set.Has(wang))
@@ -477,12 +485,21 @@ public partial class TileWorld : TileMapLayer
         return true;
     }
 
-    private static bool HasAllThree(int a, int b, int c, int d)
+    /// <summary>그 타일셋에서 'upper' 쪽 지형이 무엇인가. 네 모서리가 같을 때 쓴다.</summary>
+    private int UpperOf(WangTileset set)
     {
-        bool grass = a == TerrainGrass || b == TerrainGrass || c == TerrainGrass || d == TerrainGrass;
-        bool dirt = a == TerrainDirt || b == TerrainDirt || c == TerrainDirt || d == TerrainDirt;
-        bool stone = a == TerrainStone || b == TerrainStone || c == TerrainStone || d == TerrainStone;
-        return grass && dirt && stone;
+        if (set == _grassDirt) return TerrainDirt;
+        if (set == _dirtStone) return TerrainStone;
+        if (set == _grassStone) return TerrainStone;
+        return TerrainWater;
+    }
+
+    private static int DistinctCount(int a, int b, int c, int d)
+    {
+        int mask = (1 << a) | (1 << b) | (1 << c) | (1 << d);
+        int n = 0;
+        while (mask != 0) { n += mask & 1; mask >>= 1; }
+        return n;
     }
 
     private static int Promote(int terrain) => terrain == TerrainDirt ? TerrainStone : terrain;

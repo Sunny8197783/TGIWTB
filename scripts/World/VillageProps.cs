@@ -21,7 +21,7 @@ namespace PixelMmo.Runtime;
 /// </summary>
 public partial class VillageProps : Node2D
 {
-    private const string Root = "res://art/objects";
+    private const string Root = "res://art/objects32";
 
     /// <summary>이보다 옅은 픽셀은 없는 셈 친다 — 외곽 반투명 픽셀까지 막지 않도록.</summary>
     private const float AlphaFloor = 0.25f;
@@ -38,14 +38,7 @@ public partial class VillageProps : Node2D
     /// <summary>생성기가 쓰는 그림 이름 전부.</summary>
     private static readonly string[] RequiredTextures =
     {
-        "cottage_a", "cottage_b", "cottage_c",
-        "townhouse_a", "townhouse_b", "manor",
-        "shack_a", "shack_b", "backalley_door",
-        "shop_blacksmith", "shop_general", "shop_alchemist",
-        "shop_armor", "shop_bakery", "shop_inn",
-        "training_hall", "fountain", "notice_board",
-        "market_stall_a", "market_stall_b", "barrels",
-        "tree_oak", "tree_poplar",
+        "gatehouse", "fountain", "tree_conifer", "bridge", "farm_plot", "wall_section",
     };
 
     /// <summary>쓸 그림이 전부 있는가.</summary>

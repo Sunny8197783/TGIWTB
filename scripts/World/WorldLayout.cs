@@ -31,32 +31,35 @@ public sealed class ZoneDef
 /// </summary>
 public static class WorldLayout
 {
-    public const int TileSize = 16;
-
     /// <summary>
-    /// 마을이 56x64 → 188x188 로 커지면서(넓이 약 10배) 월드도 같이 커졌다.
-    /// 이 규모는 손으로 건물을 놓을 수 없어서 TownGenerator 가 거리와 필지를 만든다.
+    /// 32px 그리드. 아트 규격을 high top-down / 32px 로 옮기면서 16 → 32 가 됐다.
+    /// 타일 수를 절반으로 줄여 월드의 픽셀 크기는 그대로 뒀다 — 타일만 키우면
+    /// 월드가 두 배가 되어 이미 넓은 마을을 감당할 수 없다.
     /// </summary>
-    public const int WidthTiles = 336;
+    public const int TileSize = 32;
 
-    public const int HeightTiles = 192;
+    /// <summary>5376 / 32. 32px 로 옮기면서 타일 수는 절반이 됐다(픽셀 크기 동일).</summary>
+    public const int WidthTiles = 168;
+
+    /// <summary>3072 / 32.</summary>
+    public const int HeightTiles = 96;
 
     public static readonly Vector2 WorldSizePx = new(WidthTiles * TileSize, HeightTiles * TileSize);
 
     /// <summary>바깥 테두리 벽 두께(타일).</summary>
-    public const int BorderThickness = 2;
+    public const int BorderThickness = 1;
 
     /// <summary>구역을 나누는 벽 두께(타일).</summary>
-    public const int WallThickness = 2;
+    public const int WallThickness = 1;
 
     /// <summary>통로 폭(타일).</summary>
-    public const int GateHeight = 6;
+    public const int GateHeight = 3;
 
     public static readonly ZoneDef Town = new()
     {
         Id = "town",
         DisplayName = "초보자 마을",
-        Tiles = new Rect2I(2, 2, 188, 188),
+        Tiles = new Rect2I(1, 1, 94, 94),
         Safe = true,
         // 마을 바닥은 잔디다. 길·광장은 TileWorld 가 그 위에 덮는다.
         FloorColor = new Color(0.22f, 0.34f, 0.20f),
@@ -66,7 +69,7 @@ public static class WorldLayout
     {
         Id = "meadow",
         DisplayName = "초원",
-        Tiles = new Rect2I(192, 2, 100, 188),
+        Tiles = new Rect2I(96, 1, 50, 94),
         Safe = false,
         FloorColor = new Color(0.16f, 0.26f, 0.18f),
     };
@@ -75,7 +78,7 @@ public static class WorldLayout
     {
         Id = "ironjaw_den",
         DisplayName = "철턱의 굴",
-        Tiles = new Rect2I(294, 2, 40, 188),
+        Tiles = new Rect2I(147, 1, 20, 94),
         Safe = false,
         FloorColor = new Color(0.26f, 0.16f, 0.16f),
     };

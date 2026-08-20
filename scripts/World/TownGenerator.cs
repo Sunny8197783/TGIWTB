@@ -10,8 +10,11 @@ public enum Surface
     Dirt = 1,
     Stone = 2,
 
+    /// <summary>강. 못 건넌다 — 다리로만.</summary>
+    Water = 3,
+
     /// <summary>성벽. 바닥이 아니라 막힌 칸이라 Wang 지형에서 빠진다.</summary>
-    Wall = 3,
+    Wall = 4,
 }
 
 /// <summary>놓인 소품 하나. 타일 좌표와 쓸 그림.</summary>
@@ -69,6 +72,12 @@ public sealed class TownGenerator
 {
     private const int Seed = 20260821;
 
+    /// <summary>
+    /// 건물을 세울지. 단계별로 진행하는 중이라 1~2단계에서는 꺼 둔다 —
+    /// 도로망과 구역이 먼저 확정돼야 건물 배치가 의미가 있다.
+    /// </summary>
+    public const bool BuildingsEnabled = false;
+
     // ── 건물 ─────────────────────────────────────────────────────
     private static readonly BuildingKind[] Cottages =
     {
@@ -98,12 +107,14 @@ public sealed class TownGenerator
     private const int MaxPerShop = 2;
 
     // ── 형태 (마을 반지름에 대한 비율) ────────────────────────────
-    private const float WallRadius = 0.96f;
+    // 성벽을 마을 가장자리까지 밀면 벽 바깥에 아무 것도 못 놓는다.
+    // 명세가 벽 밖에 숲·강·밭을 요구하므로 안쪽으로 당겨 바깥 여백을 만든다.
+    private const float WallRadius = 0.70f;
     private const int WallThickness = 3;
 
-    private const float PlazaRadius = 0.13f;
-    private const float InnerRingRadius = 0.34f;
-    private const float OuterRingRadius = 0.68f;
+    private const float PlazaRadius = 0.20f;
+    private const float InnerRingRadius = 0.36f;
+    private const float OuterRingRadius = 0.56f;
 
     private const int AvenueHalfWidth = 3;    // 성문으로 뻗는 대로 (돌)
     private const int LaneHalfWidth = 1;      // 대각선 골목 (흙)
@@ -146,12 +157,20 @@ public sealed class TownGenerator
     public void Generate()
     {
         CarveWallAndRoads();
-        ReserveTraining();
-        ReserveLogging();
+        if (BuildingsEnabled)
+        {
+            ReserveTraining();
+            ReserveLogging();
+        }
         PlacePlazaFurniture();
+        PlaceGates();
 
-        // 길가부터 시작해 안쪽으로 번지듯 집을 세운다. 한 번에 다 놓으면 격자가
-        // 되고, 길에 붙는 것부터 놓아야 거리 모양을 따라 무리가 생긴다.
+        PaintOutside();
+
+        // 1단계는 "길과 지형만 있는 빈 마을"이다. 건물은 3~4단계에서 놓는다.
+        if (!BuildingsEnabled)
+            return;
+
         GrowBuildings(roadFrontOnly: true);
         for (int pass = 0; pass < 4; pass++)
             GrowBuildings(roadFrontOnly: false);
@@ -184,13 +203,22 @@ public sealed class TownGenerator
                 float d = OctDist(dx, dy);
 
                 bool onAvenue = Mathf.Abs(dx) <= AvenueHalfWidth || Mathf.Abs(dy) <= AvenueHalfWidth;
-                bool onLane = Mathf.Abs(Mathf.Abs(dx) - Mathf.Abs(dy)) <= LaneHalfWidth;
+
+                // 순환로는 팔각 거리가 아니라 진짜 원 거리로 잰다 — 팔각으로 재면
+                // 마름모가 나온다. 명세는 원형 순환로다.
+                float ringDist = Mathf.Sqrt(dx * dx + dy * dy);
+
+                // 골목은 곧은 대각선이 아니라 휘어야 한다. 중심에서 멀어질수록
+                // 어긋나게 흔들어 준다.
+                float wobble = Mathf.Sin(ringDist * 0.22f) * 3.2f;
+                bool onLane = Mathf.Abs(Mathf.Abs(dx) - Mathf.Abs(dy) + wobble) <= LaneHalfWidth;
 
                 if (d > wall)
                 {
                     // 성벽 바깥 — 마을을 둘러싼 풀밭. 성문 앞 길만 이어 준다.
+                    // 여기는 _taken 으로 막지 않는다. 막으면 숲·밭·다리를 못 놓는다.
+                    // 건물이 벽 밖으로 나가는 건 IsInsideWall 로 따로 막는다.
                     Ground[x, y] = onAvenue ? Surface.Dirt : Surface.Grass;
-                    _taken[x, y] = true;
                     continue;
                 }
 
@@ -201,14 +229,14 @@ public sealed class TownGenerator
                     continue;
                 }
 
-                if (d <= plaza || onAvenue || Mathf.Abs(d - inner) <= InnerRingWidth * 0.5f)
+                if (d <= plaza || onAvenue || Mathf.Abs(ringDist - inner) <= InnerRingWidth * 0.5f)
                 {
                     Ground[x, y] = Surface.Stone;      // 광장 · 대로 · 안쪽 환상 도로
                     _taken[x, y] = true;
                     continue;
                 }
 
-                if (Mathf.Abs(d - outer) <= OuterRingWidth * 0.5f || (onLane && d > inner))
+                if (Mathf.Abs(ringDist - outer) <= OuterRingWidth * 0.5f || (onLane && d > inner))
                 {
                     Ground[x, y] = Surface.Dirt;       // 바깥 환상 도로 · 대각선 골목
                     _taken[x, y] = true;
@@ -220,7 +248,83 @@ public sealed class TownGenerator
         }
     }
 
+    /// <summary>
+    /// 성벽 바깥. 좌측은 침엽수림, 우측은 강과 나무다리, 우상단은 밭.
+    /// 마을이 허공에 뜬 섬처럼 보이지 않으려면 벽 밖에도 사연이 있어야 한다.
+    /// </summary>
+    private void PaintOutside()
+    {
+        float wall = _radius * WallRadius;
+
+        // 우측 강 — 세로로 흐른다. 성문 앞 길과 만나는 자리에 다리를 놓는다.
+        int riverX = (int)(_cx + _radius * 0.86f);
+        if (riverX + 5 < _w)
+        {
+            for (int y = 0; y < _h; y++)
+            {
+                for (int x = riverX; x < Mathf.Min(_w, riverX + 5); x++)
+                {
+                    if (Ground[x, y] == Surface.Dirt)
+                        continue;                       // 성문 앞 길은 남긴다(다리 자리)
+                    Ground[x, y] = Surface.Water;
+                    _taken[x, y] = true;
+                }
+            }
+            Props.Add(new PropPlacement(
+                Abs(new Rect2I(riverX - 1, (int)_cy - 1, 7, 3)), "bridge", solid: false));
+        }
+
+        // 좌측 침엽수림 — 벽에서 떨어진 바깥쪽에 빽빽하게.
+        for (int y = 1; y < _h - 4; y += 3)
+        {
+            for (int x = 1; x < _w - 3; x += 3)
+            {
+                float dx = x - _cx, dy = y - _cy;
+                if (OctDist(dx, dy) < wall + 4f || dx > -_radius * 0.35f)
+                    continue;
+                if (_rng.Randf() > 0.5f)
+                    continue;
+
+                var rect = new Rect2I(x, y, 2, 3);
+                if (!IsFree(rect) || Ground[x, y] != Surface.Grass)
+                    continue;
+                Take(rect);
+                Props.Add(new PropPlacement(Abs(rect), "tree_conifer"));
+            }
+        }
+
+        // 우상단 밭 — 강 이쪽 편, 성벽 바깥.
+        int fx = (int)(_cx + wall + 4);
+        int fy = 3;
+        for (int row = 0; row < 3; row++)
+        {
+            for (int col = 0; col < 2; col++)
+            {
+                var rect = new Rect2I(fx + col * 5, fy + row * 4, 4, 3);
+                if (!IsFree(rect))
+                    continue;
+                Take(rect);
+                Props.Add(new PropPlacement(Abs(rect), "farm_plot", solid: false));
+            }
+        }
+    }
+
     // ── 미리 잡아 두는 구역 ───────────────────────────────────────
+
+    /// <summary>성문 네 개. 성벽을 뚫어 둔 자리에 문루를 얹는다.</summary>
+    private void PlaceGates()
+    {
+        int r = (int)(_radius * WallRadius) - WallThickness / 2;
+        int cx = (int)_cx, cy = (int)_cy;
+
+        Add(cx - 2, cy - r - 2, 5, 4);      // 북문
+        Add(cx - 2, cy + r - 2, 5, 4);      // 남문
+        Add(cx - r - 2, cy - 2, 5, 4);      // 서문
+        Add(cx + r - 2, cy - 2, 5, 4);      // 동문
+
+        void Add(int x, int y, int w, int h)
+            => Props.Add(new PropPlacement(Abs(new Rect2I(x, y, w, h)), "gatehouse", solid: false));
+    }
 
     /// <summary>서쪽 훈련장 — 건물과 울타리 마당.</summary>
     private void ReserveTraining()
@@ -267,11 +371,8 @@ public sealed class TownGenerator
     {
         int cx = (int)_cx, cy = (int)_cy;
 
-        Add(cx - 2, cy - 10, 5, 5, "fountain");
-        Add(cx + 7, cy - 6, 3, 3, "notice_board");
-        Add(cx - 12, cy + 4, 4, 3, "market_stall_a");
-        Add(cx + 7, cy + 4, 4, 3, "market_stall_b");
-        Add(cx - 13, cy - 6, 4, 3, "market_stall_a");
+        // 1단계 광장에는 분수만 선다. 노점·게시판은 5단계(빈 공간 채우기)에서.
+        Add(cx - 1, cy - 2, 3, 3, "fountain");
 
         void Add(int x, int y, int w, int h, string texture)
             => Props.Add(new PropPlacement(Abs(new Rect2I(x, y, w, h)), texture));
@@ -341,6 +442,9 @@ public sealed class TownGenerator
         {
             for (int x = 1; x < _w - 1; x++)
             {
+                if (!IsInsideWall(x, y))
+                    continue;                    // 성벽 밖에는 집을 짓지 않는다
+
                 District district = DistrictAt(x, y);
                 BuildingKind kind = Pick(district);
                 var rect = new Rect2I(x, y, kind.W, kind.H);
@@ -419,6 +523,10 @@ public sealed class TownGenerator
         => new(local.Position.X + _ox, local.Position.Y + _oy, local.Size.X, local.Size.Y);
 
     private bool Inside(int x, int y) => x >= 0 && y >= 0 && x < _w && y < _h;
+
+    /// <summary>성벽 안쪽인가. 건물은 여기에만 선다.</summary>
+    private bool IsInsideWall(int x, int y)
+        => OctDist(x - _cx, y - _cy) < _radius * WallRadius - WallThickness;
 
     private bool IsFree(Rect2I r)
     {
