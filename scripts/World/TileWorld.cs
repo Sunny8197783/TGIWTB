@@ -34,13 +34,16 @@ public partial class TileWorld : TileMapLayer
     private const int TileStoneA = 15;
     private const int TileStoneB = 16;
     private const int TileFence = 17;
-    private const int TileCount = 18;
+
+    /// <summary>마을을 두르는 돌 성벽. 바깥 테두리 벽(TileWall)보다 밝은 회색이다.</summary>
+    private const int TileTownWall = 18;
+    private const int TileCount = 19;
 
     /// <summary>벽·건물·물·울타리면 막힌 칸. 다리(TileBridge)는 통행 가능.</summary>
     private static bool IsSolid(int tileX) => tileX == TileWall
         || (tileX >= TileHouseA && tileX <= TileHouseC)
         || tileX == TileWaterA || tileX == TileWaterB
-        || tileX == TileFence;
+        || tileX == TileFence || tileX == TileTownWall;
 
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
@@ -258,6 +261,7 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileStoneA, stone);
         Fill(image, TileStoneB, Shade(stone));
         Fill(image, TileFence, new Color(0.40f, 0.28f, 0.16f));
+        Fill(image, TileTownWall, new Color(0.55f, 0.55f, 0.58f));
 
         return ImageTexture.CreateFromImage(image);
     }
@@ -325,6 +329,7 @@ public partial class TileWorld : TileMapLayer
                 {
                     case Surface.Dirt: SetFloor(tx, ty, TileDirtA, TileDirtB); break;
                     case Surface.Stone: SetFloor(tx, ty, TileStoneA, TileStoneB); break;
+                    case Surface.Wall: SetCellTile(tx, ty, TileTownWall); break;
                     default: SetFloor(tx, ty, TileGrassA, TileGrassB); break;
                 }
             }

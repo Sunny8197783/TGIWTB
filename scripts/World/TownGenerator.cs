@@ -9,6 +9,9 @@ public enum Surface
     Grass = 0,
     Dirt = 1,
     Stone = 2,
+
+    /// <summary>성벽. 바닥이 아니라 막힌 칸이라 Wang 지형에서 빠진다.</summary>
+    Wall = 3,
 }
 
 /// <summary>놓인 소품 하나. 타일 좌표와 쓸 그림.</summary>
@@ -26,7 +29,7 @@ public readonly struct PropPlacement
     }
 }
 
-/// <summary>건물 한 종류의 크기와 쓰임.</summary>
+/// <summary>건물 한 종류의 타일 크기.</summary>
 public readonly struct BuildingKind
 {
     public readonly string Texture;
@@ -42,31 +45,31 @@ public readonly struct BuildingKind
 }
 
 /// <summary>
-/// 초보자 마을을 만든다. 188x188 타일에 건물이 수백 채라 손으로는 못 놓는다.
+/// 초보자 마을을 만든다.
 ///
-/// 마을처럼 보이게 하는 핵심은 크기가 아니라 **건물이 길에 붙어 줄지어 서는 것**이다.
-/// 잔디 한가운데 예쁜 집을 한 채씩 놓으면 아무리 많아도 전시장처럼 보인다.
-/// 그래서 이렇게 만든다:
+/// 구조는 성벽으로 둘러싸인 방사형 마을이다. 격자로 자르면 아무리 빽빽해도
+/// 신도시처럼 보인다 — 옛 마을은 광장에서 성문으로 길이 뻗고, 그 길을
+/// 환상 도로가 가로지르며, 집이 길을 따라 뭉쳐 선다.
 ///
-///   1) 마을 사각형을 거리로 재귀 분할한다. 깊이가 얕으면 넓은 돌길(대로),
-///      깊어질수록 좁은 돌길, 마지막에는 흙 골목이 된다. 분할 위치를 흔들어
-///      바둑판처럼 반듯해지지 않게 한다.
-///   2) 남은 블록마다 건물을 **가로 줄**로 채운다. 한 줄 안에서는 서로 어깨를
-///      맞대고 붙고, 줄과 줄 사이에는 흙길이 난다. 이게 밀도를 만든다.
-///   3) 어디에 무엇이 서는지는 중심에서의 거리와 방향으로 정한다 —
-///      중심은 상점가, 북동은 부촌, 남서는 빈민가, 나머지는 주택가.
+///   팔각 성벽 + 동서남북 성문
+///   중앙 광장(분수·노점) → 성문으로 뻗는 방사형 대로, 대각선 골목
+///   광장을 두 겹으로 감싸는 환상 도로
+///   길가에 붙어 번지는 집 무리, 그 사이를 채우는 나무
 ///
-/// 광장·훈련소·뒷골목처럼 '있어야 할 자리에 있어야 하는 것'은 생성 전에 미리
-/// 자리를 잡아 두고, 생성기가 그 위를 침범하지 않게 한다.
+/// 바탕은 잔디다. 길과 문 앞만 흙·돌이고 나머지는 풀과 나무로 남는다 —
+/// 바탕을 흙으로 깔면 마을이 아니라 공사장처럼 보인다.
+///
+/// 부채꼴 섹터마다 성격이 다르다:
+///   중심 상점가 / 북동 길드 구역 / 남서 바깥 허름한 집 / 서 훈련장 / 동 벌목장
 ///
 /// 같은 씨앗이면 같은 마을이 나온다 — 세이브에 적힌 좌표가 다음 실행에서
 /// 건물 안이 되면 안 되기 때문이다.
 /// </summary>
 public sealed class TownGenerator
 {
-    private const int Seed = 20260820;
+    private const int Seed = 20260821;
 
-    // ── 건물 목록 (타일 크기) ─────────────────────────────────────
+    // ── 건물 ─────────────────────────────────────────────────────
     private static readonly BuildingKind[] Cottages =
     {
         new("cottage_a", 6, 5), new("cottage_b", 6, 5), new("cottage_c", 6, 5),
@@ -91,56 +94,49 @@ public sealed class TownGenerator
 
     private static readonly BuildingKind Manor = new("manor", 12, 9);
 
-    // ── 거리 규격 ────────────────────────────────────────────────
-    /// <summary>깊이별 길 폭. 얕을수록 큰길이다.</summary>
-    private static readonly int[] RoadWidthByDepth = { 5, 4, 3, 3, 2, 2 };
+    /// <summary>상점 종류당 최대 채수. 대장간이 열 곳이면 마을이 아니다.</summary>
+    private const int MaxPerShop = 2;
 
-    /// <summary>이 깊이부터는 돌길이 아니라 흙 골목이다.</summary>
-    private const int DirtFromDepth = 4;
+    // ── 형태 (마을 반지름에 대한 비율) ────────────────────────────
+    private const float WallRadius = 0.96f;
+    private const int WallThickness = 3;
 
-    /// <summary>블록이 이보다 작아지면 더 쪼개지 않는다.</summary>
-    private const int MinBlock = 15;
+    private const float PlazaRadius = 0.13f;
+    private const float InnerRingRadius = 0.34f;
+    private const float OuterRingRadius = 0.68f;
 
-    /// <summary>건물 줄과 줄 사이에 두는 뒷길 폭.</summary>
-    private const int RowGap = 3;
+    private const int AvenueHalfWidth = 3;    // 성문으로 뻗는 대로 (돌)
+    private const int LaneHalfWidth = 1;      // 대각선 골목 (흙)
+    private const int InnerRingWidth = 4;
+    private const int OuterRingWidth = 3;
 
-    /// <summary>건물이 길에서 떨어지는 여백. 0이면 문이 길에 바로 붙는다.</summary>
-    private const int StreetMargin = 1;
+    /// <summary>팔각형을 만드는 대각선 절단 계수. 작으면 팔각, 1이면 마름모에 가깝다.</summary>
+    private const float OctagonCut = 0.76f;
 
     // ── 결과 ─────────────────────────────────────────────────────
-    public Surface[,] Ground { get; private set; }
+    public Surface[,] Ground { get; }
     public List<PropPlacement> Props { get; } = new();
 
-    /// <summary>광장 한가운데 — 부활 지점.</summary>
-    public Vector2 PlazaCenter { get; private set; }
-
-    /// <summary>훈련장 안 허수아비 자리.</summary>
     public Vector2 TrainingDummySpot { get; private set; }
-
-    /// <summary>훈련장 울타리 (타일 좌표, 마을 절대 좌표계).</summary>
     public Rect2I TrainingYard { get; private set; }
-
     public int YardGateY { get; private set; }
     public const int YardGateHeight = 4;
 
-    private readonly Rect2I _town;
-    private readonly int _w;
-    private readonly int _h;
-    private readonly int _ox;
-    private readonly int _oy;
-
-    /// <summary>이미 무언가 차지한 칸. 건물끼리 겹치지 않게 하는 유일한 수단.</summary>
+    private readonly int _w, _h, _ox, _oy;
+    private readonly float _cx, _cy, _radius;
     private readonly bool[,] _taken;
-
     private readonly RandomNumberGenerator _rng = new();
+    private readonly Dictionary<string, int> _shopCount = new();
 
     public TownGenerator(Rect2I town)
     {
-        _town = town;
         _ox = town.Position.X;
         _oy = town.Position.Y;
         _w = town.Size.X;
         _h = town.Size.Y;
+        _cx = _w * 0.5f;
+        _cy = _h * 0.5f;
+        _radius = Mathf.Min(_w, _h) * 0.5f;
 
         Ground = new Surface[_w, _h];
         _taken = new bool[_w, _h];
@@ -149,199 +145,172 @@ public sealed class TownGenerator
 
     public void Generate()
     {
-        ReservePlaza(out Rect2I plaza);
+        CarveWallAndRoads();
         ReserveTraining();
+        ReserveLogging();
+        PlacePlazaFurniture();
 
-        // 한 번만 쪼갠다. 길을 낼 때와 건물을 채울 때 난수를 따로 뽑으면
-        // 두 결과가 어긋나 건물이 길 위에 선다 — 쪼개면서 잎 블록을 모아 둔다.
-        Split(new Rect2I(0, 0, _w, _h), 0);
+        // 길가부터 시작해 안쪽으로 번지듯 집을 세운다. 한 번에 다 놓으면 격자가
+        // 되고, 길에 붙는 것부터 놓아야 거리 모양을 따라 무리가 생긴다.
+        GrowBuildings(roadFrontOnly: true);
+        for (int pass = 0; pass < 4; pass++)
+            GrowBuildings(roadFrontOnly: false);
 
-        foreach (Rect2I block in _blocks)
-            FillBlock(block, plaza);
-
-        PlacePlazaFurniture(plaza);
+        ScatterTrees();
     }
 
-    /// <summary>더 쪼개지지 않은 블록들 — 여기에 건물이 선다.</summary>
-    private readonly List<Rect2I> _blocks = new();
+    // ── 형태 ─────────────────────────────────────────────────────
 
-    // ── 미리 잡아 두는 자리 ───────────────────────────────────────
-
-    /// <summary>
-    /// 마을 한가운데 광장. 거리 분할이 여기를 지나가지 않도록 먼저 자리를 잡는다.
-    /// 큰길이 광장으로 모이는 그림이 나와야 마을 중심으로 읽힌다.
-    /// </summary>
-    private void ReservePlaza(out Rect2I plaza)
+    /// <summary>중심에서의 팔각 거리. 이 값 하나로 성벽·환상 도로·광장을 다 만든다.</summary>
+    private static float OctDist(float dx, float dy)
     {
-        const int size = 26;
-        int x = _w / 2 - size / 2;
-        int y = _h / 2 - size / 2;
-        plaza = new Rect2I(x, y, size, size);
-
-        FillGround(plaza, Surface.Stone);
-        Take(plaza);          // 여기엔 건물이 서지 않는다. 길도 광장 앞에서 멈춘다.
-        PlazaCenter = WorldLayout.TileCenter(_ox + _w / 2, _oy + _h / 2);
+        float ax = Mathf.Abs(dx), ay = Mathf.Abs(dy);
+        return Mathf.Max(Mathf.Max(ax, ay), (ax + ay) * OctagonCut);
     }
 
-    /// <summary>남동쪽 훈련소 — 건물 하나와 울타리 마당.</summary>
+    private void CarveWallAndRoads()
+    {
+        float wall = _radius * WallRadius;
+        float plaza = _radius * PlazaRadius;
+        float inner = _radius * InnerRingRadius;
+        float outer = _radius * OuterRingRadius;
+
+        for (int y = 0; y < _h; y++)
+        {
+            for (int x = 0; x < _w; x++)
+            {
+                float dx = x + 0.5f - _cx;
+                float dy = y + 0.5f - _cy;
+                float d = OctDist(dx, dy);
+
+                bool onAvenue = Mathf.Abs(dx) <= AvenueHalfWidth || Mathf.Abs(dy) <= AvenueHalfWidth;
+                bool onLane = Mathf.Abs(Mathf.Abs(dx) - Mathf.Abs(dy)) <= LaneHalfWidth;
+
+                if (d > wall)
+                {
+                    // 성벽 바깥 — 마을을 둘러싼 풀밭. 성문 앞 길만 이어 준다.
+                    Ground[x, y] = onAvenue ? Surface.Dirt : Surface.Grass;
+                    _taken[x, y] = true;
+                    continue;
+                }
+
+                if (d > wall - WallThickness)
+                {
+                    Ground[x, y] = onAvenue ? Surface.Stone : Surface.Wall;   // 성문 통로
+                    _taken[x, y] = true;
+                    continue;
+                }
+
+                if (d <= plaza || onAvenue || Mathf.Abs(d - inner) <= InnerRingWidth * 0.5f)
+                {
+                    Ground[x, y] = Surface.Stone;      // 광장 · 대로 · 안쪽 환상 도로
+                    _taken[x, y] = true;
+                    continue;
+                }
+
+                if (Mathf.Abs(d - outer) <= OuterRingWidth * 0.5f || (onLane && d > inner))
+                {
+                    Ground[x, y] = Surface.Dirt;       // 바깥 환상 도로 · 대각선 골목
+                    _taken[x, y] = true;
+                    continue;
+                }
+
+                Ground[x, y] = Surface.Grass;
+            }
+        }
+    }
+
+    // ── 미리 잡아 두는 구역 ───────────────────────────────────────
+
+    /// <summary>서쪽 훈련장 — 건물과 울타리 마당.</summary>
     private void ReserveTraining()
     {
-        int x = _w - 46;
-        int y = _h - 44;
+        int x = (int)(_cx - _radius * 0.62f);
+        int y = (int)(_cy - 11);
 
-        var hall = new Rect2I(x, y, 10, 7);
-        FillGround(new Rect2I(x - 2, y - 2, 34, 36), Surface.Dirt);
-        Take(new Rect2I(x - 2, y - 2, 34, 36));       // 생성기가 여기 못 짓게 막는다
-        Props.Add(new PropPlacement(Abs(hall), "training_hall"));
+        var pad = new Rect2I(x - 2, y - 3, 30, 26);
+        FillGround(pad, Surface.Dirt);
+        Take(pad);
 
-        var yard = new Rect2I(x + 12, y + 2, 18, 18);
+        Props.Add(new PropPlacement(Abs(new Rect2I(x, y, 10, 7)), "training_hall"));
+
+        var yard = new Rect2I(x + 12, y + 1, 14, 18);
         TrainingYard = Abs(yard);
         YardGateY = TrainingYard.Position.Y + 7;
         TrainingDummySpot = WorldLayout.TileCenter(
-            TrainingYard.Position.X + 9, TrainingYard.Position.Y + 12);
+            TrainingYard.Position.X + 7, TrainingYard.Position.Y + 12);
 
-        // 마당 둘레에 무기 상자 몇 개.
-        Props.Add(new PropPlacement(Abs(new Rect2I(x, y + 9, 3, 3)), "barrels"));
-        Props.Add(new PropPlacement(Abs(new Rect2I(x + 5, y + 9, 3, 3)), "barrels"));
+        Props.Add(new PropPlacement(Abs(new Rect2I(x + 1, y + 9, 3, 3)), "barrels"));
+        Props.Add(new PropPlacement(Abs(new Rect2I(x + 6, y + 9, 3, 3)), "barrels"));
     }
 
-    // ── 거리 ─────────────────────────────────────────────────────
-
-    /// <summary>
-    /// 블록을 길로 반 가른다. 가르는 위치를 40~60% 사이에서 흔들어 바둑판을 피한다.
-    /// 길게 뻗은 쪽을 자르므로 블록이 지나치게 길쭉해지지 않는다.
-    /// </summary>
-    private void Split(Rect2I block, int depth)
+    /// <summary>동쪽 벌목장 — 통나무를 쌓아 둔 흙 마당.</summary>
+    private void ReserveLogging()
     {
-        bool vertical = block.Size.X >= block.Size.Y;
-        int span = vertical ? block.Size.X : block.Size.Y;
+        int x = (int)(_cx + _radius * 0.44f);
+        int y = (int)(_cy - 10);
 
-        if (depth >= RoadWidthByDepth.Length || span < MinBlock * 2)
+        var yard = new Rect2I(x, y, 22, 22);
+        FillGround(yard, Surface.Dirt);
+        Take(yard);
+
+        for (int i = 0; i < 6; i++)
         {
-            _blocks.Add(block);
-            return;
+            int px = x + 2 + _rng.RandiRange(0, 16);
+            int py = y + 2 + _rng.RandiRange(0, 16);
+            Props.Add(new PropPlacement(Abs(new Rect2I(px, py, 3, 3)), "barrels"));
         }
+    }
 
-        int width = RoadWidthByDepth[depth];
-        int lo = (int)(span * 0.40f);
-        int hi = (int)(span * 0.60f);
-        int at = _rng.RandiRange(lo, Mathf.Max(lo, hi - width));
+    /// <summary>광장 — 분수와 노점, 게시판. 한가운데(부활 지점)는 비워 둔다.</summary>
+    private void PlacePlazaFurniture()
+    {
+        int cx = (int)_cx, cy = (int)_cy;
 
-        Rect2I road = vertical
-            ? new Rect2I(block.Position.X + at, block.Position.Y, width, block.Size.Y)
-            : new Rect2I(block.Position.X, block.Position.Y + at, block.Size.X, width);
+        Add(cx - 2, cy - 10, 5, 5, "fountain");
+        Add(cx + 7, cy - 6, 3, 3, "notice_board");
+        Add(cx - 12, cy + 4, 4, 3, "market_stall_a");
+        Add(cx + 7, cy + 4, 4, 3, "market_stall_b");
+        Add(cx - 13, cy - 6, 4, 3, "market_stall_a");
 
-        // 광장·훈련소를 지나는 길은 놓지 않는다 — 미리 잡아 둔 자리는 건드리지 않는다.
-        Surface surface = depth >= DirtFromDepth ? Surface.Dirt : Surface.Stone;
-        FillGroundSkippingTaken(road, surface);
-
-        Rect2I a = vertical
-            ? new Rect2I(block.Position.X, block.Position.Y, at, block.Size.Y)
-            : new Rect2I(block.Position.X, block.Position.Y, block.Size.X, at);
-        Rect2I b = vertical
-            ? new Rect2I(block.Position.X + at + width, block.Position.Y,
-                block.Size.X - at - width, block.Size.Y)
-            : new Rect2I(block.Position.X, block.Position.Y + at + width,
-                block.Size.X, block.Size.Y - at - width);
-
-        Split(a, depth + 1);
-        Split(b, depth + 1);
+        void Add(int x, int y, int w, int h, string texture)
+            => Props.Add(new PropPlacement(Abs(new Rect2I(x, y, w, h)), texture));
     }
 
     // ── 건물 ─────────────────────────────────────────────────────
 
-    /// <summary>
-    /// 블록 하나를 건물 가로 줄로 채운다.
-    ///
-    /// 한 줄 안에서 건물은 0~1칸 띄우고 어깨를 맞댄다. 줄과 줄 사이에는 뒷길이
-    /// 난다. 이 '줄 + 뒷길'이 반복되는 것이 마을의 밀도다.
-    /// </summary>
-    private void FillBlock(Rect2I block, Rect2I plaza)
+    private enum District { Market, Guild, Residential, Poor }
+
+    private District DistrictAt(int x, int y)
     {
-        Rect2I inner = block.Grow(-StreetMargin);
-        if (inner.Size.X < 5 || inner.Size.Y < 4)
-            return;
+        float dx = x - _cx, dy = y - _cy;
+        float d = OctDist(dx, dy) / _radius;
 
-        District district = DistrictAt(block, plaza);
-
-        int y = inner.Position.Y;
-        while (y < inner.Position.Y + inner.Size.Y)
-        {
-            int rowHeight = PlaceRow(inner.Position.X, y,
-                inner.Position.X + inner.Size.X, district);
-            if (rowHeight <= 0)
-                break;
-
-            // 줄 아래에 뒷길을 내고 다음 줄로.
-            var lane = new Rect2I(inner.Position.X, y + rowHeight,
-                inner.Size.X, Mathf.Min(RowGap, inner.Position.Y + inner.Size.Y - y - rowHeight));
-            if (lane.Size.Y > 0)
-                FillGroundSkippingTaken(lane, Surface.Dirt);
-
-            y += rowHeight + RowGap;
-        }
-    }
-
-    /// <summary>건물 한 줄. 놓은 줄의 높이를 돌려준다(못 놓았으면 0).</summary>
-    private int PlaceRow(int x0, int y, int xEnd, District district)
-    {
-        int tallest = 0;
-        int x = x0;
-
-        while (x < xEnd)
-        {
-            BuildingKind kind = Pick(district);
-            if (x + kind.W > xEnd || y + kind.H > _h)
-                break;
-
-            var rect = new Rect2I(x, y, kind.W, kind.H);
-            if (IsFree(rect))
-            {
-                Take(rect);
-
-                // 건물 둘레를 다진 흙으로 깐다. 이걸 안 하면 블록마다 잔디 띠가
-                // 그대로 남아 마을이 아니라 초록 리본처럼 보인다. 사람이 밟고 사는
-                // 자리는 풀이 남지 않는다.
-                FillGroundSoft(rect.Grow(1), Surface.Dirt);
-
-                Props.Add(new PropPlacement(Abs(rect), kind.Texture));
-                tallest = Mathf.Max(tallest, kind.H);
-                x += kind.W + _rng.RandiRange(0, 1);   // 어깨를 맞대거나 한 칸만 띄운다
-            }
-            else
-            {
-                x += 1;
-            }
-        }
-
-        return tallest;
-    }
-
-    private enum District { Core, Wealthy, Poor, Residential }
-
-    private District DistrictAt(Rect2I block, Rect2I plaza)
-    {
-        int cx = block.Position.X + block.Size.X / 2;
-        int cy = block.Position.Y + block.Size.Y / 2;
-
-        float dx = (cx - _w * 0.5f) / (_w * 0.5f);
-        float dy = (cy - _h * 0.5f) / (_h * 0.5f);
-        float ring = Mathf.Max(Mathf.Abs(dx), Mathf.Abs(dy));
-
-        if (ring < 0.30f)
-            return District.Core;                    // 광장 둘레 — 상점가
-        if (dx > 0.25f && dy < -0.25f)
-            return District.Wealthy;                 // 북동 부촌
-        if (dx < -0.25f && dy > 0.25f)
-            return District.Poor;                    // 남서 빈민가
+        if (d < InnerRingRadius + 0.08f)
+            return District.Market;              // 광장을 두르는 상점가
+        if (dx > 0f && dy < 0f)
+            return District.Guild;               // 북동 길드 구역
+        if (dx < 0f && dy > 0f && d > 0.72f)
+            return District.Poor;                // 남서 바깥 — 허름한 집
         return District.Residential;
     }
 
-    /// <summary>상점 종류별로 이미 몇 채를 세웠는지. 같은 가게가 늘어서지 않게 막는다.</summary>
-    private readonly Dictionary<string, int> _shopCount = new();
+    private BuildingKind Pick(District district) => district switch
+    {
+        District.Market => _rng.Randf() < 0.45f
+            ? PickShop()
+            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
 
-    /// <summary>한 종류당 최대 채수. 마을에 대장간이 열 곳 있으면 마을이 아니다.</summary>
-    private const int MaxPerShop = 2;
+        District.Guild => _rng.Randf() < 0.18f
+            ? Manor
+            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
+
+        District.Poor => Shacks[_rng.RandiRange(0, Shacks.Length - 1)],
+
+        _ => _rng.Randf() < 0.22f
+            ? TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)]
+            : Cottages[_rng.RandiRange(0, Cottages.Length - 1)],
+    };
 
     private BuildingKind PickShop()
     {
@@ -358,39 +327,90 @@ public sealed class TownGenerator
         return TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)];
     }
 
-    private BuildingKind Pick(District district) => district switch
+    /// <summary>
+    /// 집을 한 겹 자라게 한다.
+    ///
+    /// roadFrontOnly 면 아래가 길에 닿는 자리에만 세운다 — 첫 겹이 거리를 따라
+    /// 늘어서게 하는 것이 목적이다. 다음 겹부터는 이미 선 집 옆에도 붙을 수 있어,
+    /// 거리에서 안쪽으로 번지듯 무리가 커진다. 격자로 찍는 것과 달리 길의 모양을
+    /// 따라가므로 굽은 길·방사형 길에서도 자연스럽다.
+    /// </summary>
+    private void GrowBuildings(bool roadFrontOnly)
     {
-        District.Core => _rng.Randf() < 0.35f
-            ? PickShop()
-            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
+        for (int y = 1; y < _h - 1; y++)
+        {
+            for (int x = 1; x < _w - 1; x++)
+            {
+                District district = DistrictAt(x, y);
+                BuildingKind kind = Pick(district);
+                var rect = new Rect2I(x, y, kind.W, kind.H);
 
-        District.Wealthy => _rng.Randf() < 0.30f
-            ? Manor
-            : TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)],
+                // 여백 없이 자리만 본다. Grow(1) 로 여백을 요구하면 길이 이미
+                // 점유 상태라 건물이 길에 절대 못 붙고, 마을이 성기게 흩어진다.
+                // 집은 길에 어깨를 대고 서야 거리가 생긴다.
+                if (!IsFree(rect) || !FrontsSomething(rect, roadFrontOnly))
+                    continue;
 
-        District.Poor => Shacks[_rng.RandiRange(0, Shacks.Length - 1)],
+                Take(rect);
 
-        _ => _rng.Randf() < 0.25f
-            ? TownHouses[_rng.RandiRange(0, TownHouses.Length - 1)]
-            : Cottages[_rng.RandiRange(0, Cottages.Length - 1)],
-    };
+                // 문 앞 두 칸만 다진 흙. 건물을 통째로 흙으로 감싸면 마을이
+                // 공사장처럼 보인다 — 바탕은 풀이어야 한다.
+                FillGroundSoft(new Rect2I(x + kind.W / 2 - 1, y + kind.H, 2, 1), Surface.Dirt);
 
-    private void PlacePlazaFurniture(Rect2I plaza)
+                Props.Add(new PropPlacement(Abs(rect), kind.Texture));
+                x += kind.W;                       // 어깨를 맞대고 다음 자리로
+            }
+        }
+    }
+
+    /// <summary>집 아래가 길이거나(첫 겹), 옆에 이미 집이 있는가(다음 겹).</summary>
+    private bool FrontsSomething(Rect2I rect, bool roadOnly)
     {
-        int cx = plaza.Position.X + plaza.Size.X / 2;
-        int cy = plaza.Position.Y + plaza.Size.Y / 2;
+        int belowY = rect.Position.Y + rect.Size.Y;
+        for (int x = rect.Position.X; x < rect.Position.X + rect.Size.X; x++)
+        {
+            for (int dy = 0; dy <= 2; dy++)
+            {
+                int y = belowY + dy;
+                if (Inside(x, y) && (Ground[x, y] == Surface.Stone || Ground[x, y] == Surface.Dirt))
+                    return true;
+            }
+        }
 
-        Add(new Rect2I(cx - 7, cy - 8, 5, 5), "fountain");
-        Add(new Rect2I(cx + 4, cy - 7, 3, 3), "notice_board");
-        Add(new Rect2I(cx - 8, cy + 4, 4, 3), "market_stall_a");
-        Add(new Rect2I(cx - 2, cy + 6, 4, 3), "market_stall_b");
-        Add(new Rect2I(cx + 4, cy + 4, 4, 3), "market_stall_a");
-        Add(new Rect2I(cx + 8, cy - 2, 3, 3), "barrels");
+        if (roadOnly)
+            return false;
 
-        // 광장은 통째로 Taken 이라 IsFree 로는 못 놓는다. 자리를 손으로 정했고
-        // 서로 겹치지 않는 것을 확인했으므로 그대로 놓는다.
-        void Add(Rect2I r, string texture)
-            => Props.Add(new PropPlacement(Abs(r), texture));
+        // 이미 선 집에 어깨를 붙인다. (길·성벽은 Ground 로 걸러진다)
+        for (int y = rect.Position.Y - 2; y < rect.Position.Y + rect.Size.Y + 2; y++)
+        {
+            for (int x = rect.Position.X - 2; x < rect.Position.X + rect.Size.X + 2; x++)
+            {
+                if (Inside(x, y) && _taken[x, y] && Ground[x, y] == Surface.Grass)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>남은 풀밭에 나무를 흩는다. 집 사이가 허전하면 마을이 헐거워 보인다.</summary>
+    private void ScatterTrees()
+    {
+        for (int y = 2; y < _h - 6; y += 3)
+        {
+            for (int x = 2; x < _w - 5; x += 3)
+            {
+                if (_rng.Randf() > 0.18f)
+                    continue;
+
+                bool poplar = _rng.Randf() < 0.4f;
+                var rect = new Rect2I(x, y, poplar ? 3 : 4, 5);
+                if (!IsFree(rect) || Ground[x, y] != Surface.Grass)
+                    continue;
+
+                Take(rect);
+                Props.Add(new PropPlacement(Abs(rect), poplar ? "tree_poplar" : "tree_oak"));
+            }
+        }
     }
 
     // ── 격자 도우미 ──────────────────────────────────────────────
@@ -437,7 +457,7 @@ public sealed class TownGenerator
         }
     }
 
-    /// <summary>잔디인 칸만 바꾼다. 이미 깔린 돌길·흙길을 덮어쓰지 않는다.</summary>
+    /// <summary>잔디인 칸만 바꾼다. 이미 깔린 길을 덮어쓰지 않는다.</summary>
     private void FillGroundSoft(Rect2I r, Surface surface)
     {
         for (int y = r.Position.Y; y < r.Position.Y + r.Size.Y; y++)
@@ -446,21 +466,6 @@ public sealed class TownGenerator
             {
                 if (Inside(x, y) && Ground[x, y] == Surface.Grass)
                     Ground[x, y] = surface;
-            }
-        }
-    }
-
-    /// <summary>이미 잡아 둔 자리(광장·훈련소)는 건너뛰고 바닥을 칠한다.</summary>
-    private void FillGroundSkippingTaken(Rect2I r, Surface surface)
-    {
-        for (int y = r.Position.Y; y < r.Position.Y + r.Size.Y; y++)
-        {
-            for (int x = r.Position.X; x < r.Position.X + r.Size.X; x++)
-            {
-                if (!Inside(x, y) || _taken[x, y])
-                    continue;
-                Ground[x, y] = surface;
-                _taken[x, y] = true;           // 길에는 건물이 서지 않는다
             }
         }
     }
