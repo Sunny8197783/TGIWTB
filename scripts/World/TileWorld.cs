@@ -1,6 +1,5 @@
 using Godot;
 using PixelMmo.Combat;
-using Village = PixelMmo.Runtime.WorldLayout.Village;
 
 namespace PixelMmo.Runtime;
 
@@ -58,11 +57,13 @@ public partial class TileWorld : TileMapLayer
 
     private const int GrassDirtSourceId = 1;
     private const int DirtStoneSourceId = 2;
+    private const int GrassStoneSourceId = 3;
 
     private const string TilesRoot = "res://art/tiles";
 
     private WangTileset _grassDirt;
     private WangTileset _dirtStone;
+    private WangTileset _grassStone;
     private bool _terrainReady;
 
     /// <summary>집·우물 스프라이트가 있는가. 없으면 예전 도형 블록으로 간다.</summary>
@@ -73,26 +74,36 @@ public partial class TileWorld : TileMapLayer
     /// <summary>같은 구역 안에서 체커보드로 밝기를 살짝 흔든다 — 움직임이 눈에 보이게.</summary>
     private static readonly float CheckerShade = 0.06f;
 
-    /// <summary>초원에 박아 둘 장애물 기둥 (타일 좌표). 이동에 리듬을 준다.</summary>
-    private static readonly Rect2I[] MeadowPillars =
+    // 초원 안의 것들은 초원 왼쪽 끝을 기준으로 잡는다.
+    // 예전에는 절대 좌표라, 마을을 넓혀 초원을 오른쪽으로 밀었을 때 강과 바위가
+    // 마을 한복판에 남아 있었다. 구역이 움직이면 같이 움직여야 한다.
+    private static int MeadowX(int offset) => WorldLayout.Meadow.Tiles.Position.X + offset;
+
+    /// <summary>초원에 박아 둘 장애물 기둥. 이동에 리듬을 준다.</summary>
+    private static Rect2I[] MeadowPillars => new Rect2I[]
     {
-        new(44, 14, 4, 4),
-        new(48, 48, 3, 5),
-        new(72, 20, 3, 6),
-        new(70, 46, 6, 3),
+        new(MeadowX(10), 14, 4, 4),
+        new(MeadowX(14), 48, 3, 5),
+        new(MeadowX(38), 20, 3, 6),
+        new(MeadowX(36), 46, 6, 3),
     };
 
     /// <summary>초원을 가로지르는 세로 강(물). 못 지나감.</summary>
-    private static readonly Rect2I MeadowRiver = new(56, 2, 4, 64);   // x56~59, y2~65
+    private static Rect2I MeadowRiver => new(MeadowX(22), 2, 4, 64);
 
-    /// <summary>강을 건너는 다리 — 통로 높이에 맞춰 중앙에. (게이트 중앙 y=34)</summary>
-    private static readonly Rect2I MeadowBridge = new(56, 31, 4, 6);  // x56~59, y31~36
+    /// <summary>강을 건너는 다리 — 동쪽 통로 높이(y31~36)에 맞춘다.</summary>
+    private static Rect2I MeadowBridge => new(MeadowX(22), 31, 4, 6);
 
     public override void _Ready()
     {
         Name = "TileWorld";
         // 실제 픽셀아트 타일이 들어오므로 확대할 때 뭉개지면 안 된다.
         TextureFilter = TextureFilterEnum.Nearest;
+
+        // 손으로 놓은 사각형이 서른 개가 넘는다. 겹치면 화면에서는 '조금 이상한'
+        // 정도로만 보여서 놓치기 쉬우므로 시작할 때 한 번 훑는다.
+        foreach (string problem in VillagePlan.Validate())
+            GD.PushWarning($"[VillagePlan] {problem}");
 
         _propsReady = VillageProps.AssetsPresent();
 
@@ -119,7 +130,8 @@ public partial class TileWorld : TileMapLayer
 
         // Wang 지형 소스에는 바닥만 들어 있다 — 충돌 폴리곤도 없다.
         // (마을 바닥을 지형으로 다시 칠하면 소스 번호가 바뀌므로 여기서 함께 본다.)
-        if (source == GrassDirtSourceId || source == DirtStoneSourceId)
+        if (source == GrassDirtSourceId || source == DirtStoneSourceId
+            || source == GrassStoneSourceId)
             return true;
 
         return source == SourceId && !IsSolid(GetCellAtlasCoords(cell).X);
@@ -171,10 +183,12 @@ public partial class TileWorld : TileMapLayer
     }
 
     /// <summary>
-    /// 마을 바닥용 Wang 타일셋 두 벌(잔디↔흙, 흙↔돌)을 붙인다.
+    /// 마을 바닥용 Wang 타일셋 세 벌(잔디↔흙, 흙↔돌, 잔디↔돌)을 붙인다.
     ///
-    /// 두 벌이 흙을 공유한다. 생성할 때 흙을 base_tile_id 로 체인해 뒀으므로
-    /// 두 시트의 흙 그림이 같고, 광장 둘레(PlazaSkirt)에서 자연스럽게 이어진다.
+    /// 세 벌이 잔디·흙·돌 그림을 공유한다. 생성할 때 base_tile_id 로 체인을
+    /// 걸었으므로 세 시트의 같은 지형이 같은 그림이고, 어느 조합이 맞닿아도 이어진다.
+    /// 세 쌍이 다 있어야 돌길이 잔디에 바로 닿을 수 있다 — 예전에는 광장을 흙으로
+    /// 감싸야만 했다.
     ///
     /// 한 벌이라도 없으면 아예 쓰지 않는다. 절반만 실제 아트인 상태보다
     /// 전부 도형인 편이 낫고, 무엇보다 게임이 멈추지 않는다.
@@ -187,7 +201,10 @@ public partial class TileWorld : TileMapLayer
         _dirtStone = WangTileset.Load(tileSet, DirtStoneSourceId,
             $"{TilesRoot}/dirt_stone_metadata.json", $"{TilesRoot}/dirt_stone_image.png");
 
-        _terrainReady = _grassDirt != null && _dirtStone != null;
+        _grassStone = WangTileset.Load(tileSet, GrassStoneSourceId,
+            $"{TilesRoot}/grass_stone_metadata.json", $"{TilesRoot}/grass_stone_image.png");
+
+        _terrainReady = _grassDirt != null && _dirtStone != null && _grassStone != null;
         if (!_terrainReady)
             GD.Print("[TileWorld] 마을 타일셋이 없어 도형 바닥으로 간다.");
     }
@@ -281,28 +298,27 @@ public partial class TileWorld : TileMapLayer
     /// </summary>
     private void PaintVillage()
     {
-        FillRect(Village.MainRoad, TileDirtA, TileDirtB);
-        FillRect(Village.CrossRoad, TileDirtA, TileDirtB);
-        FillRect(Village.PlazaSkirt, TileDirtA, TileDirtB);
-        FillRect(Village.Plaza, TileStoneA, TileStoneB);
-
-        // 집. 스프라이트가 있으면 바닥(문 앞 흙)만 찍고 건물은 VillageProps 가 얹는다.
-        // 없으면 예전처럼 지붕색 블록으로 대신한다.
-        int[] roofs = { TileHouseA, TileHouseB, TileHouseC };
-        for (int i = 0; i < Village.Houses.Length; i++)
+        // 거리와 골목. 적힌 순서대로 덮으므로 뒤에 오는 큰길이 위로 온다.
+        foreach (PathDef path in VillagePlan.Paths)
         {
-            Rect2I h = Village.Houses[i];
-            if (_propsReady)
-                StampDoorstep(h);
-            else
-                StampHouse(h.Position.X, h.Position.Y, h.Size.X, h.Size.Y, roofs[i % roofs.Length]);
+            switch (path.Surface)
+            {
+                case Surface.Dirt: FillRect(path.Tiles, TileDirtA, TileDirtB); break;
+                case Surface.Stone: FillRect(path.Tiles, TileStoneA, TileStoneB); break;
+                default: FillRect(path.Tiles, TileGrassA, TileGrassB); break;
+            }
         }
 
         PaintTrainingYard();
 
-        // 우물. 스프라이트가 있으면 광장 돌바닥을 그대로 두고 그 위에 얹는다.
+        // 건물·소품은 VillageProps 가 스프라이트로 얹는다. 그림이 없을 때만
+        // 예전처럼 지붕색 블록으로 자리를 표시한다 — 게임은 그대로 돌아가야 한다.
         if (!_propsReady)
-            FillSolid(Village.Well, TileWaterA);
+        {
+            int[] roofs = { TileHouseA, TileHouseB, TileHouseC };
+            for (int i = 0; i < VillagePlan.Props.Length; i++)
+                FillSolid(VillagePlan.Props[i].Tiles, roofs[i % roofs.Length]);
+        }
 
         // 도형으로 칠해 둔 바닥을 실제 픽셀아트로 다시 칠한다.
         ApplyVillageTerrain();
@@ -397,24 +413,34 @@ public partial class TileWorld : TileMapLayer
     /// </summary>
     private bool PaintWangCell(int x, int y, int nw, int ne, int sw, int se)
     {
+        // Wang 타일셋 한 벌은 지형 두 개짜리다. 한 칸 네 모서리에 셋이 다 모이면
+        // 맞는 타일이 없으므로, 가운데인 흙을 돌로 올려 두 개로 줄인다.
+        // (흙 골목이 돌 거리에 붙는 자리라 이음매가 포장으로 읽혀도 어색하지 않다.)
+        if (HasAllThree(nw, ne, sw, se))
+        {
+            nw = Promote(nw); ne = Promote(ne);
+            sw = Promote(sw); se = Promote(se);
+        }
+
         int lo = Mathf.Min(Mathf.Min(nw, ne), Mathf.Min(sw, se));
         int hi = Mathf.Max(Mathf.Max(nw, ne), Mathf.Max(sw, se));
 
         WangTileset set;
         int upper;
-        if (hi <= TerrainDirt)               // 잔디 / 흙
+        if (hi <= TerrainDirt)                            // 잔디 / 흙
         {
             set = _grassDirt;
             upper = TerrainDirt;
         }
-        else if (lo >= TerrainDirt)          // 흙 / 돌
+        else if (lo >= TerrainDirt)                       // 흙 / 돌
         {
             set = _dirtStone;
             upper = TerrainStone;
         }
-        else
+        else                                              // 잔디 / 돌
         {
-            return false;                    // 잔디 + 돌 — 전환 타일셋이 없다.
+            set = _grassStone;
+            upper = TerrainStone;
         }
 
         int wang = (nw == upper ? 8 : 0) + (ne == upper ? 4 : 0)
@@ -426,10 +452,20 @@ public partial class TileWorld : TileMapLayer
         return true;
     }
 
+    private static bool HasAllThree(int a, int b, int c, int d)
+    {
+        bool grass = a == TerrainGrass || b == TerrainGrass || c == TerrainGrass || d == TerrainGrass;
+        bool dirt = a == TerrainDirt || b == TerrainDirt || c == TerrainDirt || d == TerrainDirt;
+        bool stone = a == TerrainStone || b == TerrainStone || c == TerrainStone || d == TerrainStone;
+        return grass && dirt && stone;
+    }
+
+    private static int Promote(int terrain) => terrain == TerrainDirt ? TerrainStone : terrain;
+
     /// <summary>훈련장 — 안은 흙바닥, 테두리는 울타리. 서쪽에 출입구를 낸다.</summary>
     private void PaintTrainingYard()
     {
-        Rect2I y = Village.TrainingYard;
+        Rect2I y = VillagePlan.TrainingYard;
 
         FillRect(y, TileDirtA, TileDirtB);
 
@@ -447,7 +483,7 @@ public partial class TileWorld : TileMapLayer
         }
 
         // 서쪽 출입구 — 큰길 쪽에서 걸어 들어온다.
-        for (int yy = Village.YardGateY; yy < Village.YardGateY + Village.YardGateHeight; yy++)
+        for (int yy = VillagePlan.YardGateY; yy < VillagePlan.YardGateY + VillagePlan.YardGateHeight; yy++)
             SetFloor(x0, yy, TileDirtA, TileDirtB);
     }
 
@@ -518,33 +554,7 @@ public partial class TileWorld : TileMapLayer
         }
     }
 
-    /// <summary>
-    /// 집이 스프라이트일 때의 바닥. 집터는 잔디 그대로 두고 문 앞 두 칸만 흙으로
-    /// 다진다 — 집이 어느 쪽을 보고 서 있는지 바닥으로도 읽히게.
-    /// </summary>
-    private void StampDoorstep(Rect2I h)
-    {
-        int doorX = h.Position.X + h.Size.X / 2 - 1;
-        int doorY = h.Position.Y + h.Size.Y - 1;
-        SetFloor(doorX, doorY, TileDirtA, TileDirtB);
-        SetFloor(doorX + 1, doorY, TileDirtA, TileDirtB);
-    }
 
-    /// <summary>집 하나 — 지붕색 블록 + 아래 가운데 2칸 문(바닥으로 뚫음).</summary>
-    private void StampHouse(int x, int y, int w, int h, int tile)
-    {
-        for (int yy = y; yy < y + h; yy++)
-        {
-            for (int xx = x; xx < x + w; xx++)
-                SetCell(new Vector2I(xx, yy), SourceId, new Vector2I(tile, 0));
-        }
-
-        // 문 앞은 밟고 다니는 자리라 흙으로 둔다 — 집이 길을 향한다는 표시.
-        int doorX = x + w / 2 - 1;
-        int doorY = y + h - 1;
-        SetFloor(doorX, doorY, TileDirtA, TileDirtB);
-        SetFloor(doorX + 1, doorY, TileDirtA, TileDirtB);
-    }
 
     private void SetFloor(int x, int y, int tileA, int tileB)
     {

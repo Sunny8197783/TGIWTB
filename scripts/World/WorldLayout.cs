@@ -34,10 +34,10 @@ public static class WorldLayout
     public const int TileSize = 16;
 
     /// <summary>
-    /// 2144 / 16. 마을을 30 → 44 타일로 넓히면서 초원·굴을 오른쪽으로 밀었다.
-    /// 세로로 긴 골목처럼 보이던 마을을 광장·길이 들어갈 만한 폭으로 만들기 위함.
+    /// 2336 / 16. 마을을 30 → 44 → 56 타일로 넓히면서 초원·굴을 오른쪽으로 밀었다.
+    /// 주택가·부촌·상점가·빈민가·훈련소가 각각 한 구획씩 차지하려면 이 정도는 있어야 한다.
     /// </summary>
-    public const int WidthTiles = 134;
+    public const int WidthTiles = 146;
 
     /// <summary>1088 / 16 — 명세의 1080 에 가장 가까운 타일 배수.</summary>
     public const int HeightTiles = 68;
@@ -57,7 +57,7 @@ public static class WorldLayout
     {
         Id = "town",
         DisplayName = "초보자 마을",
-        Tiles = new Rect2I(2, 2, 44, 64),
+        Tiles = new Rect2I(2, 2, 56, 64),
         Safe = true,
         // 마을 바닥은 잔디다. 길·광장은 TileWorld 가 그 위에 덮는다.
         FloorColor = new Color(0.22f, 0.34f, 0.20f),
@@ -67,7 +67,7 @@ public static class WorldLayout
     {
         Id = "meadow",
         DisplayName = "초원",
-        Tiles = new Rect2I(48, 2, 52, 64),
+        Tiles = new Rect2I(60, 2, 52, 64),
         Safe = false,
         FloorColor = new Color(0.16f, 0.26f, 0.18f),
     };
@@ -76,7 +76,7 @@ public static class WorldLayout
     {
         Id = "ironjaw_den",
         DisplayName = "철턱의 굴",
-        Tiles = new Rect2I(102, 2, 30, 64),
+        Tiles = new Rect2I(114, 2, 30, 64),
         Safe = false,
         FloorColor = new Color(0.26f, 0.16f, 0.16f),
     };
@@ -90,60 +90,8 @@ public static class WorldLayout
     public static Vector2 TileCenter(int x, int y)
         => new((x + 0.5f) * TileSize, (y + 0.5f) * TileSize);
 
-    /// <summary>
-    /// 초보자 마을 배치. 좌표는 전부 타일 단위이고 Town(2,2,44,64) 안에 들어간다.
-    ///
-    /// 구조는 십자로다 — 가로길이 동쪽 성문(초원 통로)까지 곧게 이어지고, 세로길이
-    /// 그 길을 가로지른다. 교차점에 광장을 두고 광장 한가운데가 부활 지점이다.
-    /// 길이 만든 네 구획 중 셋에 집을 넣고, 남동 구획은 훈련장으로 비웠다.
-    /// </summary>
-    public static class Village
-    {
-        /// <summary>가로 큰길. 동쪽 통로(y31~36) 안에 들어가도록 y32~35.</summary>
-        public static readonly Rect2I MainRoad = new(2, 32, 44, 4);
-
-        /// <summary>세로 길. 마을을 남북으로 관통한다.</summary>
-        public static readonly Rect2I CrossRoad = new(22, 2, 4, 64);
-
-        /// <summary>
-        /// 광장 둘레의 흙 마당. 돌바닥이 잔디에 직접 닿지 않게 하는 완충대다.
-        ///
-        /// Wang 타일셋은 '두 지형 사이의 전환'만 담는다. 돌이 잔디에도 닿으면
-        /// 잔디↔돌 타일셋이 한 벌 더 필요해진다. 돌을 흙으로만 감싸면
-        /// 잔디↔흙, 흙↔돌 두 벌로 마을 전체를 덮을 수 있다.
-        /// </summary>
-        public static readonly Rect2I PlazaSkirt = new(16, 26, 16, 16);
-
-        /// <summary>광장 — 두 길의 교차점을 덮는 돌바닥.</summary>
-        public static readonly Rect2I Plaza = new(17, 27, 14, 14);
-
-        /// <summary>광장 북서쪽 우물. 못 지나간다.</summary>
-        public static readonly Rect2I Well = new(18, 29, 2, 2);
-
-        /// <summary>집. 전부 6x5 이고 아래 가운데 2칸이 문이다.</summary>
-        public static readonly Rect2I[] Houses =
-        {
-            new(5, 8, 6, 5),   new(14, 8, 6, 5),    // 북서 구획
-            new(5, 18, 6, 5),  new(14, 18, 6, 5),
-            new(28, 8, 6, 5),  new(37, 8, 6, 5),    // 북동 구획
-            new(28, 18, 6, 5), new(37, 18, 6, 5),
-            new(5, 44, 6, 5),  new(14, 44, 6, 5),   // 남서 구획
-            new(5, 54, 6, 5),  new(14, 54, 6, 5),
-        };
-
-        /// <summary>훈련장 울타리. 테두리만 막고 안은 흙바닥이다.</summary>
-        public static readonly Rect2I TrainingYard = new(30, 44, 13, 13);
-
-        /// <summary>울타리 서쪽 출입구가 뚫리는 세로 구간 (큰길에서 들어온다).</summary>
-        public static readonly int YardGateY = 49;
-        public static readonly int YardGateHeight = 3;
-
-        /// <summary>훈련장 한가운데 — 허수아비 자리.</summary>
-        public static Vector2 TrainingDummySpot => TileCenter(36, 50);
-
-        // 집·우물이 실제로 막는 범위는 여기서 정하지 않는다 — 그림의 불투명 영역에서
-        // 뽑아야 '보이는 것이 막는 것'과 같아진다. VillageProps 가 계산하고 소유한다.
-    }
+    // 마을 내부 배치(거리·구획·건물)는 VillagePlan 에 있다.
+    // 여기는 구역과 월드 크기까지만 정한다.
 
     public static ZoneDef ZoneAt(Vector2 worldPosition)
     {

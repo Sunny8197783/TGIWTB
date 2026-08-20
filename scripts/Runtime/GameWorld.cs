@@ -103,7 +103,7 @@ public partial class GameWorld : Node2D
 
         // 마을 훈련용 허수아비. 죽지 않으므로 스포너를 거치지 않고 직접 놓는다.
         // 광장에서 큰길을 따라 남동쪽 훈련장 안에 있다.
-        var dummy = new TrainingDummy { GlobalPosition = WorldLayout.Village.TrainingDummySpot };
+        var dummy = new TrainingDummy { GlobalPosition = VillagePlan.TrainingDummySpot };
         AddChild(dummy);
     }
 

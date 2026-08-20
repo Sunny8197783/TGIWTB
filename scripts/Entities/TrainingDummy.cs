@@ -16,15 +16,48 @@ public partial class TrainingDummy : MonsterBase
     protected override bool Immortal => true;
     protected override bool Immovable => true;
 
+    /// <summary>그림이 있으면 도형 대신 이걸 쓴다. 없으면 예전처럼 도형으로 그린다.</summary>
+    private const string SpritePath = "res://art/objects/training_dummy.png";
+
+    /// <summary>48x64 캔버스를 마을 축척에 맞춘 배율. 플레이어(0.55)보다 조금 크다.</summary>
+    private const float SpriteScale = 0.6f;
+
+    private bool _hasSprite;
+
+    public override void _Ready()
+    {
+        base._Ready();
+
+        var texture = GD.Load<Texture2D>(SpritePath);
+        if (texture == null)
+            return;
+
+        // 밑동이 그림자에 닿도록 아래를 맞춘다.
+        float bottom = Stats.Radius + 3f;
+        AddChild(new Sprite2D
+        {
+            Texture = texture,
+            TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
+            Centered = true,
+            Scale = new Vector2(SpriteScale, SpriteScale),
+            Position = new Vector2(0f, bottom - texture.GetHeight() * SpriteScale * 0.5f),
+            ZIndex = 1,
+        });
+        _hasSprite = true;
+    }
+
     protected override void UpdateAi(float delta)
     {
         // 아무것도 하지 않는다. 서서 맞아 주는 게 전부.
         Velocity = Vector2.Zero;
     }
 
-    /// <summary>볏짚 인형 — 기둥 + 가로대 + 머리. 도형만. (규칙 5)</summary>
+    /// <summary>볏짚 인형 — 기둥 + 가로대 + 머리. 그림이 없을 때의 도형 폴백.</summary>
     protected override void DrawShape(Color color)
     {
+        if (_hasSprite)
+            return;
+
         float r = Stats.Radius;
         var post = new Color(0.45f, 0.32f, 0.2f);   // 나무 기둥
 

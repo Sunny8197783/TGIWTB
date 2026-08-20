@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://frfy448eli5c"
-path="res://.godot/imported/well.png-f2974064d195118fa948b030620b4895.ctex"
+uid="uid://hs2w3032csy5"
+path="res://.godot/imported/townhouse_a.png-82112fa02bd9062918046768cdf9b6a2.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://art/objects/well.png"
-dest_files=["res://.godot/imported/well.png-f2974064d195118fa948b030620b4895.ctex"]
+source_file="res://art/objects/townhouse_a.png"
+dest_files=["res://.godot/imported/townhouse_a.png-82112fa02bd9062918046768cdf9b6a2.ctex"]
 
 [params]
 
