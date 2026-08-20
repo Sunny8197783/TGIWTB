@@ -177,7 +177,7 @@ public sealed class TownGenerator
             return;
 
         PlaceBuildings();
-        ScatterTrees();
+        FillEmptySpace();
     }
 
     // ── 형태 ─────────────────────────────────────────────────────
@@ -647,14 +647,106 @@ public sealed class TownGenerator
     private bool HasWallClearance(int x, int y)
         => OctDist(x - _cx, y - _cy) < _radius * WallRadius - WallThickness - WallClearance;
 
-    /// <summary>남은 풀밭에 나무를 흩는다. 집 사이가 허전하면 마을이 헐거워 보인다.</summary>
+    // ── 5단계: 빈 공간 채우기 ────────────────────────────────────
+    //
+    // "잔디만 남은 공간이 있으면 실패". 남은 칸을 그냥 무작위로 덮으면 창고 옆에
+    // 빨래가 널리고 광장 한복판에 텃밭이 생긴다. 그래서 **그 칸이 어디인지**를
+    // 보고 어울리는 것만 놓는다 — 건물 옆, 길가, 골목, 마당, 광장.
+
+    /// <summary>건물 벽 옆에 놓는 것.</summary>
+    private static readonly string[] NearBuilding =
+        { "barrels", "crates", "firewood", "ladder_bucket", "flower_pots" };
+
+    /// <summary>길가에 놓는 것.</summary>
+    private static readonly string[] Roadside =
+        { "lamp_post", "signpost", "bench", "well" };
+
+    /// <summary>골목에 놓는 것.</summary>
+    private static readonly string[] AlleyClutter =
+        { "laundry_line", "flower_pots", "crates", "barrels" };
+
+    /// <summary>마당에 놓는 것.</summary>
+    private static readonly string[] YardStuff =
+        { "veg_patch", "chickens", "hand_cart", "fence_section", "firewood" };
+
+    /// <summary>
+    /// 빈 잔디를 메운다. 칸마다 주변을 보고 무엇을 놓을지 정한다 —
+    /// 건물에 붙었으면 살림살이, 길에 붙었으면 가로등·벤치, 그 밖이면 마당 살림.
+    /// 도로 위에는 아무 것도 놓지 않는다(길을 가리면 안 된다).
+    /// </summary>
+    private void FillEmptySpace()
+    {
+        for (int y = 1; y < _h - 2; y++)
+        {
+            for (int x = 1; x < _w - 2; x++)
+            {
+                if (!IsInsideWall(x, y) || _taken[x, y] || Ground[x, y] != Surface.Grass)
+                    continue;
+
+                string[] table = NextToBuilding(x, y) ? NearBuilding
+                    : NextToRoad(x, y) ? Roadside
+                    : InAlley(x, y) ? AlleyClutter
+                    : YardStuff;
+
+                // 전부 채우면 답답하다. 자리마다 확률을 두되 잔디가 넓게 남지는 않게.
+                if (_rng.Randf() > 0.55f)
+                    continue;
+
+                var rect = new Rect2I(x, y, 2, 2);
+                if (!IsFree(rect))
+                    continue;
+
+                Take(rect);
+                Props.Add(new PropPlacement(
+                    Abs(rect), table[_rng.RandiRange(0, table.Length - 1)], solid: false));
+                x += 2;
+            }
+        }
+
+        ScatterTrees();
+    }
+
+    /// <summary>둘레 두 칸 안에 건물이 있는가. (건물이 차지한 칸은 잔디로 남아 있다)</summary>
+    private bool NextToBuilding(int x, int y)
+    {
+        for (int dy = -2; dy <= 2; dy++)
+        {
+            for (int dx = -2; dx <= 2; dx++)
+            {
+                int cx = x + dx, cy = y + dy;
+                if (Inside(cx, cy) && _taken[cx, cy] && Ground[cx, cy] == Surface.Grass)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    private bool NextToRoad(int x, int y) => Neighbour(x, y, Surface.Stone);
+
+    private bool InAlley(int x, int y) => Neighbour(x, y, Surface.Dirt);
+
+    private bool Neighbour(int x, int y, Surface surface)
+    {
+        for (int dy = -1; dy <= 1; dy++)
+        {
+            for (int dx = -1; dx <= 1; dx++)
+            {
+                int cx = x + dx, cy = y + dy;
+                if (Inside(cx, cy) && Ground[cx, cy] == surface)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    /// <summary>남은 풀밭에 나무를 흩는다. 도로는 가리지 않는다.</summary>
     private void ScatterTrees()
     {
-        for (int y = 2; y < _h - 6; y += 3)
+        for (int y = 2; y < _h - 4; y += 3)
         {
-            for (int x = 2; x < _w - 5; x += 3)
+            for (int x = 2; x < _w - 3; x += 3)
             {
-                if (_rng.Randf() > 0.18f)
+                if (_rng.Randf() > 0.30f)
                     continue;
 
                 var rect = new Rect2I(x, y, 2, 3);

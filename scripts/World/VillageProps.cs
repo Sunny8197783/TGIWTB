@@ -40,7 +40,9 @@ public partial class VillageProps : Node2D
     {
         "gatehouse", "fountain", "tree_conifer", "bridge", "farm_plot", "wall_section",
         "training_dummy", "weapon_rack", "fence_section", "log_pile", "tree_stump",
-        "training_hall", "barrels",
+        "training_hall", "barrels", "crates", "firewood", "well", "lamp_post",
+        "signpost", "bench", "laundry_line", "flower_pots", "veg_patch",
+        "hand_cart", "chickens", "ladder_bucket",
         "kit_s_shed", "kit_s02", "kit_s03", "kit_s04", "kit_s05", "kit_s06", "kit_s07", "kit_s08", "kit_m_cottage", "kit_m01", "kit_m02", "kit_m03", "kit_m04", "kit_m05", "kit_m06", "kit_m07", "kit_m08", "kit_m09", "kit_m10", "kit_m11", "kit_l_shop", "kit_l02", "kit_l03", "kit_l04", "kit_l05", "kit_l06", "kit_xl_guild",
     };
 
