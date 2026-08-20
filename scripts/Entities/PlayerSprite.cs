@@ -90,7 +90,9 @@ public partial class PlayerSprite : Sprite2D
         Name = "PlayerSprite";
         Centered = true;
         TextureFilter = TextureFilterEnum.Nearest;
-        ZIndex = 1;                       // 무기 VFX(50+) 보다 아래
+        // 0 이어야 한다. 1 이면 건물(0)보다 무조건 위라 Y 정렬이 무시되고,
+        // 집 뒤로 들어가도 플레이어가 지붕 위에 뜬다. 무기 VFX 는 45 이상.
+        ZIndex = 0;
         Scale = new Vector2(SpriteScale, SpriteScale);
         Load();
     }

@@ -41,7 +41,7 @@ public partial class TrainingDummy : MonsterBase
             Centered = true,
             Scale = new Vector2(SpriteScale, SpriteScale),
             Position = new Vector2(0f, bottom - texture.GetHeight() * SpriteScale * 0.5f),
-            ZIndex = 1,
+            ZIndex = 0,        // 건물과 같은 층 — Y 정렬로 앞뒤가 갈린다.
         });
         _hasSprite = true;
     }

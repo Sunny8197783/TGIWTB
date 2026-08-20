@@ -151,7 +151,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         CollisionLayer = CollisionLayers.Player;
         CollisionMask = CollisionLayers.World;
         MotionMode = MotionModeEnum.Floating;
-        ZIndex = 10;
+
+        // 건물·나무와 같은 층에 서야 Y 정렬로 앞뒤가 갈린다. 바닥은 -10 에 있고
+        // 무기 VFX 는 45 이상이라, 0 이면 그 사이에 정확히 들어간다.
+        ZIndex = 0;
 
         BuildShapes();
         DodgeSucceeded += OnDodgeSucceeded;

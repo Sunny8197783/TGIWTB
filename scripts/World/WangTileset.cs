@@ -39,7 +39,8 @@ public sealed class WangTileset
     public static WangTileset Load(TileSet tileSet, int sourceId,
         string metadataPath, string imagePath)
     {
-        var texture = GD.Load<Texture2D>(imagePath);
+        // 색은 여기서 한 번 눌러 들여온다 — 시트마다 따로 손보면 바닥이 알록달록해진다.
+        Texture2D texture = ArtPalette.Ground(imagePath);
         if (texture == null)
         {
             GD.PushWarning($"[WangTileset] 시트를 못 읽었다: {imagePath}");

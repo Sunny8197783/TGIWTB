@@ -35,15 +35,21 @@ public partial class TileWorld : TileMapLayer
     private const int TileStoneB = 16;
     private const int TileFence = 17;
 
-    /// <summary>마을을 두르는 돌 성벽. 바깥 테두리 벽(TileWall)보다 밝은 회색이다.</summary>
-    private const int TileTownWall = 18;
-    private const int TileCount = 19;
+    /// <summary>
+    /// 마을을 두르는 돌 성벽. 한 색으로 3칸을 칠하면 회색 띠일 뿐이라
+    /// 위(볕 드는 흉벽) · 몸통 · 아래(그늘) 세 단으로 나눠 두께를 보이게 한다.
+    /// </summary>
+    private const int TileTownWallTop = 18;
+    private const int TileTownWall = 19;
+    private const int TileTownWallBase = 20;
+    private const int TileCount = 21;
 
     /// <summary>벽·건물·물·울타리면 막힌 칸. 다리(TileBridge)는 통행 가능.</summary>
     private static bool IsSolid(int tileX) => tileX == TileWall
         || (tileX >= TileHouseA && tileX <= TileHouseC)
         || tileX == TileWaterA || tileX == TileWaterB
-        || tileX == TileFence || tileX == TileTownWall;
+        || tileX == TileFence
+        || tileX == TileTownWallTop || tileX == TileTownWall || tileX == TileTownWallBase;
 
     private const int SourceId = 0;
     private const int PhysicsLayer = 0;
@@ -77,6 +83,13 @@ public partial class TileWorld : TileMapLayer
 
     private VillageProps _props;
     private TownGenerator _town;
+
+    /// <summary>
+    /// 건물·나무 스프라이트 묶음. 타일맵의 자식이 아니라 **월드의 자식**이어야 한다 —
+    /// 플레이어와 같은 Y 정렬 묶음에 들어가야 건물 뒤로 지나갈 때 가려진다.
+    /// GameWorld 가 _Ready 직후에 받아 간다.
+    /// </summary>
+    public VillageProps Props => _props;
 
     /// <summary>훈련장 허수아비 자리. GameWorld 가 개체를 놓을 때 쓴다.</summary>
     public Vector2 TrainingDummySpot => _town?.TrainingDummySpot ?? WorldLayout.SpawnPoint;
@@ -123,6 +136,10 @@ public partial class TileWorld : TileMapLayer
         // 실제 픽셀아트 타일이 들어오므로 확대할 때 뭉개지면 안 된다.
         TextureFilter = TextureFilterEnum.Nearest;
 
+        // 바닥은 언제나 맨 아래. Y 정렬은 z 가 같은 것끼리만 겨루므로,
+        // 바닥을 따로 떼어 놓아야 건물·플레이어 정렬에 끼어들지 않는다.
+        ZIndex = -10;
+
         // 마을을 만든다. 188x188 에 건물이 수백 채라 손으로 놓을 수 없다.
         _town = new TownGenerator(WorldLayout.Town.Tiles);
         _town.Generate();
@@ -132,11 +149,10 @@ public partial class TileWorld : TileMapLayer
         TileSet = BuildTileSet();
         Paint();
 
+        // 여기서 만들기만 하고 트리에 붙이지는 않는다 — GameWorld 가 자기 자식으로
+        // 받아 가야 플레이어와 같은 Y 정렬 묶음에 들어간다.
         if (_propsReady)
-        {
             _props = new VillageProps(_town.Props);
-            AddChild(_props);               // 타일 뒤에 붙어 바닥 위에 그려진다.
-        }
     }
 
     /// <summary>해당 월드 좌표가 벽이 아닌가.</summary>
@@ -270,7 +286,11 @@ public partial class TileWorld : TileMapLayer
         Fill(image, TileStoneA, stone);
         Fill(image, TileStoneB, Shade(stone));
         Fill(image, TileFence, new Color(0.40f, 0.28f, 0.16f));
-        Fill(image, TileTownWall, new Color(0.55f, 0.55f, 0.58f));
+
+        // 성벽 3단 — 볕 드는 흉벽 / 몸통 / 그늘. 색만으로 두께가 읽힌다.
+        Fill(image, TileTownWallTop, new Color(0.62f, 0.60f, 0.55f));
+        Fill(image, TileTownWall, new Color(0.47f, 0.45f, 0.42f));
+        Fill(image, TileTownWallBase, new Color(0.31f, 0.30f, 0.29f));
 
         return ImageTexture.CreateFromImage(image);
     }
@@ -339,7 +359,7 @@ public partial class TileWorld : TileMapLayer
                     case Surface.Dirt: SetFloor(tx, ty, TileDirtA, TileDirtB); break;
                     case Surface.Stone: SetFloor(tx, ty, TileStoneA, TileStoneB); break;
                     case Surface.Water: SetFloor(tx, ty, TileWaterA, TileWaterB); break;
-                    case Surface.Wall: SetCellTile(tx, ty, TileTownWall); break;
+                    case Surface.Wall: SetCellTile(tx, ty, WallShade(x, y)); break;
                     default: SetFloor(tx, ty, TileGrassA, TileGrassB); break;
                 }
             }
@@ -357,6 +377,21 @@ public partial class TileWorld : TileMapLayer
         }
 
         ApplyVillageTerrain();
+    }
+
+    /// <summary>
+    /// 성벽 한 칸이 띠의 어디쯤인가 — 위 끝이면 흉벽, 아래 끝이면 그늘.
+    /// 좌표는 마을 안 지역 좌표다(생성기의 Ground 격자).
+    /// </summary>
+    private int WallShade(int x, int y)
+    {
+        Rect2I town = WorldLayout.Town.Tiles;
+        bool aboveIsWall = y > 0 && _town.Ground[x, y - 1] == Surface.Wall;
+        bool belowIsWall = y < town.Size.Y - 1 && _town.Ground[x, y + 1] == Surface.Wall;
+
+        if (!aboveIsWall)
+            return TileTownWallTop;
+        return belowIsWall ? TileTownWall : TileTownWallBase;
     }
 
     /// <summary>
@@ -504,30 +539,12 @@ public partial class TileWorld : TileMapLayer
 
     private static int Promote(int terrain) => terrain == TerrainDirt ? TerrainStone : terrain;
 
-    /// <summary>훈련장 — 안은 흙바닥, 테두리는 울타리. 서쪽에 출입구를 낸다.</summary>
-    private void PaintTrainingYard()
-    {
-        Rect2I y = _town.TrainingYard;
-
-        FillRect(y, TileDirtA, TileDirtB);
-
-        int x0 = y.Position.X, y0 = y.Position.Y;
-        int x1 = x0 + y.Size.X - 1, y1 = y0 + y.Size.Y - 1;
-        for (int x = x0; x <= x1; x++)
-        {
-            SetCellTile(x, y0, TileFence);
-            SetCellTile(x, y1, TileFence);
-        }
-        for (int yy = y0; yy <= y1; yy++)
-        {
-            SetCellTile(x0, yy, TileFence);
-            SetCellTile(x1, yy, TileFence);
-        }
-
-        // 서쪽 출입구 — 큰길 쪽에서 걸어 들어온다.
-        for (int yy = _town.YardGateY; yy < _town.YardGateY + TownGenerator.YardGateHeight; yy++)
-            SetFloor(x0, yy, TileDirtA, TileDirtB);
-    }
+    /// <summary>
+    /// 훈련장 바닥. 울타리는 타일이 아니라 목책 스프라이트로 세운다 —
+    /// 단색 갈색 타일로 두르면 마당이 아니라 도면에 그린 사각형처럼 보였다.
+    /// (목책은 TownGenerator.FenceYard 가 놓는다)
+    /// </summary>
+    private void PaintTrainingYard() => FillRect(_town.TrainingYard, TileDirtA, TileDirtB);
 
     private void FillRect(Rect2I r, int tileA, int tileB)
     {

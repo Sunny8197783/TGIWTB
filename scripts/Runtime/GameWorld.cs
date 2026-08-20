@@ -34,8 +34,17 @@ public partial class GameWorld : Node2D
     {
         Name = "World";
 
+        // 이 노드의 자식들을 Y 로 정렬한다. 건물·나무·플레이어·몬스터가 한 줄에
+        // 서서, 화면상 아래에 있는 것이 위에 있는 것을 덮는다 —
+        // 집 뒤로 걸어 들어가면 집이 플레이어를 가린다.
+        YSortEnabled = true;
+
         _tiles = new TileWorld();
         AddChild(_tiles);
+
+        // 건물 스프라이트는 타일맵이 아니라 여기 직접 붙인다(같은 정렬 묶음).
+        if (_tiles.Props != null)
+            AddChild(_tiles.Props);
 
         _player = new PlayerCharacter();
         AddChild(_player);

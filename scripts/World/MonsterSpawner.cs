@@ -47,6 +47,10 @@ public partial class MonsterSpawner : Node2D
     public override void _Ready()
     {
         Name = "MonsterSpawner";
+
+        // 몬스터도 건물과 같은 정렬 묶음에 넣는다. 이게 없으면 스포너가 원점(0,0)
+        // 한 점으로 취급돼 모든 몬스터가 같은 순서로 그려진다.
+        YSortEnabled = true;
         _rng.Randomize();
     }
 
