@@ -151,16 +151,26 @@ public sealed class TownGenerator
         new("kit_l07", 3, 3),
     };
 
-    /// <summary>지붕면만 보이는 그림. 길 아래쪽·옆쪽에 세운다(뒷모습·옆모습).</summary>
-    private static readonly BuildingKind[] RoofS = { new("roof_s01", 1, 1) };
+    /// <summary>
+    /// 지붕면만 보이는 그림. 길 아래쪽·옆쪽에 세운다(뒷모습·옆모습).
+    /// 정면 키트보다 종류가 적으면 뒷골목이 복붙처럼 보이므로 꾸준히 늘려야 한다.
+    /// </summary>
+    private static readonly BuildingKind[] RoofS =
+    {
+        new("roof_s01", 1, 1), new("roof_s02", 1, 1), new("roof_s03", 1, 1),
+    };
 
     private static readonly BuildingKind[] RoofM =
     {
-        new("roof_m01", 2, 2), new("roof_m02", 2, 2),
-        new("roof_m03", 2, 2), new("roof_m04", 2, 2),
+        new("roof_m01", 2, 2), new("roof_m02", 2, 2), new("roof_m03", 2, 2),
+        new("roof_m04", 2, 2), new("roof_m05", 2, 2), new("roof_m06", 2, 2),
+        new("roof_m07", 2, 2), new("roof_m08", 2, 3),
     };
 
-    private static readonly BuildingKind[] RoofL = { new("roof_l01", 3, 3) };
+    private static readonly BuildingKind[] RoofL =
+    {
+        new("roof_l01", 3, 3), new("roof_l02", 3, 3), new("roof_l03", 3, 3),
+    };
 
     /// <summary>상점 종류당 최대 채수. 대장간이 열 곳이면 마을이 아니다.</summary>
     private const int MaxPerShop = 3;
@@ -200,6 +210,9 @@ public sealed class TownGenerator
     private readonly Dictionary<string, int> _shopCount = new();
     private int _placed;
 
+    /// <summary>지붕(뒷모습·옆모습)으로 선 채수. 정면만 잔뜩이면 거리 한쪽만 사는 것처럼 보인다.</summary>
+    private int _roofFaced;
+
     public TownGenerator(Rect2I town)
     {
         _ox = town.Position.X;
@@ -237,7 +250,8 @@ public sealed class TownGenerator
         FillYards();
         PaintOutside();
 
-        GD.Print($"[Town] 건물 {_placed}채, 소품 합계 {Props.Count}개");
+        GD.Print($"[Town] 건물 {_placed}채 (정면 {_placed - _roofFaced} / 뒷·옆 {_roofFaced}), "
+            + $"소품 합계 {Props.Count}개");
         ReportGround();
     }
 
@@ -435,7 +449,11 @@ public sealed class TownGenerator
                     continue;
                 }
 
-                BuildingKind kind = Pick(x, y, roof: true);
+                // 세로 길가라고 전부 지붕 그림을 쓰면 뒷·옆모습이 정면보다 많아지는데,
+                // 지붕 키트는 종류가 몇 안 되므로 같은 집이 줄줄이 늘어선다.
+                // 모퉁이집이 옆길을 바라보는 건 실제 마을에도 흔하니 일부는 정면으로.
+                bool roof = _rng.Randf() < 0.55f;
+                BuildingKind kind = Pick(x, y, roof);
                 var rect = west
                     ? new Rect2I(x - kind.W, y, kind.W, kind.H)
                     : new Rect2I(x + 1, y, kind.W, kind.H);
@@ -446,7 +464,7 @@ public sealed class TownGenerator
                     continue;
                 }
 
-                Raise(rect, kind.Texture, flipH: east);
+                Raise(rect, kind.Texture, flipH: roof && east);
                 y += kind.H + _rng.RandiRange(0, 1);
             }
         }
@@ -482,6 +500,8 @@ public sealed class TownGenerator
         MarkBuilding(rect);
         Props.Add(new PropPlacement(Abs(rect), texture, solid: true, flipH: flipH));
         _placed++;
+        if (texture.StartsWith("roof_", System.StringComparison.Ordinal))
+            _roofFaced++;
     }
 
     /// <summary>세울 수 있는 자리인가 — 성벽 안, 벽에서 떨어져 있고, 아직 빈 땅.</summary>

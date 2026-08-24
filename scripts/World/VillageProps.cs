@@ -94,7 +94,10 @@ public partial class VillageProps : Node2D
         "kit_l_shop", "kit_l02", "kit_l03", "kit_l04", "kit_l05", "kit_l06", "kit_l07",
 
         // 길 아래·옆 — 지붕면(뒷모습·옆모습)
-        "roof_s01", "roof_m01", "roof_m02", "roof_m03", "roof_m04", "roof_l01",
+        "roof_s01", "roof_s02", "roof_s03",
+        "roof_m01", "roof_m02", "roof_m03", "roof_m04",
+        "roof_m05", "roof_m06", "roof_m07", "roof_m08",
+        "roof_l01", "roof_l02", "roof_l03",
 
         // 이름 붙은 건물
         "kit_xl_guild", "town_hall", "chapel", "inn", "tavern", "bakery", "smithy",
