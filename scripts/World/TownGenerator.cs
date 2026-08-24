@@ -79,7 +79,13 @@ public sealed class TownGenerator
     // 예전 값은 광장·순환로가 너무 굵어서 마을 한가운데가 통째로 포석 공터였다.
     // 길은 얇게, 땅은 넓게 — 그래야 건물이 들어설 띠가 생긴다.
     private const float WallRadius = 0.84f;
-    private const int WallThickness = 3;
+
+    /// <summary>
+    /// 성벽 두께(칸). 성벽 타일은 '네 칸이 모두 벽일 때만' 벽 윗면으로 치므로,
+    /// 두께 N 이면 바깥 벽면 1줄 + 윗면 (N-2)줄 + 안쪽 밑동 1줄로 나뉜다.
+    /// 3 이면 윗면이 한 줄뿐이라 담장처럼 얇아 보인다.
+    /// </summary>
+    private const int WallThickness = 4;
 
     /// <summary>
     /// 광장 원반. 분수 하나 놓을 만큼만 잡으면 노점을 둘러세울 자리가 없다 —

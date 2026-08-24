@@ -70,12 +70,16 @@ public partial class TileWorld : TileMapLayer
     private const int GrassStoneSourceId = 3;
     private const int GrassWaterSourceId = 4;
 
+    /// <summary>성벽. 바닥이 아니라 '높이가 있는 지형'이라 따로 칠하고 따로 막는다.</summary>
+    private const int TownWallSourceId = 5;
+
     private const string TilesRoot = "res://art/tiles32";
 
     private WangTileset _grassDirt;
     private WangTileset _dirtStone;
     private WangTileset _grassStone;
     private WangTileset _grassWater;
+    private WangTileset _townWall;
     private bool _terrainReady;
 
     /// <summary>집·우물 스프라이트가 있는가. 없으면 예전 도형 블록으로 간다.</summary>
@@ -210,6 +214,8 @@ public partial class TileWorld : TileMapLayer
             return true;
         if (source == GrassWaterSourceId)
             return false;      // 강은 못 건넌다 — 다리로만.
+        if (source == TownWallSourceId)
+            return false;      // 성벽. 실제 충돌은 코너 사분면 단위로 붙어 있다.
 
         return source == SourceId && !IsSolid(GetCellAtlasCoords(cell).X);
     }
@@ -283,6 +289,12 @@ public partial class TileWorld : TileMapLayer
 
         _grassWater = WangTileset.Load(tileSet, GrassWaterSourceId,
             $"{TilesRoot}/grass_water_metadata.json", $"{TilesRoot}/grass_water_image.png");
+
+        // 성벽은 있으면 쓰고 없으면 코드로 그린 석축 무늬로 간다 — 나머지 바닥과
+        // 달리 없어도 마을이 성립하므로 _terrainReady 조건에 넣지 않는다.
+        _townWall = WangTileset.Load(tileSet, TownWallSourceId,
+            $"{TilesRoot}/town_wall_metadata.json", $"{TilesRoot}/town_wall_image.png",
+            solidQuadrants: true);
 
         _terrainReady = _grassDirt != null && _dirtStone != null
             && _grassStone != null && _grassWater != null;
@@ -550,6 +562,74 @@ public partial class TileWorld : TileMapLayer
 
         GD.Print($"[TileWorld] 마을 바닥 {painted}칸 픽셀아트로 교체"
             + (skipped > 0 ? $", {skipped}칸은 도형 유지(지형 조합 없음)" : ""));
+
+        ApplyTownWall();
+    }
+
+    /// <summary>
+    /// 성벽을 실제 픽셀아트로 칠한다.
+    ///
+    /// 성벽은 바닥이 아니라 **높이가 있는 지형**이다. 그래서 잔디↔성벽 Wang 한 벌을
+    /// 따로 쓴다 — 타일셋의 transition 이 두 지형의 높이차를 벽면으로 그려 주므로,
+    /// 팔각의 직선·대각선·모서리를 우리가 일일이 그릴 필요가 없다.
+    ///
+    /// 정점 판정은 바닥과 반대로 **네 칸이 모두 성벽일 때만** 성벽으로 친다.
+    /// 바닥처럼 '하나라도 있으면' 으로 하면 경계가 띠 바깥으로 한 칸 번져서
+    /// 성문 앞 길까지 벽 그림이 덮는다. 이 규칙이면 3칸 띠가
+    /// 바깥 흉벽 / 벽 윗면 / 안쪽 밑동 세 줄로 딱 떨어진다.
+    /// </summary>
+    private void ApplyTownWall()
+    {
+        if (_townWall == null)
+            return;
+
+        Rect2I town = WorldLayout.Town.Tiles;
+        int w = town.Size.X, h = town.Size.Y;
+        int ox = town.Position.X, oy = town.Position.Y;
+
+        var vertex = new bool[w + 1, h + 1];
+        for (int vy = 0; vy <= h; vy++)
+        {
+            for (int vx = 0; vx <= w; vx++)
+                vertex[vx, vy] = AllWall(vx, vy, w, h);
+        }
+
+        int painted = 0;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                if (_town.Ground[x, y] != Surface.Wall)
+                    continue;
+
+                int wang = (vertex[x, y] ? 8 : 0) + (vertex[x + 1, y] ? 4 : 0)
+                         + (vertex[x, y + 1] ? 2 : 0) + (vertex[x + 1, y + 1] ? 1 : 0);
+                if (!_townWall.Has(wang))
+                    continue;
+
+                SetCell(new Vector2I(ox + x, oy + y), _townWall.SourceId, _townWall.Atlas(wang));
+                painted++;
+            }
+        }
+
+        GD.Print($"[TileWorld] 성벽 {painted}칸 픽셀아트로 교체");
+    }
+
+    /// <summary>그 정점에 닿은 네 칸이 전부 성벽인가. 격자 밖은 성벽이 아니다.</summary>
+    private bool AllWall(int vx, int vy, int w, int h)
+    {
+        for (int dy = -1; dy <= 0; dy++)
+        {
+            for (int dx = -1; dx <= 0; dx++)
+            {
+                int cx = vx + dx, cy = vy + dy;
+                if (cx < 0 || cy < 0 || cx >= w || cy >= h)
+                    return false;
+                if (_town.Ground[cx, cy] != Surface.Wall)
+                    return false;
+            }
+        }
+        return true;
     }
 
     /// <summary>도형 타일을 보고 그 칸의 바닥 지형을 되읽는다. 막힌 칸은 TerrainNone.</summary>

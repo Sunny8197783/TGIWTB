@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 
 namespace PixelMmo.Runtime;
@@ -36,11 +37,22 @@ public sealed class WangTileset
     /// 타일셋을 TileSet 에 새 아틀라스 소스로 붙이고 조회표를 만든다.
     /// 에셋이 없거나 깨졌으면 null — 호출부는 도형 플레이스홀더로 폴백한다.
     /// </summary>
+    /// <param name="solidQuadrants">
+    /// 타일의 '위 지형(upper)' 쪽 사분면에만 충돌을 붙일지.
+    ///
+    /// 성벽처럼 지형 자체가 막는 것일 때 쓴다. 타일 한 장을 통째로 막으면 성벽
+    /// 바깥 줄(그림상 절반이 잔디인 칸)에서 벽에 닿기도 전에 걸린다 — 사용자가
+    /// 지적했던 바로 그 증상이다. 코너가 벽인 사분면만 막으면 보이는 것과
+    /// 막는 것이 같아진다.
+    /// </param>
     public static WangTileset Load(TileSet tileSet, int sourceId,
-        string metadataPath, string imagePath)
+        string metadataPath, string imagePath, bool solidQuadrants = false)
     {
         // 색은 여기서 한 번 눌러 들여온다 — 시트마다 따로 손보면 바닥이 알록달록해진다.
-        Texture2D texture = ArtPalette.Ground(imagePath);
+        // 성벽 시트만 돌을 어둡게 눌러야 한다(바닥용 규칙은 돌을 밝히므로 벽이 하얘진다).
+        Texture2D texture = solidQuadrants
+            ? ArtPalette.Wall(imagePath)
+            : ArtPalette.Ground(imagePath);
         if (texture == null)
         {
             GD.PushWarning($"[WangTileset] 시트를 못 읽었다: {imagePath}");
@@ -90,6 +102,9 @@ public sealed class WangTileset
             int wang = Bit(corners, "NW") * 8 + Bit(corners, "NE") * 4
                      + Bit(corners, "SW") * 2 + Bit(corners, "SE");
             set._byWang[wang] = atlas;
+
+            if (solidQuadrants)
+                AddQuadrantCollision(source, atlas, wang, tileW, tileH);
         }
 
         int missing = 0;
@@ -106,4 +121,43 @@ public sealed class WangTileset
 
     private static int Bit(Godot.Collections.Dictionary corners, string key)
         => corners[key].AsString() == "upper" ? 1 : 0;
+
+    /// <summary>
+    /// 위 지형인 코너의 사분면마다 정사각형 충돌을 붙인다.
+    /// 좌표는 타일 중심이 원점이다.
+    /// </summary>
+    private static void AddQuadrantCollision(TileSetAtlasSource source, Vector2I atlas,
+        int wang, int tileW, int tileH)
+    {
+        float hw = tileW * 0.5f, hh = tileH * 0.5f;
+
+        // 비트 순서: NW=8, NE=4, SW=2, SE=1
+        var quadrants = new (int Bit, float X, float Y)[]
+        {
+            (8, -hw, -hh), (4, 0f, -hh), (2, -hw, 0f), (1, 0f, 0f),
+        };
+
+        var polygons = new List<Vector2[]>();
+        foreach (var q in quadrants)
+        {
+            if ((wang & q.Bit) == 0)
+                continue;
+
+            polygons.Add(new[]
+            {
+                new Vector2(q.X, q.Y),
+                new Vector2(q.X + hw, q.Y),
+                new Vector2(q.X + hw, q.Y + hh),
+                new Vector2(q.X, q.Y + hh),
+            });
+        }
+
+        if (polygons.Count == 0)
+            return;
+
+        TileData data = source.GetTileData(atlas, 0);
+        data.SetCollisionPolygonsCount(0, polygons.Count);
+        for (int i = 0; i < polygons.Count; i++)
+            data.SetCollisionPolygonPoints(0, i, polygons[i]);
+    }
 }

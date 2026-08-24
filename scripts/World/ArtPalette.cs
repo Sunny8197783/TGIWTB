@@ -26,6 +26,17 @@ public static class ArtPalette
     public const float PropValue = 0.96f;
 
     /// <summary>
+    /// 성벽 시트의 돌 밝기 배율. 바닥용 등급을 그대로 쓰면 '채도 낮은 픽셀은 밝게'
+    /// (포석용) 규칙에 걸려 벽이 하얗게 떠서, 마을을 두른 흰 띠가 되고 문루보다
+    /// 밝아진다. 성벽은 무겁고 어두워야 마을을 지키는 것으로 보인다.
+    ///
+    /// 잔디 규칙은 그대로 둔다 — 성벽 시트에도 잔디가 절반쯤 들어 있어서,
+    /// 여기만 다르게 누르면 성벽 둘레에 색이 다른 잔디 띠가 생긴다.
+    /// </summary>
+    private const float WallStoneGain = 0.62f;
+    private const float WallStoneSaturation = 0.55f;
+
+    /// <summary>
     /// 형광 초록을 올리브 쪽으로 끌어온다. 채도만 낮추면 회색빛 초록이 되어
     /// 여전히 '게임 잔디'처럼 보인다 — 색상 자체를 노란 쪽으로 옮겨야 풀이 된다.
     /// (HSV 색상환에서 0.33 이 순수 초록, 0.17 이 누런 풀색)
@@ -51,12 +62,19 @@ public static class ArtPalette
     private static readonly Dictionary<string, Texture2D> Cache = new();
 
     public static Texture2D Ground(string path)
-        => Load(path, GroundSaturation, GroundValue, pullGrass: true);
+        => Load(path, GroundSaturation, GroundValue, pullGrass: true,
+                stoneGain: StoneValueGain, stoneSaturation: 0.70f);
 
     public static Texture2D Prop(string path)
-        => Load(path, PropSaturation, PropValue, pullGrass: false);
+        => Load(path, PropSaturation, PropValue, pullGrass: false,
+                stoneGain: 0f, stoneSaturation: 0f);
 
-    private static Texture2D Load(string path, float saturation, float value, bool pullGrass)
+    public static Texture2D Wall(string path)
+        => Load(path, GroundSaturation, GroundValue, pullGrass: true,
+                stoneGain: WallStoneGain, stoneSaturation: WallStoneSaturation);
+
+    private static Texture2D Load(string path, float saturation, float value,
+        bool pullGrass, float stoneGain, float stoneSaturation)
     {
         if (Cache.TryGetValue(path, out Texture2D cached))
             return cached;
@@ -80,7 +98,7 @@ public static class ArtPalette
             return source;
         }
 
-        Grade(image, saturation, value, pullGrass);
+        Grade(image, saturation, value, pullGrass, stoneGain, stoneSaturation);
 
         Texture2D graded = ImageTexture.CreateFromImage(image);
         Cache[path] = graded;
@@ -92,7 +110,8 @@ public static class ArtPalette
     /// 형광 초록이 그대로 남는다 — 그래서 직접 돈다. 시트가 커야 128x128 이라
     /// 로딩에서 티가 나지 않는다.
     /// </summary>
-    private static void Grade(Image image, float saturation, float value, bool pullGrass)
+    private static void Grade(Image image, float saturation, float value,
+        bool pullGrass, float stoneGain, float stoneSaturation)
     {
         int w = image.GetWidth(), h = image.GetHeight();
         for (int y = 0; y < h; y++)
@@ -113,11 +132,11 @@ public static class ArtPalette
                     {
                         hue = Mathf.Lerp(hue, GrassHueTarget, GrassHuePull);
                     }
-                    else if (sat <= StoneSaturationMax)
+                    else if (sat <= StoneSaturationMax && stoneGain > 0f)
                     {
                         hue = Mathf.Lerp(hue, StoneHueTarget, StoneHuePull);
-                        outSat = sat * 0.7f;              // 돌은 채도를 덜 깎는다
-                        outVal = val * value * StoneValueGain;
+                        outSat = sat * stoneSaturation;
+                        outVal = val * value * stoneGain;
                     }
                 }
 
