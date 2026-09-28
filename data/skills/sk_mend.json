@@ -1,0 +1,16 @@
+{
+  "id": "sk_mend",
+  "name": "치유",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "bash",
+  "cooldown": 6.0,
+  "manaCost": 14.0,
+  "heavy": false,
+  "job": "job_priest",
+  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
+  "damage": { "base": 0.0, "scaling": {} },
+  "heal": { "base": 16.0, "scaling": { "wis": 1.2 }, "maxHpRatio": 0.08, "overSeconds": 0.0 },
+  "effect": { "vfx": "ring", "color": "aaffcc", "radiusPx": 26.0 },
+  "mastery": { "minInterval": 0.5, "damageBonusPer100": 0.08, "evolution": null }
+}

@@ -46,7 +46,7 @@ public static class MonsterTuning
     public static class SlimeAttack
     {
         /// <summary>몽둥이 휘두르기 데미지.</summary>
-        public static readonly float ContactDamage = 6f;
+        public static readonly float ContactDamage = 4f;
 
         public static readonly float Cooldown = 1.4f;
 
@@ -63,11 +63,10 @@ public static class MonsterTuning
         public static readonly float ClubSwingTo = 1.0f;
 
         /// <summary>
-        /// 선딜 0.3s — 몽둥이를 치켜드는 예고. 이 동안 피하거나 (퍼펙트) 가드할 수 있다.
+        /// 선딜 0.42s (25프레임) — 초보자가 이동/회피로 반응할 수 있는 예고.
         /// 예고 없이 닿자마자 때리면 근접 몹에게 붙는 순간 무조건 맞는 문제가 생긴다.
-        /// 0.45s 는 피하기엔 너무 굼떠 보여 0.3s 로 줄였다.
         /// </summary>
-        public static readonly float Windup = 0.3f;
+        public static readonly float Windup = 0.42f;
 
         /// <summary>내려치는 순간. 이 시점에 사거리 안이면 피해가 들어간다.</summary>
         public static readonly float Strike = 0.1f;
@@ -204,4 +203,13 @@ public static class MonsterTuning
 
     public static readonly int DenIronjawCount = 1;
     public static readonly float DenRespawnSeconds = 45f;
+
+    /// <summary>
+    /// 자동 편성 밀도. 이 칸수마다 한 마리. 초원(64x94)에서 9마리가 나오도록
+    /// 맞춘 값이라, 손으로 짜 둔 기존 편성과 밀도가 어긋나지 않는다.
+    /// </summary>
+    public static readonly int TilesPerMonster = 650;
+
+    /// <summary>한 구역 상한. 넓은 구역이 혼자 스폰 예산을 다 먹지 않게.</summary>
+    public static readonly int ZoneMonsterCap = 16;
 }

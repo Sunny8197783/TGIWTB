@@ -13,6 +13,13 @@ public partial class Boot : Node2D
 
     public override void _Ready()
     {
+        if(System.Array.IndexOf(OS.GetCmdlineUserArgs(),"--reproduce-raw-contour")>=0)
+        { GetTree().Quit(SpriteContourChecks.ReproduceRaw()?0:1);return; }
+        if (System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--combat-check") >= 0)
+        {
+            AddChild(new CombatChecks());
+            return;
+        }
         var db = GameDatabase.Instance;
         if (db == null)
         {
@@ -22,6 +29,12 @@ public partial class Boot : Node2D
 
         GD.Print($"[Boot] ok — save={SaveSystem.Instance?.AbsoluteSavePath()}");
 
+        if (SelfCheck.Requested())
+        {
+            RunSelfCheck(db);
+            return;
+        }
+
         if (ResourceLoader.Exists(WorldScenePath))
         {
             CallDeferred(nameof(GoToWorld));
@@ -29,6 +42,20 @@ public partial class Boot : Node2D
         }
 
         ShowBootSummary(db);
+    }
+
+    /// <summary>--selfcheck. 결과를 찍고 바로 종료한다 (실패 있으면 코드 1).</summary>
+    private void RunSelfCheck(GameDatabase db)
+    {
+        var fail = SelfCheck.Run(db);
+        foreach (string line in fail)
+            GD.PrintErr($"[selfcheck] {line}");
+
+        GD.Print(fail.Count == 0
+            ? $"[selfcheck] ok — jobs={db.Jobs.Count} skills={db.Skills.Count} npcs={db.Npcs.Count}"
+            : $"[selfcheck] 실패 {fail.Count}건");
+
+        GetTree().Quit(fail.Count == 0 ? 0 : 1);
     }
 
     private void GoToWorld()

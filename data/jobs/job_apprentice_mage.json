@@ -11,10 +11,49 @@
     "requiredCounters": {},
     "requiredJobRanks": {}
   },
-  "statPerRank": { "str": 0, "vit": 1, "dex": 0, "int": 3, "wis": 2, "luk": 0 },
-  "expPerRank": [0, 120, 280, 500, 800, 1200, 1750, 2500, 3500, 5000],
-  "rankSkills": {
-    "1": ["sk_slash"]
+  "statPerRank": {
+    "str": 0,
+    "vit": 1,
+    "dex": 0,
+    "int": 3,
+    "wis": 2,
+    "luk": 0
   },
-  "rankGates": []
+  "expPerRank": [
+    0,
+    120,
+    280,
+    500,
+    800,
+    1200,
+    1750,
+    2500,
+    3500,
+    5000
+  ],
+  "rankSkills": {
+    "1": [
+      "sk_arcane_bolt"
+    ],
+    "2": [
+      "sk_ice_lance"
+    ],
+    "4": [
+      "sk_frost_nova"
+    ],
+    "6": [
+      "sk_flame_wave"
+    ],
+    "8": [
+      "sk_mana_shield"
+    ]
+  },
+  "rankGates": [],
+  "prototypeSkills": [
+    "sk_arcane_bolt",
+    "sk_ice_lance",
+    "sk_frost_nova",
+    "sk_flame_wave",
+    "sk_mana_shield"
+  ]
 }

@@ -20,6 +20,9 @@ public partial class MonsterSpawner : Node2D
     {
         public Func<MonsterBase> Factory;
         public ZoneDef Zone;
+
+        /// <summary>구역 랜덤 대신 정확히 이 지점에서 스폰·리스폰한다. (테스트장 전용)</summary>
+        public Vector2? FixedPoint;
         public float RespawnSeconds;
         public float Timer;
         public MonsterBase Current;
@@ -29,6 +32,9 @@ public partial class MonsterSpawner : Node2D
     private readonly RandomNumberGenerator _rng = new();
     private TileWorld _tiles;
     private Node2D _player;
+
+    /// <summary>만들어 둔 스폰 자리 수. 구역 편성이 의도대로 붙었는지 확인용.</summary>
+    public int SlotCount => _slots.Count;
 
     public int AliveCount
     {
@@ -76,6 +82,22 @@ public partial class MonsterSpawner : Node2D
         }
     }
 
+    /// <summary>
+    /// 구역 랜덤 없이 정확히 point 에서 1마리를 스폰하고, 죽으면 respawnSeconds 뒤 같은 자리에 다시 세운다.
+    /// 손맛 테스트장처럼 "여기서 하나씩 계속" 이 필요할 때 쓴다. 기존 구역 스폰 슬롯과 섞이지 않는다.
+    /// </summary>
+    public void AddFixedSlot(Func<MonsterBase> factory, Vector2 point, float respawnSeconds)
+    {
+        var slot = new Slot
+        {
+            Factory = factory,
+            FixedPoint = point,
+            RespawnSeconds = respawnSeconds,
+        };
+        _slots.Add(slot);
+        Spawn(slot);
+    }
+
     public override void _Process(double delta)
     {
         float dt = (float)delta;
@@ -94,7 +116,7 @@ public partial class MonsterSpawner : Node2D
     private void Spawn(Slot slot)
     {
         MonsterBase monster = slot.Factory();
-        monster.Position = RandomSpawnPoint(slot.Zone);
+        monster.Position = slot.FixedPoint ?? RandomSpawnPoint(slot.Zone);
         monster.Died += _ => OnDied(slot);
 
         slot.Current = monster;

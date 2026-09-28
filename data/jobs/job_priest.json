@@ -1,0 +1,59 @@
+{
+  "id": "job_priest",
+  "name": "사제",
+  "tier": 1,
+  "hidden": false,
+  "maxRank": 10,
+  "carrySlots": 2,
+  "description": "살리는 손이 죽이는 손보다 오래 간다.",
+  "unlock": {
+    "requiredFlags": [],
+    "requiredCounters": {},
+    "requiredJobRanks": {}
+  },
+  "statPerRank": {
+    "str": 0,
+    "vit": 2,
+    "dex": 0,
+    "int": 1,
+    "wis": 4,
+    "luk": 0
+  },
+  "expPerRank": [
+    0,
+    120,
+    280,
+    500,
+    800,
+    1200,
+    1750,
+    2500,
+    3500,
+    5000
+  ],
+  "rankSkills": {
+    "1": [
+      "sk_smite"
+    ],
+    "2": [
+      "sk_mend"
+    ],
+    "4": [
+      "sk_renew"
+    ],
+    "6": [
+      "sk_holy_nova"
+    ],
+    "8": [
+      "sk_sanctuary"
+    ]
+  },
+  "rankGates": [],
+  "prototypeSkills": [
+    "sk_smite",
+    "sk_mend",
+    "sk_renew",
+    "sk_holy_nova",
+    "sk_sanctuary"
+  ]
+}

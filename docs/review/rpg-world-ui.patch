@@ -1,0 +1,1136 @@
+--- a/NOTES.md
++++ b/NOTES.md
+@@ -4,13 +4,16 @@
+ 
+ ## 진입점과 주요 심볼
+ - Godot .NET: `scripts/Runtime/Boot.cs` → `GameWorld` → `ReferenceWorld3D` / `ReferenceTerrain3D`. 기본은 원근 3D, `--flat`은 기존 2D.
+-- `WorldLayout`: 224×192 연속 숲, 작은 마을·고블린 부락·별도 성소. `TownGenerator`는 12채와 문 앞 접근로를 배치한다.
+-- `TileWorld.Paint/ForestProps/PaintSanctuary`: 유기적 외곽, 숲길·개울·다리 3곳, 실내 석재 바닥. `PlayerHud.DrawMinimap`은 실내 지도를 전환한다.
+-- `MeadowLayout` / `MeadowEncounters`: `data/encounters/meadow.json`의 7거점과 8경로. `ForestSecrets`는 조사·문·귀환·샛길 상태를 저장한다.
++- `WorldLayout`: 320×256 연속 숲, 작은 마을·고블린 부락·별도 성소. `TownGenerator`는 12채와 문 앞 접근로를 배치한다.
++- `TileWorld.Paint/ForestProps/PaintSanctuary`: 유기적 외곽, 숲길·개울·다리 4곳, 실내 석재 바닥. `PlayerHud.DrawMinimap`은 실내 지도를 전환한다.
++- `MeadowLayout` / `MeadowEncounters`: `data/encounters/meadow.json`의 14거점과 11경로. `ForestSecrets`는 조사·문·귀환·샛길 상태를 저장한다.
+ - `PlayerCharacter.SpriteClip` → `CombatMotion.Progress`: 검 일반/강공격 접촉 프레임 동기화. `ActorArt.FrameFor`는 고블린 8방향 보행·공격을 제공한다.
+ - `SpriteCollision3D.Shapes/Set`: 건물·몬스터의 불투명 윤곽을 공유. F2로 표시. 나무는 보이는 줄기만 이동을 막는다.
+ - `CombatCollision.Sweep/ClearSight`: 발사체·근접의 벽 차단. `GestureSkillInput`은 우클릭 드래그를 기존 스킬 입력에 연결한다.
+ - 스킬 연출: `CombatFeedback` → `ReferenceWorld3D.Ring/Impact`. 베기 JSON의 `effect`를 사용하며, 궤적·명중 불꽃·충격파는 자동 소멸한다. `GameCamera`의 감쇠 진동을 3D 투영 오프셋에 적용한다. F3의 `shake.strength`를 0으로 두면 흔들림이 꺼진다.
++
++- `RpgUi` / `PlayerHud`: 황동·목재색 HUD, P 캐릭터 기록, B 기술/숙련 창. `GameWorld.BuildDialogueBox`는 같은 테마의 NPC 대화창. UI 상태는 `IPlayerContext`를 통해 읽으며 열린 창은 배경 입력을 막는다.
++- 스태미나: `CombatTuning.Stamina*`, `PlayerCharacter.StartDash/TickTimers`. 회피 24 소모, 0.5초 후 초당 20 회복. `SaveData.Stamina`는 이전 저장에서 빠져 있으면 최대값으로 복원한다.
+ 
+ ## 결정과 이유
+ - 사용자가 이전 3D 느낌 복원과 숲속 마을 전면 교체를 승인했다. 기존 13지역은 활성 월드에서 제거했다. 이번 아트·음향 요청은 P1 문서의 제외 범위보다 우선한다.
+@@ -25,7 +28,7 @@
+ ## 검증 명령과 결과
+ - `tools/verify_forest.ps1`: 빌드, Godot 임포트, `--reference-check`, `--combat-check`, `--selfcheck`. 로그는 `docs/review/forest-*.log`.
+ - 빌드 경고 0/오류 0. 지도·전투 검사 PASS, 데이터 직업 8/스킬 28/NPC 16 정상.
+-- 지도 검증: 마을 길 255칸의 막힘 0, 경로·보급품 1,716표본, 연결 가능 20,374칸. 8방향·윤곽 명중/빗나감·경사 접지·발사체·성소 입장/귀환 포함.
++- 지도 검증: 마을 길 259칸의 막힘 0, 경로·보급품 3,018표본, 연결 가능 40,093칸. 8방향·윤곽 명중/빗나감·경사 접지·발사체·성소 입장/귀환 포함.
+ - `python tools/check_sprite_consistency.py sword sword_walk sword_heavy`: 세 클립 통과. 실제 전투 캡처에서 처치·피격·숙련 상승 확인.
+ - 스킬 연출 검증: `docs/review/skill-feedback.md`. 빌드·3D 투영 흔들림/복귀·효과 생성/소멸·전투·데이터 검사 통과. `CombatChecks.Finish`는 테스트 월드를 해제한 뒤 종료해 .NET 리소스 종료 오류를 방지한다.
+ - Godot 실행 파일은 Downloads의 `Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64_console.exe`.
+@@ -33,4 +36,4 @@
+ ## 남은 문제와 다음 행동
+ - 장시간 사냥 밸런스는 별도 플레이 평가가 필요하다. 모든 직업의 전용 무기 모션은 아직 없다. 검 방어/피격은 무장 대기 이미지와 기존 반응 연출을 재사용한다.
+ - 지형은 좌표당 높이 하나인 높이장이다. 윤곽은 고정 카메라 기준 1px 단순화 형상이다. 자유 회전·다층 실내에는 별도 모델이 필요하다.
+-- 최종 화면·검증 근거: `docs/review/forest-rebuild.md`. 이전 마을/해안 보고서는 과거 상태이며 현재 지도로 해석하지 않는다.
++- 최신 맵/UI 근거: `docs/review/rpg-world-ui.md`. 숲 개편과 전투 연출 기록은 이전 보고서를 참조한다. UI 교체 전 백업은 `%TEMP%/TGIWTB-before-rpg-ui-world-20260909.zip`.
+--- a/data/encounters/meadow.json
++++ b/data/encounters/meadow.json
+@@ -69,6 +69,76 @@
+       "goblins": 1,
+       "respawn": 130,
+       "rewardRatio": 0.22
++    },
++    {
++      "id": "east_watch",
++      "name": "동쪽 망루길",
++      "x": 218,
++      "y": 100,
++      "slimes": 0,
++      "goblins": 4,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "sunken_garden",
++      "name": "이끼 정원 유적",
++      "x": 248,
++      "y": 146,
++      "slimes": 3,
++      "goblins": 2,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "pilgrims_rest",
++      "name": "순례자의 쉼터",
++      "x": 197,
++      "y": 191,
++      "slimes": 2,
++      "goblins": 0,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "moss_quarry",
++      "name": "잊힌 채석장",
++      "x": 262,
++      "y": 100,
++      "slimes": 1,
++      "goblins": 3,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "hunters_lodge",
++      "name": "사냥꾼의 숲집",
++      "x": 215,
++      "y": 54,
++      "slimes": 2,
++      "goblins": 2,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "moon_glade",
++      "name": "달빛 고목길",
++      "x": 259,
++      "y": 193,
++      "slimes": 3,
++      "goblins": 2,
++      "respawn": 150,
++      "rewardRatio": 0.22
++    },
++    {
++      "id": "oldroad",
++      "name": "남쪽 옛길",
++      "x": 177,
++      "y": 211,
++      "slimes": 2,
++      "goblins": 2,
++      "respawn": 150,
++      "rewardRatio": 0.22
+     }
+   ],
+   "routes": [
+@@ -331,6 +401,108 @@
+         126,
+         57
+       ]
++    ],
++    [
++      [
++        165,
++        68
++      ],
++      [
++        191,
++        64
++      ],
++      [
++        215,
++        54
++      ],
++      [
++        243,
++        71
++      ],
++      [
++        262,
++        100
++      ],
++      [
++        248,
++        146
++      ],
++      [
++        259,
++        193
++      ],
++      [
++        231,
++        205
++      ],
++      [
++        197,
++        191
++      ],
++      [
++        177,
++        178
++      ],
++      [
++        157,
++        143
++      ]
++    ],
++    [
++      [
++        155,
++        117
++      ],
++      [
++        189,
++        125
++      ],
++      [
++        218,
++        100
++      ],
++      [
++        234,
++        117
++      ],
++      [
++        248,
++        146
++      ]
++    ],
++    [
++      [
++        197,
++        191
++      ],
++      [
++        177,
++        211
++      ],
++      [
++        147,
++        193
++      ],
++      [
++        138,
++        190
++      ],
++      [
++        126,
++        190
++      ],
++      [
++        116,
++        190
++      ],
++      [
++        104,
++        170
++      ],
++      [
++        98,
++        133
++      ]
+     ]
+   ]
+ }
+--- a/scenes/Boot.tscn
++++ b/scenes/Boot.tscn
+@@ -0,0 +1,6 @@
++[gd_scene load_steps=2 format=3]
++
++[ext_resource type="Script" path="res://scripts/Runtime/Boot.cs" id="1_boot"]
++
++[node name="Boot" type="Node2D"]
++script = ExtResource("1_boot")
+--- a/scenes/World.tscn
++++ b/scenes/World.tscn
+@@ -0,0 +1,6 @@
++[gd_scene load_steps=2 format=3]
++
++[ext_resource type="Script" path="res://scripts/Runtime/GameWorld.cs" id="1_world"]
++
++[node name="World" type="Node2D"]
++script = ExtResource("1_world")
+--- a/scripts/Combat/CombatTuning.cs
++++ b/scripts/Combat/CombatTuning.cs
+@@ -26,6 +26,11 @@
+     public const string GroupMotion = "모션";
+     public const string GroupVfx = "이펙트";
+ 
++    public static readonly TuningEntry StaminaMax = Custom("stamina.max", GroupScreen, "최대 스태미나", 100f, 25f, 200f, 5f, "", false);
++    public static readonly TuningEntry StaminaDashCost = Custom("stamina.dash", GroupScreen, "회피 스태미나 소모", 24f, 0f, 100f, 1f, "", false);
++    public static readonly TuningEntry StaminaRegen = Custom("stamina.regen", GroupScreen, "스태미나 초당 회복", 20f, 1f, 100f, 1f, "/s", false);
++    public static readonly TuningEntry StaminaRegenDelay = Sec("stamina.delay", GroupScreen, "스태미나 회복 지연", .5f, 0f, 2f, .05f); // 30 frames
++
+     // --- §C-1 이동 --------------------------------------------------------
+ 
+     public static readonly TuningEntry MoveSpeed =
+--- a/scripts/Entities/PlayerCharacter.cs
++++ b/scripts/Entities/PlayerCharacter.cs
+@@ -151,6 +151,10 @@
+     public float MaxMp => PlayerTuning.BaseMaxMp + GetStat(Stats.Int) * PlayerTuning.MpPerInt;
+ 
+     public float MpRatio => MaxMp > 0f ? Mp / MaxMp : 0f;
++    public float Stamina { get; private set; } = CombatTuning.StaminaMax;
++    public float MaxStamina => CombatTuning.StaminaMax;
++    public bool InputBlocked { get; set; }
++    private float _staminaRegenBlock;
+     public bool IsAlive => _state != PlayerState.Dead;
+     public Vector2 WorldPosition => GlobalPosition;
+     public ulong InstanceId => GetInstanceId();
+@@ -216,6 +220,7 @@
+         MaxHp = PlayerTuning.BaseMaxHp;
+         Hp = MaxHp;
+         Mp = MaxMp;
++        Stamina = MaxStamina;
+         _state = PlayerState.Normal;
+         Velocity = Vector2.Zero;
+         GlobalPosition = WorldLayout.SpawnPoint;
+@@ -250,6 +255,7 @@
+         _knockbackTimer = 0f;
+         _lockTarget = null;
+         _mpRegenBlock = 0f;
++        _staminaRegenBlock = 0f;
+         _healOverTimer = 0f;
+         _healOverPerSecond = 0f;
+     }
+@@ -318,6 +324,8 @@
+ 
+         TickCooldowns(dt);
+         TickMana(dt);
++        if (_staminaRegenBlock > 0f) _staminaRegenBlock = Mathf.Max(0f, _staminaRegenBlock - dt);
++        else if (IsAlive) Stamina = Mathf.Min(MaxStamina, Stamina + CombatTuning.StaminaRegen * dt);
+         TickHealOverTime(dt);
+ 
+         if (_state == PlayerState.Dead)
+@@ -387,6 +395,12 @@
+ 
+     private void UpdateNormal(float dt)
+     {
++        if (InputBlocked)
++        {
++            _bufferedAction = null; _bufferTimer = 0f; _guarding = false;
++            AdvanceAttack(dt); Velocity = Vector2.Zero;
++            return;
++        }
+         Vector2 input = ReadMoveInput();
+ 
+         UpdateLockOn();
+@@ -423,7 +437,8 @@
+         // 시간까지 묶어 두면 콤보 사이 리듬이 뚝뚝 끊긴다. (§ref Hades: dash as universal cancel)
+         // 선딜·판정 중엔 그대로 못 끊는다 — 커밋이 있어야 공격에 무게가 실린다.
+         bool dashCancelable = _attack.IsBusy && _attack.Phase == SkillPhase.Recovery;
+-        if ((!_attack.IsBusy || dashCancelable) && Input.IsActionJustPressed(InputSetup.Dash) && _dashCooldownTimer <= 0f)
++        if ((!_attack.IsBusy || dashCancelable) && Input.IsActionJustPressed(InputSetup.Dash)
++            && _dashCooldownTimer <= 0f && Stamina >= CombatTuning.StaminaDashCost)
+         {
+             if (dashCancelable)
+                 _attack.Cancel();
+@@ -666,7 +681,9 @@
+     {
+         Hp = MaxHp;
+         Mp = MaxMp;
++        Stamina = MaxStamina;
+         _mpRegenBlock = 0f;
++        _staminaRegenBlock = 0f;
+     }
+ 
+     private void ApplyHeal(SkillDefinition skill)
+@@ -1228,6 +1245,8 @@
+ 
+     private void StartDash(Vector2 input)
+     {
++        Stamina = Mathf.Max(0f, Stamina - CombatTuning.StaminaDashCost);
++        _staminaRegenBlock = CombatTuning.StaminaRegenDelay;
+         _dashDirection = input != Vector2.Zero ? input : _facing;
+         _facing = _dashDirection;
+         _state = PlayerState.Dash;
+@@ -2024,6 +2043,7 @@
+         Version = SaveSystem.CurrentVersion,
+         Level = Level,
+         Hp = Hp,
++        Stamina = Stamina,
+         Position = new SavePosition { X = GlobalPosition.X, Y = GlobalPosition.Y },
+         BaseStats = new Dictionary<string, int>(_baseStats),
+         JobState = new SaveJobState
+@@ -2063,6 +2083,7 @@
+         Level = Mathf.Max(1, data.Level);
+         MaxHp = PlayerTuning.BaseMaxHp;
+         Hp = Mathf.Clamp(data.Hp, 1f, MaxHp);
++        Stamina = data.Stamina.HasValue && float.IsFinite(data.Stamina.Value) ? Mathf.Clamp(data.Stamina.Value,0f,MaxStamina) : MaxStamina;
+ 
+         var job = data.JobState ?? new SaveJobState();
+         Jobs.RestoreFrom(job.CurrentJobId, job.History, job.LearnedSkills,
+--- a/scripts/Runtime/GameWorld.cs
++++ b/scripts/Runtime/GameWorld.cs
+@@ -35,6 +35,7 @@
+ 
+     private PanelContainer _dialogueBox;
+     private Label _dialogueLabel;
++    private Label _dialogueName;
+     private Npc _talking;
+ 
+     private string _lastZoneId = "";
+@@ -301,9 +302,13 @@
+             MouseFilter = Control.MouseFilterEnum.Ignore,
+         };
+         _announceLabel.SetAnchorsPreset(Control.LayoutPreset.TopWide);
+-        _announceLabel.OffsetTop = 96;
+-        _announceLabel.OffsetBottom = 120;
+-        _announceLabel.AddThemeFontSizeOverride("font_size", 14);
++        _announceLabel.OffsetTop = 32;
++        _announceLabel.OffsetBottom = 68;
++        _announceLabel.AddThemeFontSizeOverride("font_size", 21);
++        _announceLabel.AddThemeColorOverride("font_color",RpgUi.Paper);
++        _announceLabel.AddThemeColorOverride("font_shadow_color",RpgUi.Ink);
++        _announceLabel.AddThemeConstantOverride("shadow_offset_x",2);
++        _announceLabel.AddThemeConstantOverride("shadow_offset_y",2);
+         layer.AddChild(_announceLabel);
+ 
+         BuildDialogueBox(layer);
+@@ -316,37 +321,26 @@
+     /// <summary>화면 아래 대사창. 말을 걸 때만 보인다.</summary>
+     private void BuildDialogueBox(CanvasLayer layer)
+     {
+-        _dialogueBox = new PanelContainer { Visible = false, MouseFilter = Control.MouseFilterEnum.Ignore };
+-
+-        // 기본 테마에는 판이 없어서 글자만 화면 구석에 떠 있었다. 틀을 직접 준다.
+-        var frame = new StyleBoxFlat
+-        {
+-            BgColor = new Color(0.06f, 0.05f, 0.08f, 0.92f),
+-            BorderColor = new Color(0.62f, 0.55f, 0.40f),
+-            ContentMarginLeft = 14,
+-            ContentMarginRight = 14,
+-            ContentMarginTop = 10,
+-            ContentMarginBottom = 10,
+-        };
+-        frame.SetBorderWidthAll(2);
+-        frame.SetCornerRadiusAll(3);
+-        _dialogueBox.AddThemeStyleboxOverride("panel", frame);
++        _dialogueBox = new PanelContainer { Name="Dialogue", Visible=false };
++        _dialogueBox.AddThemeStyleboxOverride("panel",RpgUi.Frame());
+         _dialogueBox.SetAnchorsPreset(Control.LayoutPreset.BottomWide);
+-        _dialogueBox.OffsetTop = -116;
+-        _dialogueBox.OffsetBottom = -24;
+-        _dialogueBox.OffsetLeft = 140;
+-        _dialogueBox.OffsetRight = -140;
+-
+-        _dialogueLabel = new Label
+-        {
+-            AutowrapMode = TextServer.AutowrapMode.WordSmart,
+-            VerticalAlignment = VerticalAlignment.Center,
+-            MouseFilter = Control.MouseFilterEnum.Ignore,
+-        };
+-        _dialogueLabel.AddThemeFontSizeOverride("font_size", 15);
+-        _dialogueLabel.AddThemeConstantOverride("line_spacing", 4);
+-        _dialogueBox.AddChild(_dialogueLabel);
++        _dialogueBox.OffsetTop=-302; _dialogueBox.OffsetBottom=-122;
++        _dialogueBox.OffsetLeft=40; _dialogueBox.OffsetRight=-40;
++        var column=new VBoxContainer(); column.AddThemeConstantOverride("separation",10); _dialogueBox.AddChild(column);
++        _dialogueName=RpgUi.Text("",21,RpgUi.Gold); column.AddChild(_dialogueName);
++        _dialogueLabel=RpgUi.Text("",18); _dialogueLabel.AutowrapMode=TextServer.AutowrapMode.WordSmart;
++        _dialogueLabel.SizeFlagsVertical=Control.SizeFlags.ExpandFill; column.AddChild(_dialogueLabel);
++        var buttons=new HBoxContainer(); column.AddChild(buttons);
++        var hint=RpgUi.Text("대화",12,RpgUi.Muted); hint.SizeFlagsHorizontal=Control.SizeFlags.ExpandFill; buttons.AddChild(hint);
++        var next=RpgUi.Button("계속 듣기  F"); next.Pressed+=Interact; buttons.AddChild(next);
++        var close=RpgUi.Button("대화 마치기"); close.Pressed+=CancelTalk; buttons.AddChild(close);
+         layer.AddChild(_dialogueBox);
++    }
++
++    private void CancelTalk()
++    {
++        _talking=null; _dialogueBox.Visible=false;
++        ((IPlayerContext)_player).InputBlocked=PlayerHud.Instance?.MenuOpen ?? false;
+     }
+ 
+     /// <summary>
+@@ -366,7 +360,9 @@
+         string line = _talking.NextLine();
+         if (line != null)
+         {
+-            _dialogueLabel.Text = $"{_talking.Def.Name}\n{line}";
++            _dialogueName.Text = "◆  " + _talking.Def.Name;
++            _dialogueLabel.Text = line;
++            ((IPlayerContext)_player).InputBlocked = true;
+             _dialogueBox.Visible = true;
+             return;
+         }
+@@ -439,6 +435,8 @@
+         UpdateAnnounce((float)delta);
+         UpdateZone();
+         UpdateTalk();
++        var hovered=GetViewport().GuiGetHoveredControl();
++        ((IPlayerContext)_player).InputBlocked=(_dialogueBox?.Visible ?? false) || (PlayerHud.Instance?.MenuOpen ?? false) || hovered is Button;
+         SaveSystem.Instance?.Tick(delta, _player);
+     }
+ 
+@@ -474,6 +472,9 @@
+ 
+     public override void _UnhandledInput(InputEvent @event)
+     {
++        if (PlayerHud.Instance?.MenuOpen == true) return;
++        if (_dialogueBox.Visible && @event is InputEventKey key && key.Pressed && key.PhysicalKeycode==Key.Escape)
++        { CancelTalk(); GetViewport().SetInputAsHandled(); return; }
+         if (@event.IsActionPressed(InputSetup.Interact))
+         {
+             Interact();
+--- a/scripts/Runtime/GestureSkillInput.cs
++++ b/scripts/Runtime/GestureSkillInput.cs
+@@ -26,16 +26,17 @@
+         _stroke = new Line2D { Width = 3f, DefaultColor = new Color(.4f, .93f, 1f),
+             BeginCapMode = Line2D.LineCapMode.Round, EndCapMode = Line2D.LineCapMode.Round };
+         AddChild(_stroke);
+-        _hint = new Label { Text = "WASD 이동 · 좌클릭 공격 · 우클릭 드래그: 직선 / 원 / Z · Space 회피 · 휠 줌 · F2 충돌 윤곽",
++        _hint = new Label { Text = "WASD 이동  ·  Space 회피  ·  F 대화  ·  P 캐릭터  ·  B 스킬",
+             MouseFilter = Control.MouseFilterEnum.Ignore };
+-        _hint.AddThemeFontSizeOverride("font_size", 15);
++        _hint.AddThemeFontSizeOverride("font_size", 12);
++        _hint.AddThemeColorOverride("font_color",RpgUi.Muted);
+         _hint.AddThemeColorOverride("font_shadow_color", Colors.Black);
+         _hint.AddThemeConstantOverride("shadow_offset_x", 1); _hint.AddThemeConstantOverride("shadow_offset_y", 1);
+         AddChild(_hint);
+     }
+ 
+     public override void _Process(double delta)
+-        => _hint.Position = new Vector2(16f, GetViewport().GetVisibleRect().Size.Y - 28f);
++        => _hint.Position = new Vector2(16f, GetViewport().GetVisibleRect().Size.Y - 18f);
+ 
+     public override void _PhysicsProcess(double delta)
+     {
+@@ -51,6 +52,7 @@
+ 
+     public override void _UnhandledInput(InputEvent input)
+     {
++        if (PlayerHud.Instance?.MenuOpen == true) { _drawing=false; _stroke.ClearPoints(); return; }
+         if (input is InputEventMouseButton button && button.ButtonIndex == MouseButton.Right)
+         {
+             _drawing = button.Pressed;
+--- a/scripts/Runtime/IPlayerContext.cs
++++ b/scripts/Runtime/IPlayerContext.cs
+@@ -1,4 +1,5 @@
+ using Godot;
++using PixelMmo.Data;
+ 
+ namespace PixelMmo.Runtime;
+ 
+@@ -16,6 +17,13 @@
+     float Mp { get; }
+     float MaxMp { get; }
+     float MpRatio { get; }
++    float Stamina { get; }
++    float MaxStamina { get; }
++    bool InputBlocked { get; set; }
++    SkillDefinition ResolveSkillForAction(string action);
++    float CooldownRemaining(string skillId);
++    float GuardCooldownRemaining { get; }
++    bool HasManaFor(SkillDefinition skill);
+     bool IsAlive { get; }
+     Vector2 WorldPosition { get; }
+ 
+--- a/scripts/Runtime/InputSetup.cs
++++ b/scripts/Runtime/InputSetup.cs
+@@ -30,6 +30,8 @@
+     public const string Run = "run";               // Shift — 달리기(홀드)
+     public const string LockOn = "lock_on";        // Tab — 시선 고정 토글 (마우스 좌클릭으로 대상 지정)
+     public const string Customize = "customize";   // C — 겉모습 무작위(임시 데모)
++    public const string CharacterSheet = "character_sheet";
++    public const string SkillBook = "skill_book";
+     public const string DebugOverlay = "debug_overlay";   // F1
+     public const string DebugHitbox = "debug_hitbox";     // F2
+     public const string DebugTuning = "debug_tuning";     // F3
+@@ -65,6 +67,8 @@
+         Bind(Run, Key.Shift);
+         Bind(LockOn, Key.Tab);
+         Bind(Customize, Key.C);
++        Bind(CharacterSheet, Key.P);
++        Bind(SkillBook, Key.B);
+ 
+         Bind(DebugOverlay, Key.F1);
+         Bind(DebugHitbox, Key.F2);
+--- a/scripts/Runtime/PlayerHud.cs
++++ b/scripts/Runtime/PlayerHud.cs
+@@ -1,159 +1,212 @@
++using System;
++using System.Collections.Generic;
++using System.Linq;
+ using Godot;
+ using PixelMmo.Combat;
+ using PixelMmo.Data;
+ 
+ namespace PixelMmo.Runtime;
+ 
+-/// <summary>
+-/// 항상 떠 있는 최소 HUD — 체력, 마나, 스킬 슬롯 다섯.
+-///
+-/// 마나가 자원이 된 순간부터는 눈에 보이지 않으면 직업을 고를 수가 없다.
+-/// F1 디버그 오버레이는 숫자를 다 보여 주지만 전투 중에 읽을 물건이 아니다.
+-/// 여기서는 "지금 쓸 수 있나" 하나만 읽히게 한다.
+-/// </summary>
+ public partial class PlayerHud : Control
+ {
+-    /// <summary>슬롯 키 표시. SkillActions 와 같은 순서. (§C-8)</summary>
+-    private static readonly string[] SlotKeys = { "J", "L", "U", "I", "O" };
++    public static PlayerHud Instance { get; private set; }
++    public bool MenuOpen => _window?.Visible == true;
++    public string CurrentPage { get; private set; } = "";
++    private IPlayerContext _player;
++    private TileWorld _tiles;
++    private PanelContainer _vitals, _hotbar, _window, _mapFrame, _menus;
++    private VBoxContainer _page;
++    private Label _identity, _zone, _title, _hpText, _mpText, _staminaText;
++    private ProgressBar _hp, _mp, _stamina;
++    private TextureRect _map;
++    private ColorRect _mapDot;
++    private Control _shade;
++    private RichTextLabel _detail, _stats;
++    private readonly List<(PanelContainer Box, Label Name, Label State, ProgressBar Cooldown, string Action)> _slots = new();
++    private string _selectedSkill;
++    private string _shownSkills;
++    private float _refresh;
++    private static readonly string[] Actions = { InputSetup.Attack, InputSetup.Bash, InputSetup.Warcry, InputSetup.Skill4, InputSetup.Skill5, InputSetup.Guard };
++    private static readonly string[] Keys = { "J", "L", "U", "I", "O", "K" };
++    public void Bind(IPlayerContext player, TileWorld tiles) { _player=player; _tiles=tiles; }
++    public override void _EnterTree() => Instance=this;
++    public override void _ExitTree() { if(Instance==this) Instance=null; if(_player!=null) _player.InputBlocked=false; }
+ 
+-    private static readonly Vector2 Origin = new(12f, 12f);
+-    private static readonly float BarWidth = 168f;
+-    private static readonly float BarHeight = 9f;
+-    private static readonly float SlotSize = 30f;
+-    private static readonly float SlotGap = 4f;
+-
+-    /// <summary>미니맵 배율. 384x224 를 0.55 로 줄이면 211x123 — 1280x720 구석에 맞는다.</summary>
+-    private static readonly float MapScale = 0.55f;
+-
+-    /// <summary>미니맵을 화면 오른쪽 위 모서리에서 이만큼 띄운다.</summary>
+-    private static readonly float MapMargin = 10f;
+-
+-    private PlayerCharacter _player;
+-    private TileWorld _tiles;
+-
+-    public void Bind(PlayerCharacter player, TileWorld tiles)
+-    {
+-        _player = player;
+-        _tiles = tiles;
+-    }
+-
++    private PanelContainer Panel(Control parent, bool light=false)
++    {
++        var panel=new PanelContainer(); panel.AddThemeStyleboxOverride("panel",RpgUi.Frame(light)); parent.AddChild(panel); return panel;
++    }
++    private static Label Resource(VBoxContainer column, string name, Color color, out ProgressBar bar)
++    {
++        bar=RpgUi.Bar(color); column.AddChild(bar);
++        var label=RpgUi.Text(name,13); label.HorizontalAlignment=HorizontalAlignment.Center;
++        bar.AddChild(label); label.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
++        return label;
++    }
+     public override void _Ready()
+     {
+-        Name = "Hud";
+-        MouseFilter = MouseFilterEnum.Ignore;
+-        SetAnchorsPreset(LayoutPreset.FullRect);
+-    }
+-
++        Name="Hud"; MouseFilter=MouseFilterEnum.Ignore; SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
++        _vitals=Panel(this); var resources=new VBoxContainer(); _vitals.AddChild(resources);
++        _identity=RpgUi.Text("모험가",18,RpgUi.Gold); resources.AddChild(_identity);
++        _hpText=Resource(resources,"생명",new Color("a74238"),out _hp);
++        _mpText=Resource(resources,"마나",new Color("456f94"),out _mp);
++        _staminaText=Resource(resources,"스태미나",new Color("839353"),out _stamina);
++        _stamina.TooltipText="회피에 사용하는 스태미나. 잠시 쉬면 회복됩니다.";
++        _mapFrame=Panel(this); var mapColumn=new VBoxContainer(); _mapFrame.AddChild(mapColumn);
++        _zone=RpgUi.Text("새잎의 숲",14,RpgUi.Gold); _zone.HorizontalAlignment=HorizontalAlignment.Center; mapColumn.AddChild(_zone);
++        _map=new TextureRect { ExpandMode=TextureRect.ExpandModeEnum.IgnoreSize, StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered,
++            CustomMinimumSize=new Vector2(176,136), MouseFilter=MouseFilterEnum.Ignore, TextureFilter=TextureFilterEnum.Nearest };
++        mapColumn.AddChild(_map);
++        _mapDot=new ColorRect { Color=RpgUi.Paper, Size=new Vector2(5,5), MouseFilter=MouseFilterEnum.Ignore }; _map.AddChild(_mapDot);
++        var compass=RpgUi.Text("◆  N  ·  탐험 지도  ◆",11,RpgUi.Muted); compass.HorizontalAlignment=HorizontalAlignment.Center; mapColumn.AddChild(compass);
++        _hotbar=Panel(this); var row=new HBoxContainer(); row.AddThemeConstantOverride("separation",6); _hotbar.AddChild(row);
++        for(int i=0;i<Actions.Length;i++)
++        {
++            var box=Panel(row,true); box.AddThemeStyleboxOverride("panel",RpgUi.Frame(true,7)); box.CustomMinimumSize=new Vector2(72,65);
++            var column=new VBoxContainer(); box.AddChild(column);
++            var key=RpgUi.Text(Keys[i],12,RpgUi.Gold); column.AddChild(key);
++            var name=RpgUi.Text("—",12); name.HorizontalAlignment=HorizontalAlignment.Center; column.AddChild(name);
++            var cd=RpgUi.Bar(new Color("c5a668"),3); column.AddChild(cd);
++            var state=RpgUi.Text("",11,RpgUi.Muted); state.HorizontalAlignment=HorizontalAlignment.Center; column.AddChild(state);
++            _slots.Add((box,name,state,cd,Actions[i]));
++        }
++        _menus=Panel(this); _menus.AddThemeStyleboxOverride("panel",RpgUi.Frame(false,6)); var menuRow=new HBoxContainer(); _menus.AddChild(menuRow);
++        var character=RpgUi.Button("P  캐릭터"); character.Pressed+=()=>TogglePage("status"); menuRow.AddChild(character);
++        var skills=RpgUi.Button("B  스킬"); skills.Pressed+=()=>TogglePage("skills"); menuRow.AddChild(skills);
++        _shade=new ColorRect { Color=new Color(0,0,0,.38f),Visible=false,MouseFilter=MouseFilterEnum.Stop };
++        AddChild(_shade); _shade.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
++        _window=Panel(this); _window.Visible=false;
++        var book=new VBoxContainer(); book.AddThemeConstantOverride("separation",12); _window.AddChild(book);
++        var heading=new HBoxContainer(); book.AddChild(heading);
++        _title=RpgUi.Text("모험가의 기록",24,RpgUi.Gold); _title.SizeFlagsHorizontal=SizeFlags.ExpandFill; heading.AddChild(_title);
++        var close=RpgUi.Button("닫기  Esc"); close.Pressed+=CloseMenu; heading.AddChild(close);
++        var tabs=new HBoxContainer(); book.AddChild(tabs);
++        foreach(var tab in new[]{("status","인물 기록"),("skills","기술과 숙련")})
++        { var button=RpgUi.Button(tab.Item2); button.SizeFlagsHorizontal=SizeFlags.ExpandFill; button.Pressed+=()=>ShowPage(tab.Item1); tabs.AddChild(button); }
++        _page=new VBoxContainer { SizeFlagsVertical=SizeFlags.ExpandFill }; book.AddChild(_page);
++        var footer=RpgUi.Text("P 캐릭터  ·  B 스킬  ·  Esc 닫기",12,RpgUi.Muted); book.AddChild(footer);
++        GetViewport().SizeChanged+=Arrange; Arrange();
++    }
++    private void Arrange()
++    {
++        Vector2 screen=GetViewportRect().Size;
++        _vitals.Position=new(18,18); _vitals.Size=new(Mathf.Min(292,screen.X*.43f),142);
++        _mapFrame.Position=new(screen.X-228,18); _mapFrame.Size=new(210,196);
++        _hotbar.Size=new(510,98); _hotbar.Position=new((screen.X-_hotbar.Size.X)*.5f,screen.Y-112);
++        _menus.Size=new(215,52); _menus.Position=new(18,170);
++        Vector2 size=new(Mathf.Min(820,screen.X-40),Mathf.Min(570,screen.Y-40));
++        _window.Position=(screen-size)*.5f; _window.Size=size;
++    }
++    public void TogglePage(string page) { if(MenuOpen && CurrentPage==page) CloseMenu(); else ShowPage(page); }
++    public void CloseMenu() { _window.Visible=false; _shade.Visible=false; _player.InputBlocked=false; GetViewport().GuiReleaseFocus(); }
++    public void ShowPage(string page)
++    {
++        if(_player==null) return;
++        CurrentPage=page; _window.Visible=true; _shade.Visible=true; _player.InputBlocked=true;
++        foreach(var child in _page.GetChildren()) { _page.RemoveChild(child); child.QueueFree(); }
++        _stats=null; _detail=null;
++        _title.Text=page=="status" ? "◆  모험가의 기록" : "◆  기술과 숙련";
++        if(page=="status")
++        {
++            var columns=new HBoxContainer { SizeFlagsVertical=SizeFlags.ExpandFill }; columns.AddThemeConstantOverride("separation",18); _page.AddChild(columns);
++            var scroll=new ScrollContainer { SizeFlagsVertical=SizeFlags.ExpandFill,SizeFlagsHorizontal=SizeFlags.ExpandFill }; columns.AddChild(scroll);
++            _stats=new RichTextLabel { BbcodeEnabled=true,FitContent=true,SizeFlagsHorizontal=SizeFlags.ExpandFill,ScrollActive=false,MouseFilter=MouseFilterEnum.Ignore };
++            _stats.AddThemeFontSizeOverride("normal_font_size",18); _stats.AddThemeColorOverride("default_color",RpgUi.Paper); scroll.AddChild(_stats);
++            var portrait=Panel(columns,true); portrait.CustomMinimumSize=new Vector2(224,0);
++            var caption=new VBoxContainer(); caption.AddThemeConstantOverride("separation",14); portrait.AddChild(caption);
++            var crest=RpgUi.Text("◆  여행자의 초상  ◆",16,RpgUi.Gold); crest.HorizontalAlignment=HorizontalAlignment.Center; caption.AddChild(crest);
++            caption.AddChild(new TextureRect { Texture=GD.Load<Texture2D>("res://art/player/sword_idle/south.png"),
++                CustomMinimumSize=new Vector2(180,210),ExpandMode=TextureRect.ExpandModeEnum.IgnoreSize,
++                StretchMode=TextureRect.StretchModeEnum.KeepAspectCentered,TextureFilter=TextureFilterEnum.Nearest,MouseFilter=MouseFilterEnum.Ignore });
++            caption.AddChild(RpgUi.Text($"보유 기술   {_player.Jobs.LearnedSkills.Count}\n거쳐온 직업   {_player.Jobs.History.Count}",14,RpgUi.Muted));
++        }
++        else
++        {
++            var columns=new HBoxContainer { SizeFlagsVertical=SizeFlags.ExpandFill }; columns.AddThemeConstantOverride("separation",20); _page.AddChild(columns);
++            var scroll=new ScrollContainer { CustomMinimumSize=new Vector2(240,0),SizeFlagsVertical=SizeFlags.ExpandFill }; columns.AddChild(scroll);
++            var list=new VBoxContainer { SizeFlagsHorizontal=SizeFlags.ExpandFill }; scroll.AddChild(list);
++            var owned=_player.Jobs.LearnedSkills.Select(id=>GameDatabase.Instance.GetSkill(id)).Where(s=>s!=null).ToList();
++            _shownSkills=string.Join("|",_player.Jobs.LearnedSkills);
++            if(!owned.Exists(s=>s.Id==_selectedSkill)) _selectedSkill=owned.FirstOrDefault()?.Id;
++            var selection=new ButtonGroup();
++            foreach(var skill in owned)
++            {
++                var button=RpgUi.Button(skill.Name); button.TooltipText="기술의 효과와 숙련도를 확인합니다.";
++                button.ToggleMode=true; button.ButtonGroup=selection; button.ButtonPressed=skill.Id==_selectedSkill;
++                button.Pressed+=()=>{_selectedSkill=skill.Id;RefreshDetails();}; list.AddChild(button);
++            }
++            _detail=new RichTextLabel { BbcodeEnabled=true,SizeFlagsHorizontal=SizeFlags.ExpandFill,SizeFlagsVertical=SizeFlags.ExpandFill };
++            _detail.AddThemeFontSizeOverride("normal_font_size",17); _detail.AddThemeColorOverride("default_color",RpgUi.Paper); columns.AddChild(_detail);
++        }
++        RefreshDetails(); _window.GetChild(0).GetChild(0).GetChild<Button>(1).GrabFocus();
++    }
++    private void RefreshDetails()
++    {
++        var job=GameDatabase.Instance.GetJob(_player.Jobs.CurrentJobId);
++        if(_stats!=null)
++        {
++            string rows="";
++            foreach(var stat in new[]{("str","힘"),("dex","민첩"),("vit","체력"),("int","지능"),("wis","정신"),("luk","행운")})
++                rows+=$"{stat.Item2}     [color=#e4bf7c]{_player.GetStat(stat.Item1)}[/color]     [font_size=14](기본 {_player.GetBaseStat(stat.Item1)})[/font_size]\n";
++            _stats.Text=$"[font_size=26][color=#e4bf7c]{job?.Name ?? "모험가"}[/color][/font_size]   Lv. {_player.Level}\n직업 숙련 단계  {_player.Jobs.CurrentRank}\n\n생명     {_player.Hp:0} / {_player.MaxHp:0}\n마나     {_player.Mp:0} / {_player.MaxMp:0}\n스태미나     {_player.Stamina:0} / {_player.MaxStamina:0}\n\n[color=#c4a46a]────────  능력치  ────────[/color]\n{rows}\n[font_size=14]스태미나는 회피에 사용되며 잠시 쉬면 회복됩니다.\n능력치는 직업 성장과 계승 보정을 반영합니다.[/font_size]";
++        }
++        if(_detail==null) return;
++        var skill=_selectedSkill==null ? null : GameDatabase.Instance.GetSkill(_selectedSkill);
++        if(skill==null) { _detail.Text="아직 배운 기술이 없습니다."; return; }
++        int slot=Array.FindIndex(Actions,a=>_player.ResolveSkillForAction(a)?.Id==skill.Id);
++        string description=skill.Kind=="passive" ? "습득한 동안 지속되는 효과입니다." : skill.Heal!=null ? "생명을 회복하는 기술입니다."
++            : skill.Guard!=null ? "공격을 막아 피해를 줄입니다." : skill.Projectile!=null ? "전방으로 투사체를 발사합니다."
++            : skill.Stun!=null ? "주변 적의 행동을 저지합니다." : skill.Dash!=null ? "앞으로 파고들며 타격합니다."
++            : skill.Buff!=null ? "일정 시간 자신의 전투 능력을 강화합니다." : "바라보는 방향의 적을 공격합니다.";
++        float mastery=_player.Mastery.Get(skill.Id);
++        _detail.Text=$"[font_size=25][color=#e4bf7c]{skill.Name}[/color][/font_size]\n{(skill.Kind=="passive" ? "지속 효과" : slot>=0 ? "단축키  "+Keys[slot] : "보유 기술")}\n\n{description}\n\n[color=#c4a46a]기술 정보[/color]\n마나 소모   {skill.ManaCost:0}\n재사용 대기   {skill.Cooldown:0.#}초\n남은 대기   {_player.CooldownRemaining(skill.Id):0.#}초\n\n[color=#c4a46a]숙련[/color]   {mastery:0.0}\n숙련 피해 보정   +{( _player.Mastery.DamageMultiplier(skill)-1f)*100f:0.#}%\n\n[font_size=14]유효한 사용으로 숙련이 쌓입니다.[/font_size]";
++    }
++    public override void _Input(InputEvent input)
++    {
++        if(input.IsEcho()) return;
++        if(input.IsActionPressed(InputSetup.CharacterSheet)) { TogglePage("status"); GetViewport().SetInputAsHandled(); }
++        else if(input.IsActionPressed(InputSetup.SkillBook)) { TogglePage("skills"); GetViewport().SetInputAsHandled(); }
++        else if(MenuOpen && input is InputEventKey key && key.Pressed && key.PhysicalKeycode==Key.Escape)
++        { CloseMenu(); GetViewport().SetInputAsHandled(); }
++    }
+     public override void _Process(double delta)
+     {
+-        // 값이 매 프레임 바뀌므로 그냥 매 프레임 다시 그린다. 도형 스무 개다.
+-        QueueRedraw();
+-    }
+-
+-    public override void _Draw()
+-    {
+-        if (_player == null)
+-            return;
+-
+-        var back = new Color(0f, 0f, 0f, 0.55f);
+-
+-        DrawBar(Origin, _player.HpRatio, new Color(0.78f, 0.24f, 0.24f), back);
+-        DrawBar(Origin + new Vector2(0f, BarHeight + 3f), _player.MpRatio,
+-            new Color(0.30f, 0.48f, 0.86f), back);
+-
+-        DrawSlots(Origin + new Vector2(0f, BarHeight * 2f + 12f));
+-        DrawMinimap();
+-    }
+-
+-    /// <summary>
+-    /// 구역 모양 + 내 위치 점. 그 이상은 그리지 않는다 —
+-    /// 몬스터·NPC 까지 찍으면 읽는 데 시간이 걸려서 전투 중에 쓸모가 없어진다.
+-    /// </summary>
+-    private void DrawMinimap()
+-    {
+-        Vector2 position=((IPlayerContext)_player).WorldPosition;
+-        bool indoor=WorldLayout.IronjawDen.Contains(position);
+-        if(!indoor && !WorldLayout.WorldBounds.HasPoint(position)) return;
+-        var map = indoor ? _tiles?.SanctuaryMinimap : _tiles?.Minimap;
+-        if (map == null)
+-            return;
+-
+-        float scale=indoor ? WorldLayout.WidthTiles*MapScale/map.GetWidth() : MapScale;
+-        var size = new Vector2(map.GetWidth(), map.GetHeight()) * scale;
+-        // Control.Size 는 앵커가 풀리기 전이라 0 일 수 있다. 뷰포트에서 직접 받는다.
+-        float screenW = GetViewportRect().Size.X;
+-        var at = new Vector2(screenW - size.X - MapMargin, MapMargin);
+-
+-        DrawRect(new Rect2(at - Vector2.One, size + Vector2.One * 2f),
+-            new Color(0f, 0f, 0f, 0.75f));
+-        DrawTextureRect(map, new Rect2(at, size), tile: false,
+-            new Color(1f, 1f, 1f, 0.85f));
+-
+-        // 내 위치. 타일 좌표를 그대로 미니맵 픽셀로 쓴다(한 타일 = 한 픽셀).
+-        Vector2 tile = position / WorldLayout.TileSize;
+-        if(indoor) tile-=WorldLayout.IronjawDen.Tiles.Grow(2).Position;
+-        Vector2 dot = at + tile * scale;
+-        DrawCircle(dot, 3f, new Color(0f, 0f, 0f, 0.8f));
+-        DrawCircle(dot, 2f, new Color(1f, 0.95f, 0.5f));
+-    }
+-
+-    private void DrawBar(Vector2 at, float ratio, Color fill, Color back)
+-    {
+-        DrawRect(new Rect2(at - Vector2.One, new Vector2(BarWidth + 2f, BarHeight + 2f)), back);
+-        DrawRect(new Rect2(at, new Vector2(BarWidth * Mathf.Clamp(ratio, 0f, 1f), BarHeight)), fill);
+-    }
+-
+-    private void DrawSlots(Vector2 at)
+-    {
+-        var font = GetThemeDefaultFont();
+-        var db = GameDatabase.Instance;
+-
+-        for (int i = 0; i < PlayerCharacter.SkillSlots.Count; i++)
+-        {
+-            var box = new Rect2(at + new Vector2(i * (SlotSize + SlotGap), 0f),
+-                new Vector2(SlotSize, SlotSize));
+-
+-            var skill = _player.ResolveSkillForAction(PlayerCharacter.SkillSlots[i]);
+-            DrawRect(box, new Color(0f, 0f, 0f, 0.55f));
+-
+-            if (skill != null)
+-            {
+-                float cd = _player.CooldownRemaining(skill.Id);
+-                bool ready = cd <= 0f && _player.HasManaFor(skill);
+-
+-                // 쿨다운은 위에서 아래로 차오르는 그림자로 남긴다 — 숫자보다 빨리 읽힌다.
+-                if (skill.Cooldown > 0f && cd > 0f)
+-                {
+-                    float left = Mathf.Clamp(cd / skill.Cooldown, 0f, 1f);
+-                    DrawRect(new Rect2(box.Position, new Vector2(SlotSize, SlotSize * left)),
+-                        new Color(0.1f, 0.1f, 0.14f, 0.75f));
+-                }
+-
+-                var tint = ready
+-                    ? new Color(0.85f, 0.85f, 0.75f)
+-                    : new Color(0.45f, 0.45f, 0.45f);
+-                DrawRect(box, tint, filled: false, width: 1f);
+-
+-                if (font != null)
+-                {
+-                    DrawString(font, box.Position + new Vector2(4f, 12f), SlotKeys[i],
+-                        HorizontalAlignment.Left, -1f, 10, tint);
+-
+-                    // 이름은 길어서 두 글자만. 어느 슬롯이 뭔지 구분되면 충분하다.
+-                    string tag = skill.Name.Length > 2 ? skill.Name.Substring(0, 2) : skill.Name;
+-                    DrawString(font, box.Position + new Vector2(4f, 25f), tag,
+-                        HorizontalAlignment.Left, -1f, 10, tint);
+-                }
+-            }
+-            else
+-            {
+-                DrawRect(box, new Color(0.3f, 0.3f, 0.3f), filled: false, width: 1f);
+-                if (font != null)
+-                {
+-                    DrawString(font, box.Position + new Vector2(4f, 12f), SlotKeys[i],
+-                        HorizontalAlignment.Left, -1f, 10, new Color(0.35f, 0.35f, 0.35f));
+-                }
+-            }
+-        }
++        if(_player==null) return;
++        _identity.Text=$"◆  {GameDatabase.Instance.GetJob(_player.Jobs.CurrentJobId)?.Name ?? "모험가"}    Lv. {_player.Level}";
++        _hp.Value=_player.HpRatio*100; _mp.Value=_player.MpRatio*100; _stamina.Value=_player.MaxStamina>0 ? _player.Stamina/_player.MaxStamina*100 : 0;
++        _hpText.Text=$"생명   {_player.Hp:0} / {_player.MaxHp:0}"; _mpText.Text=$"마나   {_player.Mp:0} / {_player.MaxMp:0}";
++        _staminaText.Text=$"스태미나   {_player.Stamina:0} / {_player.MaxStamina:0}";
++        foreach(var slot in _slots)
++        {
++            var skill=_player.ResolveSkillForAction(slot.Action);
++            slot.Name.Text=skill?.Name ?? "—";
++            float cd=skill==null ? 0 : slot.Action==InputSetup.Guard ? _player.GuardCooldownRemaining : _player.CooldownRemaining(skill.Id);
++            bool ready=skill!=null && cd<=0 && _player.HasManaFor(skill);
++            slot.State.Text=skill==null ? "미습득" : cd>0 ? $"{cd:0.0}초" : ready ? "준비" : "마나 부족";
++            slot.Cooldown.Value=skill?.Cooldown>0 ? 100*(1-Mathf.Clamp(cd/skill.Cooldown,0,1)) : 100;
++            slot.Box.TooltipText=skill==null ? "미습득 기술" : $"{skill.Name} · 마나 {skill.ManaCost:0} · 숙련 {_player.Mastery.Get(skill.Id):0.0}";
++        }
++        bool indoor=WorldLayout.IronjawDen.Contains(_player.WorldPosition);
++        _map.Texture=indoor ? _tiles?.SanctuaryMinimap : _tiles?.Minimap;
++        _zone.Text=WorldLayout.ZoneAt(_player.WorldPosition)?.DisplayName ?? "여행 중";
++        _refresh-=(float)delta;
++        if(MenuOpen && _refresh<=0)
++        {
++            _refresh=.15f;
++            if(CurrentPage=="skills" && _shownSkills!=string.Join("|",_player.Jobs.LearnedSkills)) ShowPage("skills");
++            else RefreshDetails();
++        }
++        UpdateMapMarker();
++    }
++    private void UpdateMapMarker()
++    {
++        if(_player==null || _map?.Texture==null) return;
++        bool indoor=WorldLayout.IronjawDen.Contains(_player.WorldPosition);
++        Vector2 source=_map.Texture.GetSize(); float scale=Mathf.Min(_map.Size.X/source.X,_map.Size.Y/source.Y);
++        Vector2 at=(_map.Size-source*scale)*.5f;
++        Vector2 tile=_player.WorldPosition/WorldLayout.TileSize;
++        if(indoor)tile-=WorldLayout.IronjawDen.Tiles.Grow(2).Position;
++        _mapDot.Visible=new Rect2(Vector2.Zero,source).HasPoint(tile);
++        _mapDot.Position=at+tile*scale-_mapDot.Size*.5f;
+     }
+ }
+--- a/scripts/Runtime/ReferenceChecks3D.cs
++++ b/scripts/Runtime/ReferenceChecks3D.cs
+@@ -21,6 +21,7 @@
+             CheckMapConsistency();
+             await CheckSilhouettes();
+             await CheckFeedback();
++            await CheckRpgUi();
+             foreach (var camp in MeadowLayout.Data.Camps)
+             {
+                 Vector3 expected = ReferenceTerrain3D.Ground(camp.Center);
+@@ -114,6 +115,47 @@
+         for(int i=0;i<8;i++) await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
+         Input.ActionRelease(InputSetup.Interact);
+         Expect(!WorldLayout.IronjawDen.Contains(player.WorldPosition),"dungeon must have a working return path");
++    }
++
++    private async System.Threading.Tasks.Task CheckRpgUi()
++    {
++        var hud=PlayerHud.Instance;
++        IPlayerContext player=View.World.Player;
++        var saved=player.CaptureSave();
++        Expect(hud!=null,"RPG HUD must exist");
++        if(hud==null)return;
++        try
++        {
++            hud._Input(new InputEventAction { Action=InputSetup.CharacterSheet,Pressed=true });
++            Expect(hud.MenuOpen && hud.CurrentPage=="status","P opens character sheet");
++            Vector2 at=player.WorldPosition;
++            Input.ActionPress(InputSetup.MoveRight); Input.ActionPress(InputSetup.Attack);
++            for(int i=0;i<8;i++) await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
++            Input.ActionRelease(InputSetup.MoveRight); Input.ActionRelease(InputSetup.Attack);
++            Expect(at.DistanceTo(player.WorldPosition)<1f,"book must block background movement/attack input");
++            hud._Input(new InputEventAction { Action=InputSetup.SkillBook,Pressed=true });
++            Expect(hud.MenuOpen && hud.CurrentPage=="skills","B switches to skills");
++            hud.CloseMenu(); player.RestoreFull();
++            for(int i=0;i<2;i++) await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
++            Input.ActionPress(InputSetup.Dash);
++            for(int i=0;i<3;i++) await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
++            Input.ActionRelease(InputSetup.Dash);
++            Expect(player.Stamina<player.MaxStamina && player.Stamina>=0f,"dodge consumes real stamina");
++            for(int i=0;i<120;i++) await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
++            Expect(Mathf.IsEqualApprox(player.Stamina,player.MaxStamina),"stamina recovers after the delay");
++            var depleted=player.CaptureSave(); depleted.Stamina=0f; player.RestoreSave(depleted);
++            Input.ActionPress(InputSetup.Dash);
++            await ToSignal(GetTree(),SceneTree.SignalName.PhysicsFrame);
++            Expect(!View.World.Player.IsDashing,"insufficient stamina blocks dodge");
++            Input.ActionRelease(InputSetup.Dash);
++            depleted.Stamina=null; player.RestoreSave(depleted);
++            Expect(player.Stamina==player.MaxStamina,"old saves without stamina remain playable");
++        }
++        finally
++        {
++            Input.ActionRelease(InputSetup.MoveRight);Input.ActionRelease(InputSetup.Attack);Input.ActionRelease(InputSetup.Dash);
++            hud.CloseMenu();player.RestoreSave(saved);
++        }
+     }
+ 
+     private async System.Threading.Tasks.Task CheckFeedback()
+--- a/scripts/Runtime/RpgUi.cs
++++ b/scripts/Runtime/RpgUi.cs
+@@ -0,0 +1,43 @@
++using Godot;
++
++namespace PixelMmo.Runtime;
++
++public static class RpgUi
++{
++    public static readonly Color Ink = new("201a16"), Wood = new("30251f"), Gold = new("bc9656"), Paper = new("eadbb6"), Muted = new("b8aa8d");
++    public static StyleBoxFlat Frame(bool light = false, int margin = 16)
++    {
++        var box = new StyleBoxFlat { BgColor = light ? new Color("40332a") : new Color(.10f,.075f,.058f,.96f),
++            BorderColor = Gold, ShadowColor = new Color(0,0,0,.45f), ShadowSize = 7,
++            ContentMarginLeft = margin, ContentMarginRight = margin, ContentMarginTop = margin, ContentMarginBottom = margin };
++        box.SetBorderWidthAll(2); box.SetCornerRadiusAll(3);
++        return box;
++    }
++    public static Label Text(string text, int size = 16, Color? color = null)
++    {
++        var label = new Label { Text = text, MouseFilter = Control.MouseFilterEnum.Ignore };
++        label.AddThemeFontSizeOverride("font_size",size);
++        label.AddThemeColorOverride("font_color",color ?? Paper);
++        return label;
++    }
++    public static Button Button(string text)
++    {
++        var button = new Button { Text = text, CustomMinimumSize = new Vector2(0,38), MouseDefaultCursorShape = Control.CursorShape.PointingHand };
++        button.AddThemeStyleboxOverride("normal",Frame(false,10));
++        button.AddThemeStyleboxOverride("hover",Frame(true,10));
++        button.AddThemeStyleboxOverride("pressed",Frame(true,10));
++        var focus=Frame(false,10); focus.BgColor=Colors.Transparent; focus.BorderColor=Paper;
++        button.AddThemeStyleboxOverride("focus",focus);
++        button.AddThemeColorOverride("font_color",Paper); button.AddThemeColorOverride("font_hover_color",Colors.White);
++        button.AddThemeFontSizeOverride("font_size",15);
++        return button;
++    }
++    public static ProgressBar Bar(Color color, float height = 20)
++    {
++        var bar = new ProgressBar { ShowPercentage = false, CustomMinimumSize = new Vector2(0,height), MouseFilter = Control.MouseFilterEnum.Ignore };
++        var back=Frame(false,0); back.ShadowSize=0; back.BorderColor=new Color("706042"); back.SetBorderWidthAll(1);
++        var fill=new StyleBoxFlat { BgColor=color }; fill.SetCornerRadiusAll(2);
++        bar.AddThemeStyleboxOverride("background",back); bar.AddThemeStyleboxOverride("fill",fill);
++        return bar;
++    }
++}
+--- a/scripts/Runtime/SaveData.cs
++++ b/scripts/Runtime/SaveData.cs
+@@ -10,6 +10,7 @@
+     public string WorldRevision { get; set; } = "";
+     public int Level { get; set; } = 1;
+     public float Hp { get; set; } = 100f;
++    public float? Stamina { get; set; }
+     public SavePosition Position { get; set; } = new();
+     public Dictionary<string, int> BaseStats { get; set; } = new();
+     public SaveJobState JobState { get; set; } = new();
+--- a/scripts/World/ForestSecrets.cs
++++ b/scripts/World/ForestSecrets.cs
+@@ -57,7 +57,7 @@
+         _travelCooldown=Mathf.Max(0,_travelCooldown-(float)delta);
+         _prompt.Text="";
+         if(!player.IsAlive) return;
+-        bool interact=Input.IsActionJustPressed(InputSetup.Interact);
++        bool interact=!player.InputBlocked && Input.IsActionJustPressed(InputSetup.Interact);
+         foreach(var (point,flag,stone) in _stones)
+         {
+             bool active=player.HasFlag(flag);
+--- a/scripts/World/MeadowEncounters.cs
++++ b/scripts/World/MeadowEncounters.cs
+@@ -37,7 +37,7 @@
+             if (point.DistanceTo(stone) < 100f) return true;
+         if (point.DistanceTo(ForestSecrets.Shortcut) < 100f) return true;
+         foreach (var camp in Data.Camps)
+-            if (point.DistanceTo(camp.Center) <= 140f) return true;
++            if (point.DistanceTo(camp.Center) <= Mathf.Max(140f, (camp.Goblins-1)*32.5f+45f)) return true;
+         foreach (var route in Data.Routes)
+             for (int i = 1; i < route.Length; i++)
+             {
+@@ -116,7 +116,7 @@
+             if (!camp.Cleared) continue;
+             string flag = "supplies_" + camp.Def.Id;
+             Vector2 supply = camp.Def.Center + new Vector2(0f, 80f);
+-            if (player.IsAlive && !player.HasFlag(flag) && player.WorldPosition.DistanceTo(supply) < 42f
++            if (player.IsAlive && !player.InputBlocked && !player.HasFlag(flag) && player.WorldPosition.DistanceTo(supply) < 42f
+                 && Input.IsActionJustPressed(InputSetup.Interact))
+             {
+                 player.RestoreSupplies(camp.Def.RewardRatio);
+--- a/scripts/World/ReferenceTerrain3D.cs
++++ b/scripts/World/ReferenceTerrain3D.cs
+@@ -24,9 +24,7 @@
+         if(x<0 || z<0) return 1.2f;
+         float village = Mathf.SmoothStep(17f,33f, new Vector2(x-96,z-114).Length());
+         float hills = 2.4f + 2.2f*Mathf.Sin(x*.042f)*Mathf.Cos(z*.045f);
+-        Vector2 edgeVector=(new Vector2(x,z)-new Vector2(112,96))/new Vector2(106,88);
+-        float angle=edgeVector.Angle();
+-        float edge=.94f+.035f*Mathf.Sin(angle*5)+.025f*Mathf.Cos(angle*9)-edgeVector.Length();
++        float edge=WorldLayout.ForestEdge(new Vector2(x,z));
+         hills+=18f*(1f-Mathf.SmoothStep(0f,.09f,edge));
+         float ridge = 3.5f*Mathf.SmoothStep(132f,160f,x)*(1f-Mathf.SmoothStep(70f,105f,z));
+         float land = Mathf.Lerp(1.2f,hills+ridge,village);
+--- a/scripts/World/TileWorld.cs
++++ b/scripts/World/TileWorld.cs
+@@ -884,6 +884,30 @@
+         Prop("tree_stump",-82,32,2,2); Prop("log_pile",-67,30,2,2);
+         Prop("boulder",-79,36,2,2); Prop("boulder",-71,37,2,2);
+         Prop("bench",80,39,2,1,false); Prop("flower_pots",86,39,1,1,false);
++        var landmarks = new System.Collections.Generic.List<PropPlacement>();
++        void Detail(string name,int x,int y,int w=2,int h=2,bool solid=true)
++            => landmarks.Add(new(new(x,y,w,h),name,solid));
++        Detail("watchtower",208,90,3,4); Detail("goblin_hut",223,90,3,3);
++        Detail("barrels",226,97); Detail("firewood",209,102); Detail("crates",213,94);
++        Detail("statue",240,137,2,3); Detail("statue",255,137,2,3);
++        Detail("boulder",240,150,3,2); Detail("flower_pots",244,140,1,1,false);
++        Detail("well",253,151); Detail("bench",239,145,2,1,false);
++        Detail("kit_m_cottage",207,44,4,3); Detail("kit_s_shed",222,46,3,3);
++        Detail("hand_cart",223,55); Detail("log_pile",207,58,3,2); Detail("firewood",211,48);
++        Detail("lamp_post",213,49,1,2,false); Detail("barrels",223,50);
++        Detail("chapel",187,180,4,4); Detail("bench",189,189,2,1,false);
++        Detail("well",202,182); Detail("flower_pots",187,186,1,1,false);
++        Detail("lamp_post",194,183,1,2,false); Detail("statue",201,199,2,3);
++        Detail("boulder",254,91,3,3); Detail("boulder",268,96,3,3);
++        Detail("boulder",265,106,3,3); Detail("hand_cart",256,105);
++        Detail("crates",269,101); Detail("log_pile",254,98,3,2);
++        Detail("tree_oak",253,182,4,5); Detail("statue",265,186,2,3);
++        Detail("bench",252,197,2,1,false); Detail("flower_pots",265,196,1,1,false);
++        Detail("kit_s_shed",169,200,3,3); Detail("hand_cart",183,216);
++        Detail("log_pile",170,215,3,2); Detail("lamp_post",173,206,1,2,false);
++        // Keep the silhouettes of authored landmarks clear of the procedural tree canopy.
++        result.RemoveAll(p => landmarks.Exists(d => d.Tiles.Grow(2).Intersects(p.Tiles)));
++        result.AddRange(landmarks);
+         return result;
+     }
+ 
+--- a/scripts/World/WorldLayout.cs
++++ b/scripts/World/WorldLayout.cs
+@@ -92,7 +92,7 @@
+ /// </summary>
+ public static class WorldLayout
+ {
+-    public const int TileSize = 32, WidthTiles = 224, HeightTiles = 192;
++    public const int TileSize = 32, WidthTiles = 320, HeightTiles = 256;
+     public const int BorderThickness = 1, WallThickness = 2, GateHeight = 5;
+     public const string Revision = "forest-2026-09";
+     public static readonly Vector2 WorldSizePx = new(WidthTiles * TileSize, HeightTiles * TileSize);
+@@ -104,7 +104,7 @@
+         Tiles = new(-88, 20, 28, 24), Indoor = true, Danger = 3,
+         FloorColor = new(.25f,.29f,.27f), AccentColor = new(.39f,.43f,.38f), Pattern = GroundPattern.Flagstone };
+     public static readonly ZoneDef Meadow = new() { Id = "meadow", DisplayName = "새잎의 숲",
+-        Tiles = new(1, 1, 222, 190), Danger = 1, FloorColor = new(.3f,.44f,.23f), AccentColor = new(.4f,.43f,.34f) };
++        Tiles = new(1, 1, WidthTiles-2, HeightTiles-2), Danger = 1, FloorColor = new(.3f,.44f,.23f), AccentColor = new(.4f,.43f,.34f) };
+     public static readonly ZoneDef[] Zones = { Town, Whisperwood, IronjawDen, Meadow };
+     // Open terrain uses authored paths, never walls between these descriptive areas.
+     public static readonly ZoneLink[] Links = { new(Town, Meadow), new(Meadow, Whisperwood), new(Meadow, IronjawDen) };
+@@ -112,16 +112,21 @@
+     public static Vector2 DungeonDoor => TileCenter(48, 49);
+     public static Vector2 DungeonArrival => TileCenter(-74, 40);
+     public static Vector2 TileCenter(int x, int y) => new((x + .5f) * TileSize, (y + .5f) * TileSize);
+-    public static bool IsForest(Vector2 p)
++    public static float ForestEdge(Vector2 p)
+     {
+-        Vector2 d = (p - new Vector2(112, 96)) / new Vector2(106, 88);
+-        float a = d.Angle();
+-        return d.Length() < .94f + .035f * Mathf.Sin(a * 5) + .025f * Mathf.Cos(a * 9);
++        float Edge(Vector2 center, Vector2 radius)
++        {
++            Vector2 d = (p - center) / radius;
++            float a = d.Angle();
++            return .94f + .035f * Mathf.Sin(a * 5) + .025f * Mathf.Cos(a * 9) - d.Length();
++        }
++        return Mathf.Max(Edge(new(112,96), new(106,88)), Edge(new(196,136), new(116,112)));
+     }
++    public static bool IsForest(Vector2 p) => ForestEdge(p) > 0f;
+     public static float RiverX(float y) => 131f + 7f * Mathf.Sin((y - 108f) * .047f);
+     public static bool River(Vector2 p) => IsForest(p) && Mathf.Abs(p.X - RiverX(p.Y)) < 2.2f;
+     public static bool Bridge(Vector2 p) => Mathf.Abs(p.X - RiverX(p.Y)) < 4.5f
+-        && (Mathf.Abs(p.Y - 108f) < 2.5f || Mathf.Abs(p.Y - 57f) < 2.5f || Mathf.Abs(p.Y - 150f) < 3.5f);
++        && (Mathf.Abs(p.Y - 108f) < 2.5f || Mathf.Abs(p.Y - 57f) < 2.5f || Mathf.Abs(p.Y - 150f) < 3.5f || Mathf.Abs(p.Y - 190f) < 3.5f);
+     public static ZoneDef ZoneAt(Vector2 p)
+     { foreach (var zone in Zones) if (zone.Contains(p)) return zone; return null; }
+     public static ZoneDef ZoneById(string id)

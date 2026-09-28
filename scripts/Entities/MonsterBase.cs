@@ -46,6 +46,8 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
         : 1f;
     protected PlayerCharacter Player { get; private set; }
     protected Vector2 Facing { get; set; } = Vector2.Right;
+    public Vector2 ArtFacing => Facing;
+    public bool HitFlashing => _flashTimer > 0f;
 
     public abstract MonsterStats Stats { get; }
 
@@ -76,8 +78,32 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
         Player = GetTree().GetFirstNodeInGroup(PlayerCharacter.Group) as PlayerCharacter;
     }
 
+    /// <summary>
+    /// 이 거리 밖의 몬스터는 아예 돌지 않는다.
+    ///
+    /// 3배 줌 1280x720 이면 화면에 들어오는 반경이 약 245px 이다. 그 1.7배 —
+    /// 화면 끝에서 걸어 들어오는 놈이 이미 깨어 있을 만큼은 넓고,
+    /// 맵 반대편 100마리가 매 프레임 MoveAndSlide 를 돌지는 않을 만큼은 좁다.
+    /// </summary>
+    private const float AwakeRangePx = 420f;
+
+    /// <summary>화면에서 한참 떨어져 있는가. 죽는 중인 놈은 거리와 무관하게 계속 돈다(시체가 안 사라지면 샌다).</summary>
+    private bool Sleeping()
+    {
+        if (State == MonsterState.Dead || Player == null || !IsInstanceValid(Player))
+            return false;
+
+        return GlobalPosition.DistanceSquaredTo(Player.GlobalPosition)
+            > AwakeRangePx * AwakeRangePx;
+    }
+
     public override void _PhysicsProcess(double delta)
     {
+        // 100마리가 전부 AI + MoveAndSlide 를 돌면 물리 스크립트에만 20ms 가 나간다.
+        // 보이지도 않는 놈들이라 멈춰 있어도 화면에서 달라지는 게 없다.
+        if (Sleeping())
+            return;
+
         float dt = (float)delta;
 
         // 히트스톱 — 이 엔티티만 멈춘다. (§C-3)
@@ -96,10 +122,11 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
                 QueueRedraw();
         }
 
-        // 공격 모션이 흐르는 동안은 매 프레임 다시 그린다.
-        // 히트박스 표시도 켜고 끈 것이 바로 반영되어야 한다. (§I F2)
-        if (DebugFlags.ShowHitbox || State is MonsterState.Windup or MonsterState.Attack or MonsterState.Recover)
-            QueueRedraw();
+        // 깨어 있는 동안은 매 프레임 다시 그린다 — 체력바·공격 모션이 다 여기서 갱신된다.
+        // 자는 놈은 위에서 이미 빠져나갔다. 예전에는 하위 클래스(Ironjaw/GoblinArcher/
+        // TrainingDummy)가 각자 _PhysicsProcess 를 덮어써서 조건 없이 이걸 불렀고,
+        // 그래서 화면 밖 100마리가 프레임당 700번씩 다시 그려졌다. 부르는 곳은 여기 하나다.
+        QueueRedraw();
 
         if (State == MonsterState.Dead)
         {
@@ -145,15 +172,28 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
     protected static Color Lit(Color c) => c.Lightened(0.24f);
     protected static Color Dark(Color c) => c.Darkened(0.3f);
 
+    /// <summary>진단용 — 자는 몬스터가 실제로 다시 그려지고 있는지 세는 카운터.</summary>
+    public static int DrawCalls;
+
     public override void _Draw()
     {
+        DrawCalls++;
+
         // 공격 모션만큼 몸을 밀어서 그린다. 위치(물리)는 건드리지 않는다.
         Vector2 motion = AttackMotionOffset();
         if (motion != Vector2.Zero)
             DrawSetTransform(motion, 0f, Vector2.One);
 
         // 피격 순간 0.08s 동안 흰색. (§C-6)
-        DrawShape(_flashTimer > 0f ? Colors.White : Stats.Color);
+        if (!DrawPixelBody())
+            DrawShape(_flashTimer > 0f ? Colors.White : Stats.Color);
+        else
+        {
+            DrawAttackOverlay();
+            float width = Stats.Radius * 2f;
+            DrawRect(new Rect2(-width / 2f, Stats.Radius + 3f, width, 2f), new Color(0f, 0f, 0f, .65f));
+            DrawRect(new Rect2(-width / 2f, Stats.Radius + 3f, width * HpRatio, 2f), new Color(.85f, .28f, .25f));
+        }
 
         // 판정 범위는 모션과 무관하게 실제 위치에 그린다 — 모션만큼 어긋나면 안 된다.
         if (DebugFlags.ShowHitbox)
@@ -161,6 +201,21 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
             DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
             DrawCircle(Vector2.Zero, Stats.Radius, new Color(1f, 0f, 0f, 0.25f));
         }
+    }
+
+    protected virtual void DrawAttackOverlay() { }
+
+    private bool DrawPixelBody()
+    {
+        string key = this is Slime ? "slime_blob" : this is GoblinArcher ? "goblin" : this is Ironjaw ? "ironjaw" : null;
+        if (key == null) return false;
+        float height = this is Ironjaw ? 43f : this is Slime ? 19f : 28f;
+        float pulse = State == MonsterState.Windup ? StateProgress : 0f;
+        float hurt = _knockbackTimer > 0f ? _knockbackTimer / Mathf.Max(.001f, _knockbackTotal) : 0f;
+        Vector2 scale = new(1f + pulse * .1f + hurt * .12f, 1f - pulse * .1f - hurt * .1f);
+        Color tint = _flashTimer > 0f ? new Color(2f, 2f, 2f) : Colors.White;
+        if (State == MonsterState.Dead) tint.A = Mathf.Clamp(_deathTimer / (float)CombatTuning.DeathLinger, 0f, 1f);
+        return ActorArt.Draw(this, key, Facing, height, Stats.Radius, tint, scale);
     }
 
     /// <summary>
@@ -227,6 +282,19 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
 
     /// <summary>공격 판정이 도는 구간.</summary>
     public bool AnimationHitboxActive => State == MonsterState.Attack;
+    public string ArtClip => State switch
+    {
+        MonsterState.Windup or MonsterState.Attack or MonsterState.Recover => "attack",
+        MonsterState.Chase when Velocity.Length() > 5f => "walk",
+        _ => null,
+    };
+    public float? ArtProgress => State switch
+    {
+        MonsterState.Windup => Mathf.Lerp(0f,this is GoblinArcher ? 5f/9f : 4f/9f,Mathf.Min(StateProgress,.999f)),
+        MonsterState.Attack => Mathf.Lerp(4f/9f,7f/9f,Mathf.Min(StateProgress,.999f)),
+        MonsterState.Recover => Mathf.Lerp(this is GoblinArcher ? 5f/9f : 7f/9f,.999f,StateProgress),
+        _ => null,
+    };
 
     /// <summary>플래그·카운터는 반드시 인터페이스를 통해 건드린다. (CLAUDE.md 규칙 2)</summary>
     protected IPlayerContext Context => Player;
@@ -234,7 +302,7 @@ public abstract partial class MonsterBase : CharacterBody2D, IDamageable, IAnima
     /// <summary>플레이어에게 피해를 넣는다. 무적으로 흘렸으면 false.</summary>
     protected bool StrikePlayer(float amount, Vector2 direction, bool heavy = false)
     {
-        if (!PlayerIsAlive)
+        if (!PlayerIsAlive || !CombatCollision.ClearSight(this, GlobalPosition, Player.GlobalPosition))
             return false;
 
         return Player.TakeDamage(new DamageInfo

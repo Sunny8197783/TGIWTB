@@ -3,11 +3,18 @@
   "name": "광란",
   "hidden": false,
   "kind": "active",
-  "inputAction": "",
+  "inputAction": "skill_5",
   "cooldown": 25.0,
   "heavy": false,
-  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
-  "damage": { "base": 0.0, "scaling": {} },
+  "shape": {
+    "kind": "self",
+    "angleDeg": 0.0,
+    "rangePx": 0.0
+  },
+  "damage": {
+    "base": 0.0,
+    "scaling": {}
+  },
   "buff": {
     "durationSeconds": 6.0,
     "attackPowerMultiplier": 1.5,
@@ -17,5 +24,7 @@
     "minInterval": 1.0,
     "damageBonusPer100": 0.04,
     "evolution": null
-  }
+  },
+  "job": "",
+  "manaCost": 0.0
 }

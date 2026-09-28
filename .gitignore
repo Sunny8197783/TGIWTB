@@ -14,3 +14,13 @@ obj/
 build/
 export/
 tools/__pycache__/
+
+# 로컬 에이전트/도구 상태 — 저장소에 넣지 않는다
+.claude/
+.codex/
+.serena/
+__pycache__/
+*.log
+*.zip
+*.lnk
+

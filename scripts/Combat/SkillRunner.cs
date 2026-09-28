@@ -40,11 +40,16 @@ public sealed class SkillRunner
     /// <summary>선딜 중에만 방향을 바꿀 수 있다. (§C-7)</summary>
     public bool CanTurn => Phase != SkillPhase.Active && Phase != SkillPhase.Recovery;
 
-    /// <summary>후딜은 이동 불가. (§C-2)</summary>
-    public bool CanMove => Phase != SkillPhase.Recovery;
-
-    /// <summary>선딜 동안 이동 속도 40%. (§C-2)</summary>
-    public float MoveScale => Phase == SkillPhase.Windup ? CombatTuning.WindupMoveScale : 1f;
+    /// <summary>
+    /// 선딜은 WindupMoveScale, 후딜은 RecoveryMoveScale, 판정 중엔 100% —
+    /// 어느 단계에서도 완전히 멈추지 않는다. "무조건 멈춰야 하는 건 답답하다" (질주 공격).
+    /// </summary>
+    public float MoveScale => Phase switch
+    {
+        SkillPhase.Windup => CombatTuning.WindupMoveScale,
+        SkillPhase.Recovery => CombatTuning.RecoveryMoveScale,
+        _ => 1f,
+    };
 
     /// <summary>후딜의 뒤쪽 40% — 여기서 선입력이 있으면 다음 공격으로 이어진다. (§C-2 캔슬 창)</summary>
     public bool InCancelWindow
@@ -63,7 +68,7 @@ public sealed class SkillRunner
         Skill = skill;
         LockedFacing = facing;
         _hitThisSwing.Clear();
-        EnterPhase(SkillPhase.Windup, CombatTuning.AttackWindup);
+        EnterPhase(SkillPhase.Windup, skill.Heavy ? CombatTuning.HeavyWindup : CombatTuning.AttackWindup);
     }
 
     public void Cancel()
@@ -110,7 +115,8 @@ public sealed class SkillRunner
                 JustEnteredActive = true;
                 break;
             case SkillPhase.Active:
-                EnterPhase(SkillPhase.Recovery, CombatTuning.AttackRecovery);
+                EnterPhase(SkillPhase.Recovery,
+                    Skill.Heavy ? CombatTuning.HeavyRecovery : CombatTuning.AttackRecovery);
                 break;
             default:
                 Cancel();

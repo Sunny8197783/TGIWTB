@@ -1,0 +1,16 @@
+{
+  "id": "sk_holy_nova",
+  "name": "성역 폭발",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "skill_4",
+  "cooldown": 12.0,
+  "manaCost": 20.0,
+  "heavy": true,
+  "job": "job_priest",
+  "shape": { "kind": "circle", "angleDeg": 0.0, "rangePx": 80.0 },
+  "damage": { "base": 16.0, "scaling": { "wis": 0.9 } },
+  "heal": { "base": 10.0, "scaling": { "wis": 0.5 }, "maxHpRatio": 0.04, "overSeconds": 0.0 },
+  "effect": { "vfx": "ring", "color": "fff4c4", "radiusPx": 80.0 },
+  "mastery": { "minInterval": 1.0, "damageBonusPer100": 0.06, "evolution": null }
+}

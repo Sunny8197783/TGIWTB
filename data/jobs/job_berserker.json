@@ -9,13 +9,41 @@
   "unlock": {
     "requiredFlags": [],
     "requiredCounters": {},
-    "requiredJobRanks": { "job_warrior": 6 }
+    "requiredJobRanks": {
+      "job_warrior": 6
+    }
   },
-  "statPerRank": { "str": 4, "vit": 1, "dex": 1, "int": 0, "wis": 0, "luk": 0 },
-  "expPerRank": [0, 150, 340, 600, 950, 1450, 2100, 3000, 4200, 6000],
+  "statPerRank": {
+    "str": 4,
+    "vit": 1,
+    "dex": 1,
+    "int": 0,
+    "wis": 0,
+    "luk": 0
+  },
+  "expPerRank": [
+    0,
+    150,
+    340,
+    600,
+    950,
+    1450,
+    2100,
+    3000,
+    4200,
+    6000
+  ],
   "rankSkills": {
-    "1": ["sk_frenzy"],
-    "3": ["sk_bash"]
+    "1": [
+      "sk_frenzy"
+    ],
+    "3": [
+      "sk_bash"
+    ]
   },
-  "rankGates": []
+  "rankGates": [],
+  "prototypeSkills": [
+    "sk_frenzy",
+    "sk_bash"
+  ]
 }

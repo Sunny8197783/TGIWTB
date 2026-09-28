@@ -1,4 +1,5 @@
 using Godot;
+using PixelMmo.Data;
 
 namespace PixelMmo.Runtime;
 
@@ -12,6 +13,19 @@ public interface IPlayerContext
     float Hp { get; }
     float MaxHp { get; }
     float HpRatio { get; }
+
+    float Mp { get; }
+    float MaxMp { get; }
+    float MpRatio { get; }
+    float Stamina { get; }
+    float MaxStamina { get; }
+    bool InputBlocked { get; set; }
+    CharacterAppearance Appearance { get; }
+    void ApplyAppearance(CharacterAppearance appearance);
+    SkillDefinition ResolveSkillForAction(string action);
+    float CooldownRemaining(string skillId);
+    float GuardCooldownRemaining { get; }
+    bool HasManaFor(SkillDefinition skill);
     bool IsAlive { get; }
     Vector2 WorldPosition { get; }
 
@@ -31,6 +45,12 @@ public interface IPlayerContext
 
     /// <summary>카운터를 delta 만큼 올리고 갱신된 값을 돌려준다.</summary>
     int AddCounter(string key, int delta = 1);
+
+    /// <summary>마을 회복 지점에서 체력·마나를 가득 채운다.</summary>
+    void RestoreFull();
+
+    /// <summary>보급품으로 최대 체력·마나의 일부를 회복한다.</summary>
+    void RestoreSupplies(float ratio);
 
     /// <summary>화면 중앙에 한 줄만 띄운다. 조건 설명은 하지 않는다. (규칙 4)</summary>
     void Announce(string message);

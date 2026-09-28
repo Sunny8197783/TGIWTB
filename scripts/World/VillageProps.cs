@@ -49,6 +49,7 @@ public partial class VillageProps : Node2D
     {
         ["tree_conifer"] = 14,
         ["tree_oak"] = 14,
+        ["tree_willow"] = 14,
         ["orchard_tree"] = 12,
         ["tree_stump"] = 14,
     };
@@ -74,6 +75,14 @@ public partial class VillageProps : Node2D
 
     /// <summary>실제로 막는 자리(월드 px). 하나의 소품이 여러 조각을 낼 수 있다.</summary>
     private readonly List<Rect2> _solid = new();
+
+    /// <summary>
+    /// IsBlocked 는 프레임마다(몬스터 이동·스폰 위치 찾기) 수백~수천 번 불린다.
+    /// _solid 를 매번 통째로 훑으면(소품 1000개 이상) 그게 그대로 렉이 된다 —
+    /// 128px 격자 버킷에 미리 나눠 담아, 점 하나가 걸리는 칸 하나만 본다.
+    /// </summary>
+    private const int BucketSize = 128;
+    private readonly Dictionary<Vector2I, List<Rect2>> _grid = new();
 
     /// <summary>
     /// 텍스처별 밑동 조각 캐시. 소품이 수백 개인데 같은 그림을 계속 쓰므로,
@@ -114,7 +123,7 @@ public partial class VillageProps : Node2D
         "log_pile", "training_dummy", "weapon_rack",
 
         // 성 밖 — 숲 / 농지 / 목초지
-        "tree_conifer", "tree_oak", "farm_plot", "orchard_tree", "haystack", "boulder",
+        "tree_conifer", "tree_oak", "tree_willow", "farm_plot", "orchard_tree", "haystack", "boulder",
     };
 
     /// <summary>
@@ -159,12 +168,36 @@ public partial class VillageProps : Node2D
     /// <summary>그 월드 좌표가 소품에 막혀 있는가. TileWorld.IsWalkable 이 묻는다.</summary>
     public bool IsBlocked(Vector2 world)
     {
-        foreach (Rect2 box in _solid)
+        var key = new Vector2I(Mathf.FloorToInt(world.X / BucketSize), Mathf.FloorToInt(world.Y / BucketSize));
+        if (!_grid.TryGetValue(key, out var bucket))
+            return false;
+
+        foreach (Rect2 box in bucket)
         {
             if (box.HasPoint(world))
                 return true;
         }
         return false;
+    }
+
+    /// <summary>사각형이 걸치는 모든 버킷에 등록한다 — 큰 건물은 여러 칸에 걸릴 수 있다.</summary>
+    private void AddSolid(Rect2 box)
+    {
+        _solid.Add(box);
+
+        int x0 = Mathf.FloorToInt(box.Position.X / BucketSize);
+        int y0 = Mathf.FloorToInt(box.Position.Y / BucketSize);
+        int x1 = Mathf.FloorToInt((box.Position.X + box.Size.X) / BucketSize);
+        int y1 = Mathf.FloorToInt((box.Position.Y + box.Size.Y) / BucketSize);
+
+        for (int gy = y0; gy <= y1; gy++)
+        for (int gx = x0; gx <= x1; gx++)
+        {
+            var key = new Vector2I(gx, gy);
+            if (!_grid.TryGetValue(key, out var bucket))
+                _grid[key] = bucket = new List<Rect2>();
+            bucket.Add(box);
+        }
     }
 
     private void Place(PropPlacement prop)
@@ -192,7 +225,7 @@ public partial class VillageProps : Node2D
         // 기준선에 두고 오프셋으로 그림을 제자리에 올린다 — 그래야 노드의 Y 가
         // 곧 정렬 키가 된다.
         float sortY = groundY - PlayerFootOffset;
-        AddChild(new Sprite2D
+        var sprite = new Sprite2D
         {
             Texture = texture,
             TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
@@ -205,7 +238,11 @@ public partial class VillageProps : Node2D
             // 뒤집으므로 자리가 그대로다.
             Scale = prop.FlipH ? new Vector2(-1f, 1f) : Vector2.One,
             ZIndex = decal ? -1 : 0,
-        });
+            Modulate = prop.Tint,
+        };
+        sprite.SetMeta("prop_kind", prop.Texture);
+        sprite.SetMeta("solid", prop.Solid);
+        AddChild(sprite);
 
         if (!prop.Solid)
             return;
@@ -236,7 +273,7 @@ public partial class VillageProps : Node2D
                 Position = piece.Position + piece.Size * 0.5f,
                 Shape = new RectangleShape2D { Size = piece.Size },
             });
-            _solid.Add(new Rect2(origin + piece.Position, piece.Size));
+            AddSolid(new Rect2(origin + piece.Position, piece.Size));
         }
 
         AddChild(body);

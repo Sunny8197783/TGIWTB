@@ -1,0 +1,16 @@
+{
+  "id": "sk_frost_nova",
+  "name": "서리 폭발",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "warcry",
+  "cooldown": 14.0,
+  "manaCost": 18.0,
+  "heavy": false,
+  "job": "job_apprentice_mage",
+  "shape": { "kind": "circle", "angleDeg": 0.0, "rangePx": 72.0 },
+  "damage": { "base": 14.0, "scaling": { "int": 0.8 } },
+  "stun": { "radiusPx": 72.0, "durationSeconds": 1.4 },
+  "effect": { "vfx": "ring", "color": "aee7ff", "radiusPx": 72.0 },
+  "mastery": { "minInterval": 1.0, "damageBonusPer100": 0.05, "evolution": null }
+}

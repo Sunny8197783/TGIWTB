@@ -153,6 +153,8 @@ public partial class Slime : MonsterBase
     /// 몽둥이. 선딜엔 뒤로 치켜들고(예고), 내려치기엔 앞으로 휘두른다.
     /// 도형(선분)으로만 그린다. (규칙 5)
     /// </summary>
+    protected override void DrawAttackOverlay() => DrawClub();
+
     private void DrawClub()
     {
         if (State is not (MonsterState.Windup or MonsterState.Attack or MonsterState.Recover))

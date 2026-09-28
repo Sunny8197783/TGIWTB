@@ -7,8 +7,10 @@ namespace PixelMmo.Runtime;
 public sealed class SaveData
 {
     public int Version { get; set; } = SaveSystem.CurrentVersion;
+    public string WorldRevision { get; set; } = "";
     public int Level { get; set; } = 1;
     public float Hp { get; set; } = 100f;
+    public float? Stamina { get; set; }
     public SavePosition Position { get; set; } = new();
     public Dictionary<string, int> BaseStats { get; set; } = new();
     public SaveJobState JobState { get; set; } = new();
@@ -18,9 +20,15 @@ public sealed class SaveData
     public SaveAppearance Appearance { get; set; }
 }
 
-/// <summary>겉모습 색 슬롯. 각 필드는 "rrggbb" hex. null 이면 기본 겉모습으로 폴백.</summary>
+/// <summary>외형 선택과 rrggbb 색상. 새 필드가 없는 이전 저장도 기본값으로 읽는다.</summary>
 public sealed class SaveAppearance
 {
+    public bool UsePixelLab { get; set; }=true;
+    public bool Female { get; set; }
+    public bool Confirmed { get; set; }
+    public int HairStyle { get; set; }
+    public int EyeShape { get; set; }
+    public int Body { get; set; }
     public string Skin { get; set; } = "";
     public string Hair { get; set; } = "";
     public string Shirt { get; set; } = "";

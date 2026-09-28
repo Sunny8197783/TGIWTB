@@ -65,8 +65,16 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// <summary>후딜 중에 누른 입력을 기억한다. (§C-7 입력 버퍼)</summary>
     private string _bufferedAction;
     private float _bufferTimer;
+    private float _dashBufferTimer;
 
     private bool _guarding;
+
+    /// <summary>이 시간이 남아 있으면 마나가 차오르지 않는다. 스킬을 쓸 때마다 다시 채워진다.</summary>
+    private float _mpRegenBlock;
+
+    /// <summary>지속 회복(HoT). 남은 시간과 초당 회복량.</summary>
+    private float _healOverTimer;
+    private float _healOverPerSecond;
 
     /// <summary>
     /// 막기 반동 클립(block)이 남은 시간. 가드 중에 맞으면 이 시간만큼 block 을 한 번
@@ -95,7 +103,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     /// <summary>이번 스윙의 시작 각도와 지난 프레임 칼날 각도. 판정 띠를 만드는 데 쓴다.</summary>
     private float _swingStartAngle;
-    private float _prevBladeAngle;
+
+    /// <summary>
+    /// 근접 콤보 진행도(0~2, 3타). ComboWindowSeconds 안에 같은 계열 공격을 다시 넣으면
+    /// 좌→우로 스윙 방향이 바뀌고 3타째는 마무리(가중치·피해 상승)가 된다.
+    /// 시간이 지나거나 가드/피격/사망이면 끊긴다.
+    /// </summary>
+    private int _comboIndex;
+    private float _comboTimer;
+    private bool _isComboFinisher;
 
     /// <summary>시선 고정 대상. 잡혀 있으면 이동과 무관하게 계속 바라본다.</summary>
     private MonsterBase _lockTarget;
@@ -112,7 +128,12 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         InputSetup.Attack,
         InputSetup.Bash,
         InputSetup.Warcry,
+        InputSetup.Skill4,
+        InputSetup.Skill5,
     };
+
+    /// <summary>UI 가 슬롯 순서대로 훑을 때 쓴다.</summary>
+    public static System.Collections.Generic.IReadOnlyList<string> SkillSlots => SkillActions;
 
     /// <summary>이 값이 0 보다 크면 이 엔티티만 시간이 멈춘다. (§C-3)</summary>
     private float _hitstopTimer;
@@ -124,6 +145,23 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     public float Hp { get; private set; } = PlayerTuning.BaseMaxHp;
     public float MaxHp { get; private set; } = PlayerTuning.BaseMaxHp;
     public float HpRatio => MaxHp > 0f ? Hp / MaxHp : 0f;
+
+    public float Mp { get; private set; } = PlayerTuning.BaseMaxMp;
+
+    /// <summary>int 가 오르면 같이 오른다. 스탯이 바뀌는 순간마다 다시 계산할 필요가 없게 계산식으로 둔다.</summary>
+    public float MaxMp => PlayerTuning.BaseMaxMp + GetStat(Stats.Int) * PlayerTuning.MpPerInt;
+
+    public float MpRatio => MaxMp > 0f ? Mp / MaxMp : 0f;
+    public float Stamina { get; private set; } = CombatTuning.StaminaMax;
+    public float MaxStamina => CombatTuning.StaminaMax;
+    public bool InputBlocked { get; set; }
+    public CharacterAppearance Appearance => _appearance.Copy();
+    public void ApplyAppearance(CharacterAppearance appearance)
+    {
+        _appearance=CharacterAppearance.FromSave(appearance.ToSave());
+        _sprite?.WarmFrames(_appearance);
+    }
+    private float _staminaRegenBlock;
     public bool IsAlive => _state != PlayerState.Dead;
     public Vector2 WorldPosition => GlobalPosition;
     public ulong InstanceId => GetInstanceId();
@@ -188,6 +226,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Level = PlayerTuning.StartLevel;
         MaxHp = PlayerTuning.BaseMaxHp;
         Hp = MaxHp;
+        Mp = MaxMp;
+        Stamina = MaxStamina;
         _state = PlayerState.Normal;
         Velocity = Vector2.Zero;
         GlobalPosition = WorldLayout.SpawnPoint;
@@ -209,6 +249,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _cooldowns.Clear();
         _bufferedAction = null;
         _bufferTimer = 0f;
+        _dashBufferTimer = 0f;
+        _dashTimer = 0f;
+        _dashCooldownTimer = 0f;
+        _dashInvulnTimer = 0f;
+        _iframeTimer = 0f;
+        _flashTimer = 0f;
+        _respawnTimer = 0f;
+        _comboTimer = 0f;
+        _comboIndex = 0;
         _guarding = false;
         _guardElapsed = 0f;
         _guardCooldown = 0f;
@@ -221,11 +270,20 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _hitstopTimer = 0f;
         _knockbackTimer = 0f;
         _lockTarget = null;
+        _mpRegenBlock = 0f;
+        _staminaRegenBlock = 0f;
+        _healOverTimer = 0f;
+        _healOverPerSecond = 0f;
     }
 
     public override void _PhysicsProcess(double delta)
     {
         float dt = (float)delta;
+        // Poll before hitstop/knockback returns: a short press at contact must not disappear.
+        if (!InputBlocked && _state != PlayerState.Dead) {
+            CaptureSkillPress();
+            if (Input.IsActionJustPressed(InputSetup.Dash)) _dashBufferTimer = CombatTuning.InputBuffer;
+        } else { _bufferedAction=null;_bufferTimer=0f;_dashBufferTimer=0f; }
 
         // 히트스톱: 이 엔티티만 멈춘다. 화면 전체가 아니다. (§C-3)
         if (_hitstopTimer > 0f)
@@ -233,7 +291,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _hitstopTimer -= dt;
             Velocity = Vector2.Zero;
             MoveAndSlide();
-            UpdateVisuals(dt);
+            UpdateVisuals(0f);
             return;
         }
 
@@ -256,6 +314,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             UpdateNormal(dt);
         }
 
+        // Consume before aging: an input on the final active tick may cancel recovery.
+        _dashBufferTimer = Mathf.Max(0f, _dashBufferTimer - dt);
+        if (_state != PlayerState.Dash) _bufferTimer = Mathf.Max(0f, _bufferTimer - dt);
         MoveAndSlide();
         UpdateVisuals(dt);
 
@@ -286,6 +347,10 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
 
         TickCooldowns(dt);
+        TickMana(dt);
+        if (_staminaRegenBlock > 0f) _staminaRegenBlock = Mathf.Max(0f, _staminaRegenBlock - dt);
+        else if (IsAlive) Stamina = Mathf.Min(MaxStamina, Stamina + CombatTuning.StaminaRegen * dt);
+        TickHealOverTime(dt);
 
         if (_state == PlayerState.Dead)
         {
@@ -294,6 +359,45 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
                 Respawn();
         }
     }
+
+    /// <summary>
+    /// 마나 회복. 스킬을 쓴 직후에는 잠깐 멈춘다 —
+    /// 안 그러면 마나가 사실상 무한이라 자원이 아니게 된다.
+    /// </summary>
+    private void TickMana(float dt)
+    {
+        if (_mpRegenBlock > 0f)
+        {
+            _mpRegenBlock -= dt;
+            return;
+        }
+
+        if (Mp >= MaxMp)
+            return;
+
+        float perSecond = PlayerTuning.MpRegenPerSecond
+            + GetStat(Stats.Wis) * PlayerTuning.MpRegenPerWis;
+        Mp = Mathf.Min(MaxMp, Mp + perSecond * dt);
+    }
+
+    /// <summary>지속 회복. 한 번에 다 채우면 힐이 '버튼 한 번'이 되어 손맛이 없다.</summary>
+    private void TickHealOverTime(float dt)
+    {
+        if (_healOverTimer <= 0f)
+            return;
+
+        _healOverTimer -= dt;
+        if (_state == PlayerState.Dead)
+        {
+            _healOverTimer = 0f;
+            return;
+        }
+
+        Hp = Mathf.Min(MaxHp, Hp + _healOverPerSecond * dt);
+    }
+
+    /// <summary>지금 이 스킬을 쓸 마나가 있는가. UI 도 이걸 본다.</summary>
+    public bool HasManaFor(SkillDefinition skill) => skill == null || Mp >= skill.ManaCost;
 
     private void TickCooldowns(float dt)
     {
@@ -315,6 +419,12 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void UpdateNormal(float dt)
     {
+        if (InputBlocked)
+        {
+            _bufferedAction = null; _bufferTimer = 0f; _dashBufferTimer = 0f; _guarding = false;
+            AdvanceAttack(dt); Velocity = Vector2.Zero;
+            return;
+        }
         Vector2 input = ReadMoveInput();
 
         UpdateLockOn();
@@ -327,14 +437,31 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _attack.Aim(input);
         }
 
+        if (ReferenceWorld3D.Instance is { } view && Input.IsMouseButtonPressed(MouseButton.Left)
+            && _lockTarget == null && (!_attack.IsBusy || _attack.CanTurn))
+        {
+            Vector2 aim = view.AimPoint() - GlobalPosition;
+            if (aim.LengthSquared() > 4f) { _facing = aim.Normalized(); _attack.Aim(_facing); }
+        }
         AdvanceAttack(dt);
 
-        // 겉모습 무작위 — 정식 커스터마이즈 UI 전까지의 임시 진입점. (C)
-        if (Input.IsActionJustPressed(InputSetup.Customize))
-            RandomizeAppearance();
-
-        if (!_attack.IsBusy && Input.IsActionJustPressed(InputSetup.Dash) && _dashCooldownTimer <= 0f)
+        // 콤보 유지 시간은 공격 중이 아닐 때도 흐른다 — 후딜이 끝난 뒤의 짧은 유예다.
+        if (_comboTimer > 0f)
         {
+            _comboTimer -= dt;
+            if (_comboTimer <= 0f)
+                _comboIndex = 0;
+        }
+
+        // 후딜 중엔 대시로 캔슬하고 바로 흘러나갈 수 있다 — 판정이 끝난 뒤 자세를 회복하는
+        // 시간까지 묶어 두면 콤보 사이 리듬이 뚝뚝 끊긴다. (§ref Hades: dash as universal cancel)
+        // 선딜·판정 중엔 그대로 못 끊는다 — 커밋이 있어야 공격에 무게가 실린다.
+        bool dashCancelable = _attack.IsBusy && _attack.Phase == SkillPhase.Recovery;
+        if ((!_attack.IsBusy || dashCancelable) && _dashBufferTimer > 0f
+            && _dashCooldownTimer <= 0f && Stamina >= CombatTuning.StaminaDashCost)
+        {
+            if (dashCancelable)
+                _attack.Cancel();
             StartDash(input);
             return;
         }
@@ -349,26 +476,14 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        // 후딜에는 이동 불가. (§C-2) 가드 중에는 40%. (§E) Shift 홀드면 달리기.
-        Vector2 target = _attack.CanMove
-            ? input * CurrentMoveSpeed() * _attack.MoveScale * GuardMoveScale()
-            : Vector2.Zero;
-
-        ApplyAcceleration(target, dt, _attack.CanMove && input != Vector2.Zero);
+        // 선딜/후딜엔 느려질 뿐 멈추지 않는다. (§C-2) 가드 중에는 추가로 느려진다. (§E) Shift 홀드면 달리기.
+        Vector2 target = input * CurrentMoveSpeed() * _attack.MoveScale * GuardMoveScale();
+        ApplyAcceleration(target, dt, input != Vector2.Zero);
     }
 
     /// <summary>§C-8 의 스킬 키 4개. 버퍼 → 캔슬 창 → 발동 순서로 처리한다.</summary>
     private void ReadSkillInput(float dt)
     {
-        foreach (string action in SkillActions)
-        {
-            if (Input.IsActionJustPressed(action))
-            {
-                _bufferedAction = action;
-                _bufferTimer = CombatTuning.InputBuffer;
-            }
-        }
-
         UpdateGuard(dt);
 
         if (_bufferTimer <= 0f)
@@ -376,8 +491,6 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _bufferedAction = null;
             return;
         }
-
-        _bufferTimer -= dt;
 
         // 놀고 있거나, 후딜의 캔슬 창 안이면 다음 스킬로 이어진다. (§C-2 콤보)
         if (_attack.IsBusy && !_attack.InCancelWindow)
@@ -388,6 +501,19 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         {
             _bufferedAction = null;
             _bufferTimer = 0f;
+        }
+    }
+
+    /// <summary>스킬 키 입력을 버퍼에 담는다. 대시 중에도 불러서 회피 도중 반격 입력을 받는다.</summary>
+    private void CaptureSkillPress()
+    {
+        foreach (string action in SkillActions)
+        {
+            if (Input.IsActionJustPressed(action))
+            {
+                _bufferedAction = action;
+                _bufferTimer = CombatTuning.InputBuffer;
+            }
         }
     }
 
@@ -405,26 +531,58 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         {
             StartLunge(_attack.Skill);
 
-            // 스윙 시작 각도를 잡아 둔다. 판정은 여기서부터 훑어 나간다.
-            _swingStartAngle = PoseFor(_attack.Skill, SkillPhase.Active, 0f).AngleOffset;
-            _prevBladeAngle = _swingStartAngle;
+            // 도형 무기의 잔상 시작 각도.
+            _swingStartAngle = PoseFor(_attack.Skill, SkillPhase.Active, 0f, _comboIndex).AngleOffset;
 
+            CombatFeedback.Instance?.PlaySound("swing", GlobalPosition);
             SpawnSkillVfx(_attack.Skill);
+            FireProjectiles(_attack.Skill);
         }
 
         if (_attack.IsActive)
-        {
             ProcessActiveHitbox();
-            _prevBladeAngle = PoseFor(_attack.Skill, _attack.Phase, _attack.PhaseProgress).AngleOffset;
-        }
     }
 
-    /// <summary>스킬이 판정에 들어가는 순간의 연출 — 베기 궤적 / 함성 충격파.</summary>
+    /// <summary>
+    /// 스킬이 판정에 들어가는 순간의 연출.
+    ///
+    /// 스킬이 스무 개를 넘으면서 여기에 if 를 하나씩 더 다는 방식이 한계에 왔다.
+    /// 무슨 도형을 무슨 색으로 띄울지는 스킬 정의(effect)가 정하고, 여기서는
+    /// 그 이름을 도형에 연결만 한다. effect 가 없으면 예전 규칙(함성·돌진)으로 간다.
+    /// </summary>
     private void SpawnSkillVfx(SkillDefinition skill)
     {
         var fb = CombatFeedback.Instance;
         if (fb == null)
             return;
+
+        var effect = skill.Effect;
+        if (effect != null && !string.IsNullOrEmpty(effect.Vfx))
+        {
+            Color color = ParseColor(effect.Color, new Color(1f, 1f, 1f));
+            switch (effect.Vfx)
+            {
+                case "ring":
+                    fb.ShockAt(GlobalPosition, effect.RadiusPx, color);
+                    return;
+                case "cone":
+                    fb.ConeAt(GlobalPosition, _attack.LockedFacing, color);
+                    return;
+                case "wind":
+                    fb.DashWindAt(GlobalPosition, _attack.LockedFacing, color);
+                    return;
+                case "arc":
+                    // 칼날 궤적은 판정과 같은 각도 범위를 그린다.
+                {
+                    // 칼날 궤적은 스킬의 부채꼴 각도와 사거리를 그대로 쓴다.
+                    float half = Mathf.DegToRad((skill.Shape?.AngleDeg ?? 90f) * 0.5f);
+                    float reach = skill.Shape?.RangePx ?? 32f;
+                    fb.SlashAt(GlobalPosition, _attack.LockedFacing.Angle(),
+                        -half, half, reach * (skill.Heavy ? .35f : .62f), reach, color);
+                    return;
+                }
+            }
+        }
 
         // 함성 — 자신 중심 큰 충격파.
         if (skill.Stun != null)
@@ -440,8 +598,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
         }
 
-        // 근접 타격은 이펙트를 쓰지 않는다 — 주먹이 닿는 것 자체가 판정이고,
-        // 손맛은 히트스톱·넉백·화면 흔들림·스파크로 낸다. (이펙트가 동작을 가린다)
+        // Other effects are selected by the skill JSON; hit feedback remains shared.
+    }
+
+    /// <summary>"66ccff" 같은 16진 문자열 → 색. 비었거나 이상하면 기본색.</summary>
+    public static Color ParseColor(string hex, Color fallback)
+    {
+        if (string.IsNullOrWhiteSpace(hex))
+            return fallback;
+        return Color.FromString(hex, fallback);
     }
 
     private void StartLunge(SkillDefinition skill)
@@ -452,6 +617,26 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         _lungeTimer = CombatTuning.AttackActive;
         _lungeVelocity = _attack.LockedFacing * (distance / CombatTuning.AttackActive);
+    }
+
+    /// <summary>
+    /// 근접 베기 계열(원뿔, 돌진·기절 없음)만 콤보에 들어간다 — 힐/버프/원거리는 대상이 아니다.
+    /// ComboWindowSeconds 안에 다시 들어오면 이어지고(좌→우→마무리), 아니면 1타로 리셋.
+    /// </summary>
+    private void AdvanceCombo(SkillDefinition skill)
+    {
+        bool chainable = skill.Dash == null && skill.Stun == null && skill.Shape?.Kind == "cone";
+        if (!chainable)
+        {
+            _comboIndex = 0;
+            _comboTimer = 0f;
+            _isComboFinisher = false;
+            return;
+        }
+
+        _comboIndex = _comboTimer > 0f ? (_comboIndex + 1) % 3 : 0;
+        _comboTimer = CombatTuning.ComboWindowSeconds;
+        _isComboFinisher = _comboIndex == 2;
     }
 
     protected bool TryStartSkill(SkillDefinition skill)
@@ -466,13 +651,30 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (CooldownRemaining(skill.Id) > 0f)
             return false;
 
+        // 마나가 모자라면 발동 자체가 없던 일이 된다. 쿨다운도 안 돌고 모션도 안 나간다 —
+        // 반쯤 나간 모션은 "쓴 줄 알았는데 안 나갔다"가 되어 가장 나쁜 피드백이다.
+        if (Mp < skill.ManaCost)
+        {
+            Announce("마나가 모자라다.");
+            return false;
+        }
+
         // 가드를 공격으로 끊는 것도 '뗀 것'으로 본다 — 가드↔공격 왕복으로
         // 쿨다운을 회피하지 못하게 한다.
         ReleaseGuard(GuardSkill()?.Guard);
+        AdvanceCombo(skill);
         _attack.Begin(skill, _facing);
+
+        if (skill.ManaCost > 0f)
+        {
+            Mp = Mathf.Max(0f, Mp - skill.ManaCost);
+            _mpRegenBlock = PlayerTuning.MpRegenDelay;
+        }
 
         if (skill.Cooldown > 0f)
             _cooldowns[skill.Id] = skill.Cooldown;
+
+        ApplyHeal(skill);
 
         // 돌진 자체는 판정 프레임에 들어갈 때 시작한다. StartLunge 참고.
 
@@ -485,6 +687,82 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// 회복 스킬. 즉시 회복과 지속 회복을 한 정의로 다룬다 —
+    /// OverSeconds 가 0 이면 그 자리에서, 아니면 그 시간에 나눠서 들어간다.
+    /// </summary>
+    /// <summary>마을 회복 지점(여관·예배당). 체력과 마나를 가득 채운다.</summary>
+    public void RestoreFull()
+    {
+        Hp = MaxHp;
+        Mp = MaxMp;
+        Stamina = MaxStamina;
+        _mpRegenBlock = 0f;
+        _staminaRegenBlock = 0f;
+    }
+
+    private void ApplyHeal(SkillDefinition skill)
+    {
+        if (skill.Heal == null || _state == PlayerState.Dead)
+            return;
+
+        float amount = skill.Heal.Base + MaxHp * skill.Heal.MaxHpRatio;
+        foreach (var pair in skill.Heal.Scaling)
+            amount += GetStat(pair.Key) * pair.Value;
+
+        // 숙련이 오르면 회복도 는다. 데미지만 오르면 힐 직업은 숙련이 의미가 없다.
+        amount *= Mastery.DamageMultiplier(skill);
+        if (amount <= 0f)
+            return;
+
+        if (skill.Heal.OverSeconds > 0f)
+        {
+            // 겹쳐 쓰면 남은 양을 합쳐서 새 시간에 다시 편다 — 덮어쓰면 손해가 난다.
+            float carry = _healOverPerSecond * _healOverTimer;
+            _healOverTimer = skill.Heal.OverSeconds;
+            _healOverPerSecond = (amount + carry) / skill.Heal.OverSeconds;
+        }
+        else
+        {
+            Hp = Mathf.Min(MaxHp, Hp + amount);
+        }
+
+        CombatFeedback.Instance?.Popup(GlobalPosition, -amount, false, onPlayer: true);
+        DebugLog.Add($"{skill.Id} 회복 {amount:0.#}");
+    }
+
+    /// <summary>
+    /// 투사체를 쏜다. 화살·불꽃·얼음창이 전부 같은 개체이고 색과 속도만 다르다.
+    /// Count 가 2 이상이면 SpreadDeg 안에 부채꼴로 편다.
+    /// </summary>
+    private void FireProjectiles(SkillDefinition skill)
+    {
+        var proj = skill.Projectile;
+        if (proj == null || proj.Count <= 0)
+            return;
+
+        float damage = DamageMath.Compute(this, skill, AttackPowerMultiplier());
+        Vector2 forward = _attack.LockedFacing == Vector2.Zero ? _facing : _attack.LockedFacing;
+        float baseAngle = forward.Angle();
+        float spread = Mathf.DegToRad(proj.SpreadDeg);
+
+        for (int i = 0; i < proj.Count; i++)
+        {
+            // 한 발이면 정면. 여러 발이면 부채꼴 양 끝까지 고르게 편다.
+            float t = proj.Count == 1 ? 0.5f : i / (float)(proj.Count - 1);
+            float angle = baseAngle + (t - 0.5f) * spread;
+
+            var bolt = new SkillBolt();
+            bolt.Setup(Vector2.FromAngle(angle), proj, damage, skill, this);
+            // Start at the shooter so the first sweep also covers walls beside the muzzle.
+            bolt.GlobalPosition = GlobalPosition;
+            GetParent()?.AddChild(bolt);
+        }
+
+        // 투사체는 '유효한 사용'으로 친다 — 맞았는지는 개체가 따로 보고한다. (규칙 3)
+        DebugLog.Add($"{skill.Id} 투사체 {proj.Count}발 dmg={damage:0.#}");
     }
 
     public float CooldownRemaining(string skillId)
@@ -522,7 +800,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
 
         // 좌클릭으로 대상 지정 — 커서 아래 몬스터를 집는다.
-        if (Input.IsMouseButtonPressed(MouseButton.Left) && !_lockClickHeld)
+        if (ReferenceWorld3D.Instance == null && Input.IsMouseButtonPressed(MouseButton.Left) && !_lockClickHeld)
         {
             _lockClickHeld = true;
             _lockTarget = MonsterUnderCursor();
@@ -668,19 +946,28 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// 보유 스킬 중 이 입력 액션에 묶인 것을 찾는다.
     /// 진화로 스킬이 교체돼도(sk_slash → sk_slash_heavy) 같은 키가 계속 동작한다. (§E)
     /// </summary>
-    protected SkillDefinition ResolveSkillForAction(string action)
+    public SkillDefinition ResolveSkillForAction(string action)
     {
         var db = GameDatabase.Instance;
         if (db == null)
             return null;
 
+        // 직업을 옮겨 다니면 스킬이 쌓이므로 같은 키에 두세 개가 물린다.
+        // 지금 직업의 것이 먼저다 — 안 그러면 전직해도 손에 남는 게 옛 직업 스킬이다.
+        SkillDefinition fallback = null;
         foreach (string skillId in Jobs.LearnedSkills)
         {
             var skill = db.GetSkill(skillId);
-            if (skill != null && skill.IsActive && skill.InputAction == action)
+            if (skill == null || !skill.IsActive || skill.InputAction != action)
+                continue;
+
+            if (skill.Job == Jobs.CurrentJobId)
                 return skill;
+
+            // 직업이 안 적힌 스킬(승계해 온 것 포함)은 대체용으로만 둔다.
+            fallback ??= skill;
         }
-        return null;
+        return fallback;
     }
 
     private void ProcessActiveHitbox()
@@ -689,27 +976,35 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         if (skill?.Shape == null)
             return;
 
+        // 투사체 스킬은 근접 판정이 없다 — 데미지는 날아간 개체가 옮긴다.
+        // 이걸 안 막으면 활을 쏘면서 코앞의 적도 같이 베는 꼴이 된다.
+        if (skill.Projectile != null)
+            return;
+
+        // 때리지도 밀치지도 않는 스킬(회복·자기 강화)은 대상이 없다.
+        if (skill.Stun == null && (skill.Damage?.Base ?? 0f) <= 0f
+            && (skill.Damage?.Scaling?.Count ?? 0) == 0)
+        {
+            RegisterSelfUse(skill);
+            return;
+        }
+
         // 경직만 주는 스킬(sk_warcry)은 데미지 경로를 타지 않는다.
         bool support = skill.Stun != null;
         MonsterBase firstAffected = null;
-
-        // 무기 스킬은 이번 프레임에 칼날이 훑고 간 띠가 판정 범위다.
-        // 지원 스킬(고리)은 형태 정의(circle)를 그대로 쓴다.
-        var pose = PoseFor(skill, _attack.Phase, _attack.PhaseProgress);
-        float baseAngle = _attack.LockedFacing.Angle();
+        var targets3D = ReferenceWorld3D.Instance?.MeleeTargets(skill.Shape, GlobalPosition, _attack.LockedFacing);
 
         foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
         {
             if (node is not MonsterBase monster || !IsInstanceValid(monster))
                 continue;
 
-            bool hit = support
-                ? Hitbox.Overlaps(skill.Shape, GlobalPosition, _attack.LockedFacing,
-                    monster.GlobalPosition, monster.Stats.Radius)
-                : Hitbox.SweptArc(GlobalPosition, baseAngle, _prevBladeAngle, pose.AngleOffset,
-                    pose.Inner, pose.Outer, pose.Width, monster.GlobalPosition, monster.Stats.Radius);
+            // Contact frames use the authored shape, independent of which art is loaded.
+            bool hit = targets3D != null
+                ? targets3D.Contains(monster)
+                : Hitbox.Overlaps(skill.Shape, GlobalPosition, _attack.LockedFacing, monster.GlobalPosition, monster.Stats.Radius);
 
-            if (!hit)
+            if (!hit || !CombatCollision.ClearSight(this, GlobalPosition, monster.GlobalPosition))
                 continue;
 
             // 한 스윙에 같은 대상은 한 번만.
@@ -737,10 +1032,14 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private void Strike(MonsterBase monster, SkillDefinition skill)
     {
         bool targetWasAlive = monster.IsAlive;
-        float damage = DamageMath.Compute(this, skill, AttackPowerMultiplier());
 
-        // 퍼펙트 가드 직후의 반격은 강타격으로 들어간다.
-        bool heavy = skill.Heavy || _riposteTimer > 0f;
+        // 콤보 3타(마무리)는 이 스윙에서만 적용 — 다음 스윙이 시작되며 갱신되므로 여기서 값을 굳힌다.
+        bool comboFinisher = _isComboFinisher;
+        float comboMult = comboFinisher ? CombatTuning.ComboFinisherDamageMult : 1f;
+        float damage = DamageMath.Compute(this, skill, AttackPowerMultiplier() * comboMult);
+
+        // 퍼펙트 가드 직후의 반격, 콤보 마무리는 강타격으로 들어간다.
+        bool heavy = skill.Heavy || _riposteTimer > 0f || comboFinisher;
 
         Vector2 direction = monster.GlobalPosition - GlobalPosition;
         if (direction == Vector2.Zero)
@@ -777,7 +1076,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         // 공격자와 피격자 양쪽이 같이 멈춘다. 이게 타격감의 80%. (§C-3)
         ApplyHitstop(hitstop);
-        CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, heavy, killed);
+        CombatFeedback.Instance?.OnHit(monster.GlobalPosition, damage, heavy, killed, direction);
 
         // 강타 명중 — 충격파 링.
         if (skill.Dash != null)
@@ -800,6 +1099,59 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             OnMasteryResult(result, skill);
         else
             CombatFeedback.Instance?.Announce($"{skill.Name} 숙련 대폭 상승!");
+    }
+
+    /// <summary>
+    /// 대상이 없는 스킬(회복·자기 강화)의 숙련.
+    ///
+    /// '쓴 횟수'가 아니라 '유효한 사용'만 센다(규칙 3). 대상이 없으니 명중으로는
+    /// 못 재고, 대신 그 스킬이 실제로 일을 했는지를 본다 —
+    /// 회복은 체력이 깎여 있었을 때, 강화는 근처에 싸울 상대가 있을 때.
+    /// 마을에서 힐을 눌러 대는 것으로는 오르지 않는다.
+    /// </summary>
+    private void RegisterSelfUse(SkillDefinition skill)
+    {
+        bool useful = skill.Heal != null
+            ? Hp < MaxHp - 0.5f
+            : MonstersWithin(SelfUseCombatRange);
+
+        if (!useful)
+        {
+            DebugLog.Add($"{skill.Id} 헛사용 — 숙련 없음");
+            return;
+        }
+
+        var result = Mastery.AddBonus(skill.Id, SelfUseMasteryGain, skill);
+        SkillUsed?.Invoke(result);
+        OnMasteryResult(result, skill);
+    }
+
+    /// <summary>자기 강화를 '싸우는 중'으로 볼 거리(px).</summary>
+    private const float SelfUseCombatRange = 260f;
+
+    /// <summary>대상 없는 스킬 1회의 숙련 증가량. 명중 1회와 비슷하게 잡았다.</summary>
+    private const float SelfUseMasteryGain = 1f;
+
+    private bool MonstersWithin(float range)
+    {
+        foreach (Node node in GetTree().GetNodesInGroup(MonsterBase.Group))
+        {
+            if (node is MonsterBase monster && IsInstanceValid(monster) && monster.IsAlive
+                && GlobalPosition.DistanceTo(monster.GlobalPosition) <= range)
+                return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// 투사체가 명중했다고 보고받는다. 근접과 같은 경로로 숙련을 올린다 —
+    /// 허공에 쏜 화살은 여기까지 오지 않으므로 '유효한 사용'만 세진다. (규칙 3)
+    /// </summary>
+    public void ReportProjectileHit(SkillDefinition skill, MonsterBase target, bool targetWasAlive)
+    {
+        if (skill == null || target == null || !IsInstanceValid(target))
+            return;
+        RegisterMastery(skill, target, targetWasAlive);
     }
 
     private void RegisterMastery(SkillDefinition skill, MonsterBase target, bool targetWasAlive)
@@ -895,6 +1247,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     {
         Velocity = _dashDirection * CombatTuning.DashSpeed;
 
+        // 회피 도중 반격 입력을 받아 둔다 — 버퍼 타이머는 여기서 흐르지 않으니
+        // 대시가 끝나고 Normal 로 돌아가는 순간 그대로 캔슬 없이 발동한다.
+
         _dashTimer -= dt;
         if (_dashTimer <= 0f)
         {
@@ -906,6 +1261,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     private void StartDash(Vector2 input)
     {
+        _dashBufferTimer = 0f;
+        Stamina = Mathf.Max(0f, Stamina - CombatTuning.StaminaDashCost);
+        _staminaRegenBlock = CombatTuning.StaminaRegenDelay;
         _dashDirection = input != Vector2.Zero ? input : _facing;
         _facing = _dashDirection;
         _state = PlayerState.Dash;
@@ -976,7 +1334,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         return _attack.Phase switch
         {
             SkillPhase.Windup => -dir * (CombatTuning.MotionWindupBack * t),
-            SkillPhase.Active => dir * (CombatTuning.MotionActiveForward * t),
+            SkillPhase.Active => dir * Mathf.Lerp(-CombatTuning.MotionWindupBack, CombatTuning.MotionActiveForward, t),
             SkillPhase.Recovery => dir * (CombatTuning.MotionActiveForward * (1f - t)),
             _ => Vector2.Zero,
         };
@@ -1002,7 +1360,9 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         {
             Vector2 aim = _attack.IsBusy ? _attack.LockedFacing : _facing;
             (string clip, float? progress) = SpriteClip();
-            _sprite.UpdateFrame(aim, clip, progress, dt);
+            float strideDelta = clip is "walk" or "run"
+                ? dt * Mathf.Clamp(Velocity.Length() / (float)(clip == "run" ? CombatTuning.RunSpeed : CombatTuning.MoveSpeed), 0f, 1.5f) : dt;
+            _sprite.UpdateFrame(aim, clip, progress, strideDelta, _appearance);
 
             // 공격 모션·들썩임을 스프라이트에도 실어 준다.
             _sprite.Offset = FigureMotionOffset() / _sprite.Scale.X;
@@ -1088,33 +1448,27 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     private (string clip, float? progress) SpriteClip()
     {
         if (_state == PlayerState.Dash)
-            return ("dash", null);
+            return ("dash", 1f - Mathf.Clamp(_dashTimer / (float)CombatTuning.DashDuration, 0f, 1f));
 
         if (_attack.IsBusy)
         {
             var skill = _attack.Skill;
             string clip = skill?.Stun != null ? "shout"
-                : skill?.Dash != null ? "heavy"
-                : "punch";
+                : _appearance.UsePixelLab ? (skill?.Heavy ?? false) ? "hero_heavy" : "hero_slash"
+                : (skill?.Heavy ?? false) ? "sword_heavy"
+                : "sword";
 
-            // 스킬 한 번을 클립 한 바퀴에 매핑한다 — 선딜/판정/후딜 비율 그대로.
-            float w = CombatTuning.AttackWindup;
-            float a = CombatTuning.AttackActive;
-            float r = CombatTuning.AttackRecovery;
-            float total = Mathf.Max(0.0001f, w + a + r);
-            float done = _attack.Phase switch
-            {
-                SkillPhase.Windup => w * _attack.PhaseProgress,
-                SkillPhase.Active => w + a * _attack.PhaseProgress,
-                SkillPhase.Recovery => w + a + r * _attack.PhaseProgress,
-                _ => 0f,
-            };
-            return (clip, done / total);
+            int contact=clip is "hero_slash" or "hero_heavy"
+                ? PixelHeroArt.ContactFrame(_appearance.Female,PlayerSprite.DirIndex(_attack.LockedFacing),clip) : -1;
+            return (clip, CombatMotion.Progress(clip, _attack.Phase, _attack.PhaseProgress,contact));
         }
 
         // 막은 직후에는 반동 클립을 한 번 재생하고(진행도로 되감기 없이) 방어 자세로 돌아간다.
         if (_blockTimer > 0f && _guarding)
             return ("block", 1f - _blockTimer / BlockClipSeconds);
+
+        if (_knockbackTimer > 0f && !_guarding)
+            return (_sprite.HasClip("hurt") ? "hurt" : "block", 1f - _knockbackTimer / Mathf.Max(0.001f, _knockbackTotal));
 
         if (_guarding)
             return ("guard", null);
@@ -1124,15 +1478,6 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         // 대기 — 숨쉬기 클립이 있으면 그걸 루프, 없으면 idle 한 장.
         return ("breathe", null);
-    }
-
-    /// <summary>겉모습을 바꾸고 저장한다. (임시 데모 진입점 — C 키)</summary>
-    private void RandomizeAppearance()
-    {
-        _appearance.Randomize(_rng);
-        QueueRedraw();
-        SaveSystem.Instance?.Save(this, "customize");
-        DebugLog.Add("겉모습 변경");
     }
 
     public override void _Draw()
@@ -1329,7 +1674,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             if (skill.Stun != null)
                 DrawWarcryRing();          // 함성 — 퍼지는 고리
             else if (!hasSprite)
-                DrawBlade(skill, PoseFor(skill, _attack.Phase, _attack.PhaseProgress));
+                DrawBlade(skill, PoseFor(skill, _attack.Phase, _attack.PhaseProgress, _comboIndex));
             return;
         }
 
@@ -1343,7 +1688,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     /// </summary>
     private readonly record struct WeaponPose(float AngleOffset, float Inner, float Outer, float Width);
 
-    private static WeaponPose PoseFor(SkillDefinition skill, SkillPhase phase, float progress)
+    private static WeaponPose PoseFor(SkillDefinition skill, SkillPhase phase, float progress, int comboIndex = 0)
     {
         float t = EaseOut(progress);
 
@@ -1361,14 +1706,17 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         }
 
         // 그 외는 베기 — 뒤로 감아올렸다가 호를 그리며 베어 낸다.
-        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f;
-        float swing = phase switch
+        // 콤보 2타째는 반대 방향에서 휘두르고, 3타(마무리)는 더 크게 크고 길게 휘두른다.
+        bool finisher = comboIndex >= 2;
+        float dirSign = comboIndex % 2 == 0 ? 1f : -1f;
+        float half = Mathf.DegToRad(skill.Shape?.AngleDeg ?? 90f) * 0.5f * (finisher ? 1.3f : 1f);
+        float swing = dirSign * (phase switch
         {
             SkillPhase.Windup => Mathf.Lerp(0f, -half * 1.2f, t),
             SkillPhase.Active => Mathf.Lerp(-half * 1.2f, half, t),
             _ => Mathf.Lerp(half, 0f, t),
-        };
-        float length = PlayerTuning.SwordLength * (skill.Heavy ? 1.25f : 1f);
+        });
+        float length = PlayerTuning.SwordLength * (skill.Heavy || finisher ? 1.25f : 1f);
         return new WeaponPose(swing, 3f, length, PlayerTuning.SwordWidth);
     }
 
@@ -1453,7 +1801,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
     /// <summary>
     /// F2 — 판정 범위 표시. 실제 판정과 같은 값으로 그린다.
-    /// 무기 스킬은 칼날이 훑는 띠, 지원 스킬은 형태 정의의 원. (§I)
+    /// 스킬 데이터의 도형을 표시한다. 벽과 대상 반지름은 별도 판정한다. (§I)
     /// </summary>
     private void DrawHitboxDebug()
     {
@@ -1461,29 +1809,25 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             return;
 
         var skill = _attack.Skill;
+        if (skill.Shape == null || skill.Projectile != null) return;
 
         // 선딜은 옅게, 판정 프레임은 진하게.
         Color color = _attack.IsActive
             ? new Color(1f, 0.3f, 0.3f, 0.35f)
             : new Color(1f, 1f, 1f, 0.12f);
 
-        if (skill.Stun != null)
+        if (skill.Shape.Kind == "circle")
         {
-            if (skill.Shape != null)
-                DrawCircle(Vector2.Zero, skill.Shape.RangePx, color);
+            DrawCircle(Vector2.Zero, skill.Shape.RangePx, color);
             return;
         }
-
-        var pose = PoseFor(skill, _attack.Phase, _attack.PhaseProgress);
-        float baseAngle = _attack.LockedFacing.Angle();
-
-        // 판정 중이면 스윙 시작 ~ 현재, 선딜이면 지금 자세만.
-        float from = _attack.IsActive ? _swingStartAngle : pose.AngleOffset;
-        float lo = Mathf.Min(from, pose.AngleOffset);
-        float hi = Mathf.Max(from, pose.AngleOffset);
-
-        DrawArc(Vector2.Zero, (pose.Inner + pose.Outer) * 0.5f,
-            baseAngle + lo, baseAngle + hi, 16, color, pose.Outer - pose.Inner);
+        if (skill.Shape.Kind != "cone") return;
+        var points = new Vector2[18];
+        float half = Mathf.DegToRad(skill.Shape.AngleDeg) * .5f;
+        for (int i = 1; i < points.Length; i++)
+            points[i] = Vector2.FromAngle(_attack.LockedFacing.Angle()
+                + Mathf.Lerp(-half, half, (i - 1) / 16f)) * skill.Shape.RangePx;
+        DrawColoredPolygon(points, color);
     }
 
     // --- 피해 / 사망 -------------------------------------------------------
@@ -1495,9 +1839,15 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _hitstopTimer = seconds;
     }
 
+    /// <summary>F8 테스트장 전용 무적. 게임 로직(§I)이 아니라 순수 디버그 스위치다.</summary>
+    public bool DebugInvulnerable;
+
     public bool TakeDamage(in DamageInfo info)
     {
         if (!IsAlive)
+            return false;
+
+        if (DebugInvulnerable)
             return false;
 
         // 대시 무적으로 흘렸다 — 회피 성공. (§F sk_hidden_deathline 트리거)
@@ -1519,7 +1869,11 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         _flashTimer = CombatTuning.HitFlashTime;
         ApplyHitstop(CombatTuning.HitstopNormal);
         ApplyKnockback(info.Direction, info.Heavy);
-        CombatFeedback.Instance?.OnPlayerHurt(GlobalPosition, amount);
+        CombatFeedback.Instance?.OnPlayerHurt(GlobalPosition, amount, info.Direction);
+
+        // 맞으면 콤보가 끊긴다.
+        _comboIndex = 0;
+        _comboTimer = 0f;
         DebugLog.Add($"피격 {info.SkillId} -{amount:0.#} (hp {Hp:0}/{MaxHp:0})");
 
         if (Hp <= 0f)
@@ -1542,6 +1896,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
 
         // 막아냈다는 사실 자체를 몸으로 보여준다 — 퍼펙트든 아니든 반동은 똑같이 난다.
         _blockTimer = BlockClipSeconds;
+        CombatFeedback.Instance?.PlaySound("block", GlobalPosition);
 
         if (_guardElapsed <= guard.PerfectWindow)
         {
@@ -1551,6 +1906,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
             _perfectThisGuard = true;
             _guardCooldown = 0f;
             CombatFeedback.Instance?.Popup(GlobalPosition, 0f, heavy: true, onPlayer: false);
+            CombatFeedback.Instance?.OnParry();
             DebugLog.Add($"퍼펙트 가드 (반격 {guard.RiposteSeconds:0.##}s)");
             TryCounter(info, guard);
             return 0f;
@@ -1573,6 +1929,8 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         // 화살처럼 멀리서 온 공격은 되받아치지 않는다 — 근접 몹만 카운터 대상.
         if (GlobalPosition.DistanceTo(attacker.GlobalPosition) > guard.CounterRange)
             return;
+
+        if (!CombatCollision.ClearSight(this, GlobalPosition, attacker.GlobalPosition)) return;
 
         float damage = info.Amount * guard.CounterMultiplier;
         Vector2 toAttacker = (attacker.GlobalPosition - GlobalPosition).Normalized();
@@ -1617,6 +1975,14 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
     {
         _knockbackTimer -= dt;
         Velocity = _knockbackVelocity * Mathf.Max(0f, _knockbackTimer / _knockbackTotal);
+    }
+
+    public void RestoreSupplies(float ratio)
+    {
+        if (!IsAlive) return;
+        ratio = Mathf.Clamp(ratio, 0f, 1f);
+        Hp = Mathf.Min(MaxHp, Hp + MaxHp * ratio);
+        Mp = Mathf.Min(MaxMp, Mp + MaxMp * ratio);
     }
 
     private void Respawn()
@@ -1690,6 +2056,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Version = SaveSystem.CurrentVersion,
         Level = Level,
         Hp = Hp,
+        Stamina = Stamina,
         Position = new SavePosition { X = GlobalPosition.X, Y = GlobalPosition.Y },
         BaseStats = new Dictionary<string, int>(_baseStats),
         JobState = new SaveJobState
@@ -1729,6 +2096,7 @@ public partial class PlayerCharacter : CharacterBody2D, IPlayerContext, IDamagea
         Level = Mathf.Max(1, data.Level);
         MaxHp = PlayerTuning.BaseMaxHp;
         Hp = Mathf.Clamp(data.Hp, 1f, MaxHp);
+        Stamina = data.Stamina.HasValue && float.IsFinite(data.Stamina.Value) ? Mathf.Clamp(data.Stamina.Value,0f,MaxStamina) : MaxStamina;
 
         var job = data.JobState ?? new SaveJobState();
         Jobs.RestoreFrom(job.CurrentJobId, job.History, job.LearnedSkills,

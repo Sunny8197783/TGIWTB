@@ -1,0 +1,16 @@
+{
+  "id": "sk_fan_of_knives",
+  "name": "칼날 부채",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "warcry",
+  "cooldown": 8.0,
+  "manaCost": 10.0,
+  "heavy": false,
+  "job": "job_rogue",
+  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
+  "damage": { "base": 9.0, "scaling": { "dex": 0.6 } },
+  "projectile": { "speedPx": 340.0, "count": 5, "spreadDeg": 70.0, "lifeSeconds": 0.7, "radiusPx": 3.0, "pierce": false, "color": "cfd6e6" },
+  "effect": { "vfx": "cone", "color": "cfd6e6", "radiusPx": 40.0 },
+  "mastery": { "minInterval": 0.6, "damageBonusPer100": 0.06, "evolution": null }
+}

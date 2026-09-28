@@ -11,10 +11,45 @@
     "requiredCounters": {},
     "requiredJobRanks": {}
   },
-  "statPerRank": { "str": 1, "vit": 1, "dex": 3, "int": 0, "wis": 0, "luk": 1 },
-  "expPerRank": [0, 120, 280, 500, 800, 1200, 1750, 2500, 3500, 5000],
-  "rankSkills": {
-    "1": ["sk_slash"]
+  "statPerRank": {
+    "str": 1,
+    "vit": 1,
+    "dex": 3,
+    "int": 0,
+    "wis": 0,
+    "luk": 1
   },
-  "rankGates": []
+  "expPerRank": [
+    0,
+    120,
+    280,
+    500,
+    800,
+    1200,
+    1750,
+    2500,
+    3500,
+    5000
+  ],
+  "rankSkills": {
+    "1": [
+      "sk_quick_shot"
+    ],
+    "3": [
+      "sk_power_shot"
+    ],
+    "5": [
+      "sk_multishot"
+    ],
+    "7": [
+      "sk_rain_of_arrows"
+    ]
+  },
+  "rankGates": [],
+  "prototypeSkills": [
+    "sk_quick_shot",
+    "sk_power_shot",
+    "sk_multishot",
+    "sk_rain_of_arrows"
+  ]
 }

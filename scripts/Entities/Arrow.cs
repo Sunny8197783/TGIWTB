@@ -10,6 +10,8 @@ namespace PixelMmo.Combat;
 public partial class Arrow : Area2D
 {
     private Vector2 _velocity;
+    private bool _spent;
+    private readonly Godot.Collections.Array<Rid> _excluded = new();
     private float _damage;
     private float _life;
     private Node2D _owner;
@@ -36,13 +38,29 @@ public partial class Arrow : Area2D
         };
         AddChild(shape);
 
-        BodyEntered += OnBodyEntered;
+        Monitoring = false;
+        Monitorable = false;
+        _excluded.Add(GetRid());
+        if (_owner is CollisionObject2D source) _excluded.Add(source.GetRid());
     }
 
     public override void _PhysicsProcess(double delta)
     {
         float dt = (float)delta;
-        Position += _velocity * dt;
+        if (_spent) return;
+        Vector2 end = GlobalPosition + _velocity * Mathf.Min(dt, _life);
+        for (int contacts = 0; contacts < 64; contacts++)
+        {
+            if (!CombatCollision.Sweep(this, GlobalPosition, end - GlobalPosition,
+                MonsterTuning.GoblinAttack.ArrowRadius, CollisionLayers.World | CollisionLayers.Player, _excluded, out var body, out var point))
+            { GlobalPosition = end; break; }
+            GlobalPosition = point;
+            if (body is CollisionObject2D collider) _excluded.Add(collider.GetRid());
+            if (body == null) { _spent = true; QueueFree(); break; }
+            OnBodyEntered(body);
+            if (_spent) break;
+            if (contacts == 63) { _spent = true; QueueFree(); }
+        }
 
         _life -= dt;
         if (_life <= 0f)
@@ -74,6 +92,7 @@ public partial class Arrow : Area2D
         }
 
         // 벽이든 플레이어든 닿으면 소멸.
+        _spent = true;
         QueueFree();
     }
 }

@@ -13,6 +13,7 @@ public partial class GameDatabase : Node
 {
     private const string JobsDir = "res://data/jobs";
     private const string SkillsDir = "res://data/skills";
+    private const string NpcsDir = "res://data/npcs";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -25,9 +26,11 @@ public partial class GameDatabase : Node
 
     private readonly Dictionary<string, JobDefinition> _jobs = new();
     private readonly Dictionary<string, SkillDefinition> _skills = new();
+    private readonly Dictionary<string, NpcDefinition> _npcs = new();
 
     public IReadOnlyDictionary<string, JobDefinition> Jobs => _jobs;
     public IReadOnlyDictionary<string, SkillDefinition> Skills => _skills;
+    public IReadOnlyDictionary<string, NpcDefinition> Npcs => _npcs;
 
     public override void _EnterTree()
     {
@@ -43,6 +46,7 @@ public partial class GameDatabase : Node
     {
         _jobs.Clear();
         _skills.Clear();
+        _npcs.Clear();
 
         LoadDirectory(JobsDir, json =>
         {
@@ -60,7 +64,15 @@ public partial class GameDatabase : Node
             _skills[def.Id] = def;
         });
 
-        GD.Print($"[GameDb] jobs={_jobs.Count} skills={_skills.Count}");
+        LoadDirectory(NpcsDir, json =>
+        {
+            var def = JsonSerializer.Deserialize<NpcDefinition>(json, JsonOptions);
+            if (def == null || string.IsNullOrEmpty(def.Id))
+                throw new InvalidOperationException("id 가 비어 있다");
+            _npcs[def.Id] = def;
+        });
+
+        GD.Print($"[GameDb] jobs={_jobs.Count} skills={_skills.Count} npcs={_npcs.Count}");
         WarnOnDanglingReferences();
     }
 
@@ -75,6 +87,13 @@ public partial class GameDatabase : Node
     {
         if (id != null && _skills.TryGetValue(id, out var skill))
             return skill;
+        return null;
+    }
+
+    public NpcDefinition GetNpc(string id)
+    {
+        if (id != null && _npcs.TryGetValue(id, out var npc))
+            return npc;
         return null;
     }
 
@@ -151,6 +170,12 @@ public partial class GameDatabase : Node
             string into = skill.Mastery?.Evolution?.Into;
             if (!string.IsNullOrEmpty(into) && !_skills.ContainsKey(into))
                 missing.Add(into);
+        }
+
+        foreach (var npc in _npcs.Values)
+        {
+            if (!string.IsNullOrEmpty(npc.TeachesJob) && !_jobs.ContainsKey(npc.TeachesJob))
+                missing.Add(npc.TeachesJob);
         }
 
         if (missing.Count > 0)

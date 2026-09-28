@@ -1,0 +1,19 @@
+{
+  "id": "npc_inn_keeper",
+  "name": "여관 주인 그레타",
+  "role": "merchant",
+  "zone": "town",
+  "anchor": "inn",
+  "tileX": 85,
+  "tileY": 107,
+  "color": "c07a5a",
+  "restores": true,
+  "lines": [
+    "방은 있어. 값은 나중에 받지.",
+    "다친 채로 문 열고 나가는 사람 여럿 봤어. 그중 반은 안 돌아와.",
+    "앉아. 국이 아직 따뜻해."
+  ],
+  "teachesJob": "",
+  "refuseLine": "",
+  "acceptLine": ""
+}

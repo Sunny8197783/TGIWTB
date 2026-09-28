@@ -21,6 +21,32 @@ public static class ArtPalette
     public const float GroundSaturation = 0.52f;
     public const float GroundValue = 0.84f;
 
+    /// <summary>
+    /// 바닥 시트의 밝기 대비를 이 비율로 줄인다(1 = 원본).
+    ///
+    /// 포석 한 장이 광장 전체를 32px 격자로 덮는데, 돌 사이 이음매가 거의 검정이라
+    /// 화면이 통째로 바둑판으로 읽혔다. 무늬를 지우지 않으면서 이음매만 눌러야 하므로
+    /// 대비만 낮춘다 — 어떤 바닥 그림이 들어와도 같은 문제가 나므로 시트별 보정이
+    /// 아니라 바닥 전체에 건다.
+    /// </summary>
+    private const float GroundContrast = 0.46f;
+
+    /// <summary>
+    /// 포석 시트를 밝은 쪽으로 끌어올리는 비율. 0 이면 평균이 목표.
+    ///
+    /// 한 번 0.45 로 올려 봤다가 되돌렸다 — 이음매가 '어두운' 게 아니라 '파란' 것이
+    /// 문제라, 밝기를 올리니 파랑이 오히려 또렷해져서 광장이 보라색 격자가 됐다.
+    /// 밝기는 건드리지 않고 아래 CobbleGrey 로 색을 빼는 쪽이 맞았다.
+    /// </summary>
+    private const float CobbleLift = 0f;
+
+    /// <summary>
+    /// 포석 시트의 채도를 이만큼만 남긴다. 돌 사이 이음매가 짙은 남색이라,
+    /// 광장 전체(화면의 대부분)가 파란 격자로 읽혔다. 회색이 되면 무늬는 남고
+    /// 격자만 사라진다 — 실제 포장 바닥도 회색이지 파랗지 않다.
+    /// </summary>
+    private const float CobbleGrey = 0.22f;
+
     /// <summary>건물·소품. 바닥보다는 살아 있어야 눈이 간다.</summary>
     public const float PropSaturation = 0.82f;
     public const float PropValue = 0.96f;
@@ -144,12 +170,94 @@ public static class ArtPalette
 
         Grade(image, saturation, value, pullGrass, stoneGain, stoneSaturation);
 
+        if (!dimWhitewash)
+        {
+            SoftenContrast(image, GroundContrast,
+                path.Contains("cobble") ? CobbleLift : 0f);
+
+            if (path.Contains("cobble"))
+                Desaturate(image, CobbleGrey);
+        }
+
         if (dimWhitewash)
             DimWhitewash(image, path);
 
         Texture2D graded = ImageTexture.CreateFromImage(image);
         Cache[path] = graded;
         return graded;
+    }
+
+    /// <summary>채도를 keep 배로 줄인다. 밝기와 색상은 그대로 둔다.</summary>
+    private static void Desaturate(Image image, float keep)
+    {
+        int w = image.GetWidth(), h = image.GetHeight();
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                Color c = image.GetPixel(x, y);
+                if (c.A <= 0f)
+                    continue;
+                image.SetPixel(x, y, Color.FromHsv(c.H, c.S * keep, c.V, c.A));
+            }
+        }
+    }
+
+    /// <summary>
+    /// 밝기를 그 그림의 평균 쪽으로 당겨 대비를 낮춘다. 색상·채도는 건드리지 않는다.
+    /// </summary>
+    private static void SoftenContrast(Image image, float contrast, float lift)
+    {
+        int w = image.GetWidth(), h = image.GetHeight();
+
+        float sumV = 0f, sumS = 0f;
+        int count = 0;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                Color c = image.GetPixel(x, y);
+                if (c.A <= 0f)
+                    continue;
+                sumV += c.V;
+                sumS += c.S;
+                count++;
+            }
+        }
+
+        if (count == 0)
+            return;
+
+        // 채도도 같이 눌러야 한다. 포석의 이음매는 어두운 게 아니라 '짙은 남색'이라,
+        // 밝기만 올리면 회색 돌 사이에 파란 격자가 그대로 남는다.
+        float meanV = sumV / count, meanS = sumS / count;
+
+        // lift 가 0 이면 평균이 목표, 1 이면 가장 밝은 픽셀이 목표다.
+        float maxV = 0f;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                Color c = image.GetPixel(x, y);
+                if (c.A > 0f && c.V > maxV)
+                    maxV = c.V;
+            }
+        }
+        float targetV = meanV + (maxV - meanV) * lift;
+        for (int y = 0; y < h; y++)
+        {
+            for (int x = 0; x < w; x++)
+            {
+                Color c = image.GetPixel(x, y);
+                if (c.A <= 0f)
+                    continue;
+                image.SetPixel(x, y, Color.FromHsv(
+                    c.H,
+                    Mathf.Clamp(meanS + (c.S - meanS) * contrast, 0f, 1f),
+                    Mathf.Clamp(targetV + (c.V - targetV) * contrast, 0f, 1f),
+                    c.A));
+            }
+        }
     }
 
     /// <summary>

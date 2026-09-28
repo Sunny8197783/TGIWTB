@@ -6,12 +6,26 @@
   "inputAction": "bash",
   "cooldown": 5.0,
   "heavy": true,
-  "shape": { "kind": "cone", "angleDeg": 90.0, "rangePx": 30.0 },
-  "damage": { "base": 14.0, "scaling": { "str": 0.9 } },
-  "dash": { "distancePx": 40.0 },
+  "shape": {
+    "kind": "cone",
+    "angleDeg": 90.0,
+    "rangePx": 30.0
+  },
+  "damage": {
+    "base": 14.0,
+    "scaling": {
+      "str": 0.9
+    }
+  },
+  "dash": {
+    "distancePx": 40.0
+  },
   "mastery": {
     "minInterval": 0.5,
     "damageBonusPer100": 0.06,
     "evolution": null
-  }
+  },
+  "job": "job_warrior",
+  "manaCost": 0.0,
+  "effect": { "vfx": "cone", "color": "ffc373" }
 }

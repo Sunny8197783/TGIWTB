@@ -12,6 +12,9 @@ public partial class GoblinArcher : MonsterBase
     public override MonsterStats Stats => MonsterTuning.GoblinArcher;
 
     private float _cooldown;
+    public Vector2[] PatrolRoute { get; set; } = System.Array.Empty<Vector2>();
+    private int _patrolIndex;
+    private float _patrolTime;
 
     protected override void UpdateAi(float delta)
     {
@@ -43,8 +46,7 @@ public partial class GoblinArcher : MonsterBase
         float distance = DistanceToPlayer();
         if (distance > Stats.AggroRange)
         {
-            Velocity = Vector2.Zero;
-            SetState(MonsterState.Idle);
+            Patrol(delta);
             return;
         }
 
@@ -61,6 +63,19 @@ public partial class GoblinArcher : MonsterBase
             SetState(MonsterState.Windup, MonsterTuning.GoblinAttack.Windup);
             Velocity = Vector2.Zero;
         }
+    }
+
+    private void Patrol(float delta)
+    {
+        if (PatrolRoute.Length == 0) { Velocity = Vector2.Zero; SetState(MonsterState.Idle); return; }
+        _patrolTime -= delta;
+        Vector2 step = PatrolRoute[_patrolIndex] - GlobalPosition;
+        if (_patrolTime <= 0f)
+        { _patrolIndex = (_patrolIndex + 1) % PatrolRoute.Length; _patrolTime = 5f; }
+        if (step.Length() < 5f) { Velocity = Vector2.Zero; SetState(MonsterState.Idle); return; }
+        Facing = step.Normalized();
+        Velocity = Facing * Stats.MoveSpeed * .35f;
+        SetState(MonsterState.Chase);
     }
 
     /// <summary>유지 거리보다 가까우면 후퇴, 멀면 접근, 허용 오차 안이면 정지. (§D-2)</summary>
@@ -88,10 +103,10 @@ public partial class GoblinArcher : MonsterBase
             return;
 
         var arrow = new Arrow();
-        GetParent().AddChild(arrow);
-        arrow.GlobalPosition = GlobalPosition + direction * (Stats.Radius + 4f);
         arrow.Setup(direction, MonsterTuning.GoblinAttack.ArrowSpeed,
             MonsterTuning.GoblinAttack.ArrowDamage, this);
+        arrow.GlobalPosition = GlobalPosition;
+        GetParent().AddChild(arrow);
     }
 
     /// <summary>노란 삼각형. 꼭짓점이 바라보는 방향. (§A 아트 방침)</summary>
@@ -126,6 +141,8 @@ public partial class GoblinArcher : MonsterBase
     /// 활. 선딜 동안 시위를 뒤로 당기고(예고), 발사 순간 튕겨 나간다.
     /// 활 = 정면 앞의 호, 시위 = 활 양 끝과 화살 오늬를 잇는 선. (규칙 5)
     /// </summary>
+    protected override void DrawAttackOverlay() => DrawBow();
+
     private void DrawBow()
     {
         if (State is not (MonsterState.Windup or MonsterState.Recover))
@@ -160,9 +177,4 @@ public partial class GoblinArcher : MonsterBase
             DrawLine(nock, nock + forward * (r + 8f), new Color(0.95f, 0.9f, 0.6f), 1.5f);
     }
 
-    public override void _PhysicsProcess(double delta)
-    {
-        base._PhysicsProcess(delta);
-        QueueRedraw();
-    }
 }

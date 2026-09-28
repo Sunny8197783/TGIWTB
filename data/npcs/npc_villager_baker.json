@@ -1,0 +1,19 @@
+{
+  "id": "npc_villager_baker",
+  "name": "빵집 주인 마사",
+  "role": "villager",
+  "zone": "town",
+  "tileX": 96,
+  "tileY": 104,
+  "color": "c8a878",
+  "lines": [
+    "갓 구운 거 냄새 나지? 아직 안 팔아.",
+    "밖에 나가는 사람들은 다 마르더라. 좀 먹고 다녀.",
+    "우리 애가 자꾸 광장에서 논다니까."
+  ],
+  "teachesJob": "",
+  "refuseLine": "",
+  "acceptLine": "",
+  "anchor": "bakery",
+  "restores": false
+}

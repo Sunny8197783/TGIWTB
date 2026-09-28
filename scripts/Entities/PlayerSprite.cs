@@ -99,12 +99,12 @@ public partial class PlayerSprite : Sprite2D
 
     /// <summary>있으면 읽고 없으면 건너뛰는 클립 목록. 에셋을 추가하면 여기만 늘리면 된다.</summary>
     private static readonly string[] ClipNames =
-        { "breathe", "walk", "run", "dash", "punch", "heavy", "guard", "block", "shout" };
+        { "breathe", "walk", "run", "dash", "punch", "heavy", "guard", "block", "shout", "hurt", "sword", "sword_walk", "sword_heavy" };
 
     private void Load()
     {
         for (int i = 0; i < DirNames.Length; i++)
-            _idle[i] = GD.Load<Texture2D>($"{Root}/idle/{DirNames[i]}.png");
+            _idle[i] = GD.Load<Texture2D>($"{Root}/sword_idle/{DirNames[i]}.png");
 
         foreach (string clip in ClipNames)
             LoadClip(clip);
@@ -165,12 +165,56 @@ public partial class PlayerSprite : Sprite2D
     /// progress 는 1회성 동작(공격 등)의 진행도 0~1. null 이면 루프(또는 홀드).
     /// 클립이 없으면 idle 로 폴백하므로 에셋이 없어도 안전하다.
     /// </summary>
-    public void UpdateFrame(Vector2 facing, string clip, float? progress, float delta)
+    private CharacterAppearance _look;
+    internal static ulong ImageBuildUsec;
+    internal static int ImageBuildCount;
+    private readonly System.Collections.Generic.Dictionary<(int,string,int),Texture2D> _customFrames=new();
+    // IPlayerContext returns defensive copies; cache the visible values, not object identity.
+    private bool SameAppearance(CharacterAppearance appearance) => _look != null
+        && _look.Female == appearance.Female && _look.UsePixelLab == appearance.UsePixelLab
+        && _look.HairStyle == appearance.HairStyle && _look.EyeShape == appearance.EyeShape
+        && _look.Body == appearance.Body && _look.Skin == appearance.Skin && _look.Hair == appearance.Hair
+        && _look.Shirt == appearance.Shirt && _look.Pants == appearance.Pants;
+    internal void WarmFrames(CharacterAppearance appearance)
     {
+        if(SameAppearance(appearance) || !appearance.UsePixelLab || !PixelHeroArt.Available(appearance.Female)) return;
+        _look=appearance.Copy();_customFrames.Clear();
+        foreach(string clip in new[]{"idle","hero_stride","hero_sprint","hero_slash_fixed","hero_heavy_fixed"})
+            for(int dir=0;dir<8;dir++) for(int frame=0;frame<PixelHeroArt.Count(clip);frame++) {
+                using var image=CharacterArt.Render(appearance,dir,clip,frame);
+                _customFrames[(dir,clip,frame)]=ImageTexture.CreateFromImage(image);
+            }
+    }
+    public void UpdateFrame(Vector2 facing, string clip, float? progress, float delta, CharacterAppearance appearance)
+    {
+        if(appearance.Confirmed || (appearance.UsePixelLab && PixelHeroArt.Available(appearance.Female)))
+        {
+            if(!SameAppearance(appearance)) { _look=appearance.Copy(); _customFrames.Clear(); }
+            if(_lastClip!=clip) {
+                bool moving=clip is "walk" or "run", wasMoving=_lastClip is "walk" or "run";
+                _animTime=moving && wasMoving ? _animTime* (clip=="run"?.065f:.11f)/(_lastClip=="run"?.065f:.11f) : 0;
+                _lastClip=clip;
+            }
+            _animTime+=delta;
+            int count=appearance.UsePixelLab?PixelHeroArt.Count(clip):clip is "sword" or "sword_heavy"?9:8;
+            int frame=progress.HasValue ? Mathf.Clamp((int)(progress.Value*count),0,count-1) : clip=="breathe"?0:(int)(_animTime/(clip=="run"?.065f:.11f))%count;
+            var key=(DirIndex(facing),appearance.UsePixelLab ? PixelHeroArt.Clip(clip) : clip??"idle",frame);
+            if(!_customFrames.TryGetValue(key,out var texture)) {
+                ulong started=Time.GetTicksUsec();
+                using var image=CharacterArt.Render(appearance,key.Item1,key.Item2,frame);texture=ImageTexture.CreateFromImage(image);_customFrames[key]=texture;
+                ImageBuildUsec+=Time.GetTicksUsec()-started;ImageBuildCount++;
+            }
+            Texture=texture;Scale=Vector2.One*CharacterArt.Scale;Position=new Vector2(0,FootOffsetY);return;
+        }
+        Scale=Vector2.One*SpriteScale;
         if (!_loaded)
             return;
 
         int dir = DirIndex(facing);
+        // The same armed state persists through movement, guarding and recovery.
+        bool sprint = clip is "run" or "dash";
+        if (clip is "walk" or "run" or "dash") clip = "sword_walk";
+        else if (clip is "breathe" or "guard" or "block" or "hurt") clip = null;
 
         // 클립이 바뀌면 위상을 먼저 리셋한다 — 새 동작이 항상 첫 프레임부터 시작하도록.
         if (clip != _lastClip)
@@ -200,7 +244,7 @@ public partial class PlayerSprite : Sprite2D
             else
             {
                 // 루프 — 이동/대기 클립. 달리기는 프레임을 더 빨리 넘긴다.
-                _animTime += delta * (clip == "run" ? RunFrameSpeedScale : 1f);
+                _animTime += delta * (sprint ? RunFrameSpeedScale : 1f);
 
                 int i = (int)(_animTime / FrameTimeOf(clip));
                 int start = LoopStartOf(clip);
@@ -223,7 +267,7 @@ public partial class PlayerSprite : Sprite2D
     private string _lastClip;
 
     /// <summary>방향 벡터 → 8방향 인덱스. south 가 0, 시계 반대로 45도씩.</summary>
-    private static int DirIndex(Vector2 facing)
+    internal static int DirIndex(Vector2 facing)
     {
         if (facing == Vector2.Zero)
             return 0;

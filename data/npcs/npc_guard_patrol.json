@@ -1,0 +1,18 @@
+{
+  "id": "npc_guard_patrol",
+  "name": "순찰병 미하",
+  "role": "guard",
+  "zone": "town",
+  "tileX": 99,
+  "tileY": 136,
+  "lines": [
+    "남동쪽 숲에서 물안개가 올라오고 있어.",
+    "길이 갈라지면 발자국부터 살펴봐."
+  ],
+  "color": "",
+  "teachesJob": "",
+  "refuseLine": "",
+  "acceptLine": "",
+  "anchor": "gate_south",
+  "restores": false
+}

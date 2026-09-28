@@ -13,6 +13,8 @@ public partial class SaveSystem : Node
 {
     public const int CurrentVersion = 1;
     public const string SavePath = "user://save_01.json";
+    // The real serializer/file replacement is exercised without touching the user's slot.
+    private static string ActivePath => HuntCheck.Requested ? "user://hunt-check.json" : SavePath;
 
     /// <summary>자동 저장 주기(초). (§H)</summary>
     public static readonly float AutoSaveIntervalSeconds = 60.0f;
@@ -39,28 +41,26 @@ public partial class SaveSystem : Node
         Instance = this;
     }
 
-    public bool HasSave() => Godot.FileAccess.FileExists(SavePath);
+    public bool HasSave() => Godot.FileAccess.FileExists(ActivePath);
 
     /// <summary>마을 진입·60초 주기·F5 가 모두 이 경로로 들어온다.</summary>
     public bool Save(IPlayerContext player, string reason = "manual")
     {
-        if (player == null)
+        if (player == null || (DevCapture.IsRequested() && !(HuntCheck.Requested && reason=="hunt-check")) || ReferenceWorld3D.CheckRequested || (CharacterCreator.IsOpen && reason!="appearance"))
             return false;
 
         try
         {
             SaveData data = player.CaptureSave();
             data.Version = CurrentVersion;
+            data.WorldRevision = WorldLayout.Revision;
 
             string json = JsonSerializer.Serialize(data, JsonOptions);
-            using var file = Godot.FileAccess.Open(SavePath, Godot.FileAccess.ModeFlags.Write);
-            if (file == null)
-            {
-                Report($"[Save] 파일을 열 수 없다: {Godot.FileAccess.GetOpenError()}");
-                return false;
-            }
-
-            file.StoreString(json);
+            string path=AbsoluteSavePath();
+            if(System.IO.File.Exists(path) && !System.IO.File.Exists(path+".before-forest"))
+                System.IO.File.Copy(path,path+".before-forest");
+            System.IO.File.WriteAllText(path+".tmp",json);
+            System.IO.File.Move(path+".tmp",path,true);
             _autoSaveTimer = 0.0;
             Report($"[Save] saved ({reason})");
             return true;
@@ -83,7 +83,7 @@ public partial class SaveSystem : Node
 
         try
         {
-            string json = Godot.FileAccess.GetFileAsString(SavePath);
+            string json = Godot.FileAccess.GetFileAsString(ActivePath);
             if (string.IsNullOrWhiteSpace(json))
             {
                 Report("[Save] 파일이 비어 있다 — 새 게임");
@@ -122,6 +122,12 @@ public partial class SaveSystem : Node
 
         try
         {
+            if (data.WorldRevision != WorldLayout.Revision)
+            {
+                data.Position.X = WorldLayout.SpawnPoint.X;
+                data.Position.Y = WorldLayout.SpawnPoint.Y;
+                data.WorldRevision = WorldLayout.Revision;
+            }
             player.RestoreSave(data);
             return true;
         }
@@ -148,7 +154,7 @@ public partial class SaveSystem : Node
 
     public void ResetAutoSaveTimer() => _autoSaveTimer = 0.0;
 
-    public string AbsoluteSavePath() => ProjectSettings.GlobalizePath(SavePath);
+    public string AbsoluteSavePath() => ProjectSettings.GlobalizePath(ActivePath);
 
     private void Report(string message)
     {

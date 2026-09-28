@@ -7,6 +7,26 @@ namespace PixelMmo.Balance;
 public static class PlayerTuning
 {
     public static readonly float BaseMaxHp = 100f;
+
+    // --- 마나 (P2) ---------------------------------------------------------
+    //
+    // 쿨다운만으로는 직업이 갈리지 않는다. 전사는 쿨다운만 보고 치면 되지만,
+    // 마법사는 "지금 쓰면 다음 것을 못 쓴다"가 있어야 한다. 그래서 마나는
+    // int 로 늘고 wis 로 차오른다 — 큰 걸 한 번 쓸 것인가, 작은 걸 계속 쓸 것인가.
+
+    public static readonly float BaseMaxMp = 40f;
+
+    /// <summary>int 1당 최대 마나.</summary>
+    public static readonly float MpPerInt = 4f;
+
+    /// <summary>초당 기본 회복량.</summary>
+    public static readonly float MpRegenPerSecond = 1.6f;
+
+    /// <summary>wis 1당 초당 추가 회복량.</summary>
+    public static readonly float MpRegenPerWis = 0.22f;
+
+    /// <summary>공격 직후에는 이 시간(초) 동안 마나가 차지 않는다.</summary>
+    public static readonly float MpRegenDelay = 1.0f;
     public static readonly int StartLevel = 1;
 
     /// <summary>P1 에서는 이 직업 R1 고정. (§B)</summary>

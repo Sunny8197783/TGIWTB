@@ -6,8 +6,15 @@
   "inputAction": "",
   "cooldown": 0.0,
   "heavy": false,
-  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
-  "damage": { "base": 0.0, "scaling": {} },
+  "shape": {
+    "kind": "self",
+    "angleDeg": 0.0,
+    "rangePx": 0.0
+  },
+  "damage": {
+    "base": 0.0,
+    "scaling": {}
+  },
   "learnTrigger": {
     "type": "situational_repeat",
     "counter": "lowhp_dodge_success",
@@ -22,5 +29,7 @@
     "minInterval": 0.5,
     "damageBonusPer100": 0.0,
     "evolution": null
-  }
+  },
+  "job": "",
+  "manaCost": 0.0
 }

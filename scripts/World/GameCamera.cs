@@ -13,17 +13,23 @@ public partial class GameCamera : Camera2D
     public static readonly float FollowWeight = 8.0f;
 
     /// <summary>
-    /// 카메라 확대. 기본 해상도를 1280x720 으로 올리면서 줌도 6배로 맞췄다.
-    /// 화면에 보이는 월드 범위(=viewport/zoom)는 그대로지만, 벡터 도형이
-    /// 2배 촘촘하게 그려져 훨씬 정교해진다(640→1280 업스케일 제거).
+    /// 카메라 확대. 1280x720 / 32px 타일 기준 가로 13칸이 들어온다.
+    ///
+    /// 6.0 이었다 — 640x360 에 16px 타일이던 시절 값이고, 타일이 32px 로 커질 때
+    /// 같이 내려오지 않았다. 그래서 화면에 6칸밖에 안 들어와 분수 하나가 화면
+    /// 절반을 먹었다. 탑다운 MMO 는 최소한 건물 몇 채와 그 사이 길이 한 화면에
+    /// 같이 보여야 어디로 갈지 정할 수 있다.
     /// </summary>
-    public static readonly float ZoomLevel = 6.0f;
+    public static readonly float ZoomLevel = 3.0f;
+
+    /// <summary>맵 밖 테스트장(§F8)처럼 WorldBounds 바깥을 비출 때 클램프를 끈다.</summary>
+    public bool ClampToWorld = true;
 
     private Node2D _target;
     private float _shakeAmplitude;
     private float _shakeTimer;
     private float _shakeDuration;
-    private readonly RandomNumberGenerator _rng = new();
+    private Vector2 _shakeDirection;
 
     public override void _Ready()
     {
@@ -31,7 +37,6 @@ public partial class GameCamera : Camera2D
         Zoom = new Vector2(ZoomLevel, ZoomLevel);
         PositionSmoothingEnabled = false; // lerp 를 직접 돌린다.
         MakeCurrent();
-        _rng.Randomize();
     }
 
     public void Follow(Node2D target)
@@ -41,28 +46,38 @@ public partial class GameCamera : Camera2D
             GlobalPosition = Clamp(target.GlobalPosition);
     }
 
-    /// <summary>진폭(px)과 지속 시간(초). 이미 흔들리는 중이면 더 센 쪽이 이긴다.</summary>
-    public void Shake(float amplitude, float duration)
+    /// <summary>
+    /// 진폭(px)과 지속 시간(초). 이미 흔들리는 중이면 더 센 쪽이 이긴다.
+    /// direction 을 주면 그 방향으로 밀렸다가 돌아온다(예: 내리찍기는 아래로) —
+    /// 순수 무작위 지터보다 "부딪힌 방향"이 읽혀야 타격감이 산다.
+    /// </summary>
+    public void Shake(float amplitude, float duration, Vector2 direction = default)
     {
         if (amplitude <= 0f || duration <= 0f)
             return;
 
-        if (amplitude >= _shakeAmplitude)
+        float remaining = _shakeDuration > 0f ? _shakeAmplitude * _shakeTimer / _shakeDuration : 0f;
+        if (amplitude >= remaining)
         {
             _shakeAmplitude = amplitude;
             _shakeDuration = duration;
             _shakeTimer = duration;
+            _shakeDirection = direction;
         }
     }
 
-    public void ShakeNormalHit()
-        => Shake(CombatTuning.ShakeNormalAmp, CombatTuning.ShakeNormalTime);
+    public void ShakeNormalHit(Vector2 direction = default)
+        => Shake(CombatTuning.ShakeNormalAmp, CombatTuning.ShakeNormalTime, direction);
 
-    public void ShakeHeavyHit()
-        => Shake(CombatTuning.ShakeHeavyAmp, CombatTuning.ShakeHeavyTime);
+    public void ShakeHeavyHit(Vector2 direction = default)
+        => Shake(CombatTuning.ShakeHeavyAmp, CombatTuning.ShakeHeavyTime, direction);
 
-    public void ShakePlayerHurt()
-        => Shake(CombatTuning.ShakeHurtAmp, CombatTuning.ShakeHurtTime);
+    public void ShakePlayerHurt(Vector2 direction = default)
+        => Shake(CombatTuning.ShakeHurtAmp, CombatTuning.ShakeHurtTime, direction);
+
+    /// <summary>퍼펙트 가드 순간. 강타격보다 확실히 크게 — 화면 전체가 흔들려야 "막았다"가 읽힌다.</summary>
+    public void ShakeParry()
+        => Shake(CombatTuning.ShakeParryAmp, CombatTuning.ShakeParryTime);
 
     public override void _Process(double delta)
     {
@@ -77,8 +92,9 @@ public partial class GameCamera : Camera2D
 
     private void UpdateShake(float delta)
     {
-        if (_shakeTimer <= 0f)
+        if (_shakeTimer <= 0f || CombatTuning.ShakeStrength <= 0f)
         {
+            _shakeTimer = _shakeAmplitude = 0f;
             Offset = Vector2.Zero;
             return;
         }
@@ -93,13 +109,19 @@ public partial class GameCamera : Camera2D
 
         // 남은 시간에 비례해 진폭이 줄어든다.
         float falloff = _shakeDuration > 0f ? _shakeTimer / _shakeDuration : 0f;
-        float amp = _shakeAmplitude * falloff;
-        Offset = new Vector2(_rng.RandfRange(-amp, amp), _rng.RandfRange(-amp, amp));
+        float amp = _shakeAmplitude * falloff * falloff * CombatTuning.ShakeStrength;
+        float phase = (_shakeDuration - _shakeTimer) * Mathf.Tau * CombatTuning.ShakeFrequency;
+        Vector2 n = _shakeDirection == Vector2.Zero ? Vector2.Down : _shakeDirection.Normalized();
+        Vector2 perp = new(-n.Y, n.X);
+        Offset = (n * Mathf.Cos(phase) + perp * (Mathf.Sin(phase * .75f) * .25f)) * amp;
     }
 
-    /// <summary>카메라가 맵 밖을 비추지 않게 가둔다.</summary>
+    /// <summary>카메라가 맵 밖을 비추지 않게 가둔다. 테스트장에서는 ClampToWorld=false 로 끈다.</summary>
     private Vector2 Clamp(Vector2 position)
     {
+        if (!ClampToWorld)
+            return position;
+
         Vector2 viewport = GetViewportRect().Size;
         Vector2 half = viewport * 0.5f / ZoomLevel;
         Rect2 bounds = WorldLayout.WorldBounds;

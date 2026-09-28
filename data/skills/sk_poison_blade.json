@@ -1,0 +1,16 @@
+{
+  "id": "sk_poison_blade",
+  "name": "독 바르기",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "skill_4",
+  "cooldown": 18.0,
+  "manaCost": 8.0,
+  "heavy": false,
+  "job": "job_rogue",
+  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
+  "damage": { "base": 0.0, "scaling": {} },
+  "buff": { "durationSeconds": 10.0, "attackPowerMultiplier": 1.45, "damageTakenMultiplier": 1.0 },
+  "effect": { "vfx": "ring", "color": "7fbf5a", "radiusPx": 28.0 },
+  "mastery": { "minInterval": 1.0, "damageBonusPer100": 0.0, "evolution": null }
+}

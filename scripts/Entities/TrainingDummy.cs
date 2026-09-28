@@ -72,9 +72,4 @@ public partial class TrainingDummy : MonsterBase
         DrawRect(new Rect2(-r * 0.5f, r + 3f, r, 2f), post);
     }
 
-    public override void _PhysicsProcess(double delta)
-    {
-        base._PhysicsProcess(delta);
-        QueueRedraw();
-    }
 }

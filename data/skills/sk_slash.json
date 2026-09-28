@@ -6,8 +6,17 @@
   "inputAction": "attack",
   "cooldown": 0.0,
   "heavy": false,
-  "shape": { "kind": "cone", "angleDeg": 90.0, "rangePx": 28.0 },
-  "damage": { "base": 8.0, "scaling": { "str": 0.6 } },
+  "shape": {
+    "kind": "cone",
+    "angleDeg": 90.0,
+    "rangePx": 28.0
+  },
+  "damage": {
+    "base": 8.0,
+    "scaling": {
+      "str": 0.6
+    }
+  },
   "mastery": {
     "minInterval": 0.2,
     "damageBonusPer100": 0.06,
@@ -16,5 +25,8 @@
       "into": "sk_slash_heavy",
       "announce": "칼이 무거워졌다."
     }
-  }
+  },
+  "job": "job_warrior",
+  "manaCost": 0.0,
+  "effect": { "vfx": "arc", "color": "bdefff" }
 }

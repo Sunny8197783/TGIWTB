@@ -1,0 +1,1249 @@
+--- a/NOTES.md
++++ b/NOTES.md
+@@ -1,6 +1,6 @@
+ # 확인된 작업 상태
+ 
+-갱신일: 2026-09-07
++갱신일: 2026-09-08
+ 
+ ## 진입점과 주요 심볼
+ - Godot .NET: `scripts/Runtime/Boot.cs` → `GameWorld`; `--combat-check`는 `CombatChecks`, `--selfcheck`는 `SelfCheck` 실행.
+@@ -8,6 +8,8 @@
+ - `CombatCollision.Sweep/ClearSight`: 화살·SkillBolt·근접의 벽 차단.
+ - `ActorArt.Draw`: 몬스터 3종·NPC 역할별 이미지의 발 위치/크기 정규화.
+ - `MeadowLayout.Data`, `MeadowEncounters`: `data/encounters/meadow.json`의 거점·경로·보급품.
++- 기본 화면은 `ReferenceWorld3D` → `ReferenceTerrain3D`: Godot 3D 지형·카메라·이동 충돌에 기존 픽셀 캐릭터/전투 모델을 연결. `--flat`으로 기존 2D 화면 실행.
++- `GestureSkillInput`과 `data/controls/gestures.json`: 우클릭 드래그 직선/원/Z를 기존 스킬 입력에 연결.
+ 
+ ## 결정과 이유
+ - 사용자가 공격 동기화 → 타격 음향/피격 → 벽/투사체 → 아트 → 기존 사냥터 밀도 순서의 개선을 승인했다. P1 문서의 음향·아트 제외보다 이번 명시적 요청이 우선한다.
+@@ -15,6 +17,9 @@
+ - 원본 플레이어 PixelLab ID: `fe3099a0-dbf9-48d2-8e42-6af93e94d635`. 기존 캐릭터를 유지하고 hurt 8방향을 추가했다. 재다운로드 목록: `docs/pixellab-assets.json`.
+ - 캡처는 실제 저장 파일을 덮어쓰지 않는다(`SaveSystem.Save`, `DevCapture.IsRequested`).
+ - 작업 시작 전부터 다수의 코드·JSON·건물 이미지 변경이 있었다. 전체 변경을 이번 작업 결과로 간주하거나 일괄 되돌리지 않는다.
++- 사용자가 표본 게임의 최근 변경 후 화면을 선택하고 실행을 승인했다. 새 의존성 없이 경사·해안·방향광 그림자·원근 카메라를 구현했다. 스킬/숙련/저장 좌표는 기존 모델을 재사용한다.
++- 해안 판정은 화면 생성 전부터 적용한다. 미니맵·생성 위치·소품 제거가 동일한 해안 규칙을 쓴다. 다리는 실제 통행 타일에 목재 재질을 적용한다.
++- 3D 작업 전 소스 백업: `%TEMP%/TGIWTB-before-reference3d-20260908.zip`. 현재 작업만의 비교는 `docs/review/reference3d.patch`.
+ 
+ ## 검증 명령과 결과
+ - `dotnet build --no-restore -v quiet`: 최종 빌드 경고 0 / 오류 0.
+@@ -22,8 +27,11 @@
+ - `godot --headless --path . -- --selfcheck`: 세션 중 통과, 직업 8 / 스킬 28 / NPC 16.
+ - `python tools/check_sprite_consistency.py hurt`: 통과. `git diff --check`: 공백 오류 없음.
+ - 설치된 실행 파일은 Downloads 아래 `Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64/Godot_v4.7.1-stable_mono_win64_console.exe`.
++- `godot --headless --path . -- --reference-check`: PASS 실패 0. 경로·성문·보급품 219표본, 경사 이동/착지, 안전한 부활, 투사체 벽 차단, 미니맵 해안·모래·강 검사. 라이브 저장을 읽거나 쓰지 않는다.
++- 실제 다리 통과 캡처: x3888→4162, y1552 유지. 마을 길 1196칸 중 소품 차단 0칸. 최종 화면/한계/검증은 `docs/review/reference3d.md` 참조.
+ 
+ ## 남은 문제와 다음 행동
+ - 몬스터 걷기/공격 개별 프레임은 미구현. NPC 16명은 4역할 이미지를 공유한다.
+ - 이번 사냥터 편성 개선은 초원 범위. 30분 사냥 흐름과 음향의 주관적 품질은 장시간 플레이로 평가한다.
+ - 변경 설명·검증·화면 경로: `docs/review/implementation.md`.
++- 3D 지형은 좌표당 높이 하나인 높이장이다. 다층 실내·점프 및 직업별 무기 모션은 아직 없다. 일부 성벽·바위는 단순 3D 도형이며 표본과 아트가 완전히 같지는 않다.
+--- /dev/null
++++ b/data/controls/gestures.json
+@@ -0,0 +1,5 @@
++{
++  "line": "bash",
++  "circle": "warcry",
++  "zigzag": "skill_4"
++}
+--- a/scripts/Combat/CombatCollision.cs
++++ b/scripts/Combat/CombatCollision.cs
+@@ -7,6 +7,7 @@
+     public static bool ClearSight(Node2D owner, Vector2 from, Vector2 to)
+     {
+         if (from.IsEqualApprox(to)) return true;
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view) return view.ClearSight(from, to);
+         using var query = PhysicsRayQueryParameters2D.Create(from, to, CollisionLayers.World);
+         query.HitFromInside = true;
+         return owner.GetWorld2D().DirectSpaceState.IntersectRay(query).Count == 0;
+@@ -16,6 +17,8 @@
+     public static bool Sweep(Node2D owner, Vector2 from, Vector2 motion, float radius,
+         uint mask, Godot.Collections.Array<Rid> excluded, out Node2D body, out Vector2 position)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++            return view.Sweep(owner, from, motion, radius, mask, excluded, out body, out position);
+         body = null;
+         position = from + motion;
+         var space = owner.GetWorld2D().DirectSpaceState;
+--- a/scripts/Combat/CombatFeedback.cs
++++ b/scripts/Combat/CombatFeedback.cs
+@@ -77,6 +77,8 @@
+ 
+     public void Popup(Vector2 worldPosition, float damage, bool heavy, bool onPlayer)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Popup(worldPosition, damage, heavy, onPlayer); return; }
+         var popup = new DamagePopup();
+         popup.Setup(damage, heavy, onPlayer);
+         AddChild(popup);
+@@ -85,6 +87,8 @@
+ 
+     public void DeathBurstAt(Vector2 worldPosition, Color color)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, 25f, color, .35f); return; }
+         var burst = new DeathBurst();
+         AddChild(burst);
+         burst.GlobalPosition = worldPosition;
+@@ -97,6 +101,8 @@
+     public void SlashAt(Vector2 worldPosition, float baseAngle, float fromOff, float toOff,
+         float inner, float outer, Color color)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, outer, color, CombatTuning.VfxSlashLife, baseAngle + (fromOff + toOff) * .5f, Mathf.Abs(toOff - fromOff)); return; }
+         var fx = new SlashArc();
+         AddChild(fx);
+         fx.GlobalPosition = worldPosition;
+@@ -106,6 +112,8 @@
+     /// <summary>타격 스파크. 유효타마다.</summary>
+     public void SparkAt(Vector2 worldPosition, bool heavy)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, heavy ? 17f : 10f, new Color(1f, .86f, .43f), CombatTuning.VfxSparkLife); return; }
+         var fx = new HitSpark();
+         AddChild(fx);
+         fx.GlobalPosition = worldPosition;
+@@ -115,6 +123,8 @@
+     /// <summary>충격파 링. 강타·함성 같은 큰 한 방.</summary>
+     public void ShockAt(Vector2 worldPosition, float radius, Color color)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, radius, color, CombatTuning.VfxShockLife); return; }
+         var fx = new ShockRing();
+         AddChild(fx);
+         fx.GlobalPosition = worldPosition;
+@@ -124,6 +134,8 @@
+     /// <summary>대시 바람 가르기.</summary>
+     public void DashWindAt(Vector2 worldPosition, Vector2 direction, Color color)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, 19f, color, CombatTuning.VfxDashWindLife, direction.Angle() + Mathf.Pi, Mathf.Pi); return; }
+         var fx = new DashWind();
+         AddChild(fx);
+         fx.GlobalPosition = worldPosition;
+@@ -133,6 +145,8 @@
+     /// <summary>강타 원뿔(꼬깔). 돌진 방향으로 뻗는다.</summary>
+     public void ConeAt(Vector2 worldPosition, Vector2 direction, Color color)
+     {
++        if (PixelMmo.Runtime.ReferenceWorld3D.Instance is { } view)
++        { view.Ring(worldPosition, CombatTuning.VfxConeLength, color, CombatTuning.VfxConeLife, direction.Angle(), Mathf.Pi * .55f); return; }
+         var fx = new BashCone();
+         AddChild(fx);
+         fx.GlobalPosition = worldPosition;
+--- a/scripts/Entities/ActorArt.cs
++++ b/scripts/Entities/ActorArt.cs
+@@ -11,8 +11,7 @@
+     private sealed record Frame(Texture2D Texture, Rect2 Bounds);
+     private static readonly Dictionary<string, Frame[]> Cache = new();
+ 
+-    public static bool Draw(Node2D canvas, string key, Vector2 facing, float height,
+-        float footY, Color tint, Vector2 squash)
++    public static (Texture2D Texture, Rect2 Bounds, float ReferenceHeight) FrameFor(string key, Vector2 facing)
+     {
+         if (!Cache.TryGetValue(key, out var frames))
+         {
+@@ -29,9 +28,17 @@
+         }
+         int dir = Mathf.PosMod(Mathf.RoundToInt(Mathf.Atan2(facing.X, facing.Y) / (Mathf.Pi / 4f)), 8);
+         Frame f = frames[dir] ?? frames[0];
+-        if (f == null || f.Bounds.Size.Y < 1) return false;
++        if (f == null || f.Bounds.Size.Y < 1) return default;
++        return (f.Texture, f.Bounds, (frames[0] ?? f).Bounds.Size.Y);
++    }
++
++    public static bool Draw(Node2D canvas, string key, Vector2 facing, float height,
++        float footY, Color tint, Vector2 squash)
++    {
++        var f = FrameFor(key, facing);
++        if (f.Texture == null) return false;
+         // One scale per actor, not per direction: turning cannot pump the sprite's size.
+-        float referenceHeight = (frames[0] ?? f).Bounds.Size.Y;
++        float referenceHeight = f.ReferenceHeight;
+         Vector2 size = f.Bounds.Size * (height / referenceHeight) * squash;
+         var rect = new Rect2(new Vector2(-size.X * .5f, footY - size.Y), size);
+         canvas.DrawTextureRectRegion(f.Texture, rect, f.Bounds, tint);
+--- a/scripts/Entities/MonsterBase.cs
++++ b/scripts/Entities/MonsterBase.cs
+@@ -46,6 +46,8 @@
+         : 1f;
+     protected PlayerCharacter Player { get; private set; }
+     protected Vector2 Facing { get; set; } = Vector2.Right;
++    public Vector2 ArtFacing => Facing;
++    public bool HitFlashing => _flashTimer > 0f;
+ 
+     public abstract MonsterStats Stats { get; }
+ 
+--- a/scripts/Entities/PlayerCharacter.cs
++++ b/scripts/Entities/PlayerCharacter.cs
+@@ -399,6 +399,12 @@
+             _attack.Aim(input);
+         }
+ 
++        if (ReferenceWorld3D.Instance is { } view && !DevCapture.IsRequested() && !ReferenceWorld3D.CheckRequested
++            && _lockTarget == null && (!_attack.IsBusy || _attack.CanTurn))
++        {
++            Vector2 aim = view.AimPoint() - GlobalPosition;
++            if (aim.LengthSquared() > 4f) { _facing = aim.Normalized(); _attack.Aim(_facing); }
++        }
+         AdvanceAttack(dt);
+ 
+         // 콤보 유지 시간은 공격 중이 아닐 때도 흐른다 — 후딜이 끝난 뒤의 짧은 유예다.
+--- a/scripts/Entities/SkillBolt.cs
++++ b/scripts/Entities/SkillBolt.cs
+@@ -22,6 +22,7 @@
+     private float _radius = 4f;
+     private bool _pierce;
+     private Color _color = Colors.White;
++    public Color VisualColor => _color;
+     private SkillDefinition _skill;
+     private Node2D _shooter;
+ 
+--- a/scripts/Runtime/GameWorld.cs
++++ b/scripts/Runtime/GameWorld.cs
+@@ -98,7 +98,7 @@
+         AddChild(_tuning);
+ 
+         // 세이브가 있으면 이어서, 없거나 깨졌으면 새 게임. 어느 쪽도 크래시하지 않는다. (§H)
+-        if (SaveSystem.Instance != null && !SaveSystem.Instance.LoadInto(_player))
++        if (ReferenceWorld3D.CheckRequested || (SaveSystem.Instance != null && !SaveSystem.Instance.LoadInto(_player)))
+             _player.ResetToNewGame();
+ 
+         RescueIfStuck();
+@@ -111,6 +111,8 @@
+         _lastZoneId = WorldLayout.ZoneAt(_player.GlobalPosition)?.Id ?? "";
+ 
+         GD.Print($"[World] ready — spawn={_player.GlobalPosition} zone={_lastZoneId}");
++        if (ReferenceWorld3D.Enabled)
++            AddChild(new ReferenceWorld3D { World = this });
+     }
+ 
+     /// <summary>§G 구역별 몬스터 배치.</summary>
+@@ -231,7 +233,7 @@
+     /// 정확한 칸이 막혀 있으면 나선으로 넓혀 가며 설 수 있는 칸을 찾는다.
+     /// 마을 건물은 절차적으로 앉으므로 손으로 적은 좌표가 집 안에 떨어질 수 있다.
+     /// </summary>
+-    private bool FindStandingSpot(ref Vector2 at, System.Collections.Generic.HashSet<Vector2I> occupied)
++    internal bool FindStandingSpot(ref Vector2 at, System.Collections.Generic.HashSet<Vector2I> occupied)
+     {
+         if (_tiles.IsWalkable(at) && !occupied.Contains((Vector2I)(at / WorldLayout.TileSize).Floor()))
+             return true;
+--- /dev/null
++++ b/scripts/Runtime/GestureSkillInput.cs
+@@ -0,0 +1,111 @@
++using System.Collections.Generic;
++using System.Text.Json;
++using Godot;
++
++namespace PixelMmo.Runtime;
++
++/// <summary>Right-drag mana gestures use existing input actions, including job-specific skill resolution.</summary>
++public partial class GestureSkillInput : CanvasLayer
++{
++    private readonly List<Vector2> _points = new();
++    private Dictionary<string, string> _bindings;
++    private Line2D _stroke;
++    private Label _hint;
++    private bool _drawing;
++    private string _pressed;
++    private float _releaseAfter;
++
++    public override void _Ready()
++    {
++        _bindings = JsonSerializer.Deserialize<Dictionary<string, string>>(
++            FileAccess.GetFileAsString("res://data/controls/gestures.json"));
++        foreach (var (gesture, action) in _bindings)
++            if (gesture is not ("line" or "circle" or "zigzag") || !InputMap.HasAction(action))
++                throw new System.InvalidOperationException("Invalid gesture binding: " + gesture);
++        Layer = 20;
++        _stroke = new Line2D { Width = 3f, DefaultColor = new Color(.4f, .93f, 1f),
++            BeginCapMode = Line2D.LineCapMode.Round, EndCapMode = Line2D.LineCapMode.Round };
++        AddChild(_stroke);
++        _hint = new Label { Text = "WASD 이동 · 좌클릭 공격 · 우클릭 드래그: 직선 / 원 / Z · Space 회피 · 휠 줌",
++            MouseFilter = Control.MouseFilterEnum.Ignore };
++        _hint.AddThemeFontSizeOverride("font_size", 15);
++        _hint.AddThemeColorOverride("font_shadow_color", Colors.Black);
++        _hint.AddThemeConstantOverride("shadow_offset_x", 1); _hint.AddThemeConstantOverride("shadow_offset_y", 1);
++        AddChild(_hint);
++    }
++
++    public override void _Process(double delta)
++        => _hint.Position = new Vector2(16f, GetViewport().GetVisibleRect().Size.Y - 28f);
++
++    public override void _PhysicsProcess(double delta)
++    {
++        if (_pressed == null) return;
++        _releaseAfter -= (float)delta;
++        if (_releaseAfter <= 0f) { Input.ActionRelease(_pressed); _pressed = null; }
++    }
++
++    public override void _ExitTree()
++    {
++        if (_pressed != null) Input.ActionRelease(_pressed);
++    }
++
++    public override void _UnhandledInput(InputEvent input)
++    {
++        if (input is InputEventMouseButton button && button.ButtonIndex == MouseButton.Right)
++        {
++            _drawing = button.Pressed;
++            if (_drawing)
++            {
++                _points.Clear(); _stroke.ClearPoints();
++                _points.Add(button.Position); _stroke.AddPoint(button.Position);
++            }
++            else
++            {
++                string gesture = Recognize(_points);
++                if (_bindings.TryGetValue(gesture, out string action))
++                {
++                    if (_pressed != null) Input.ActionRelease(_pressed);
++                    _pressed = action; _releaseAfter = .06f; // ~4 physics frames at 60 fps.
++                    Input.ActionPress(action);
++                    _stroke.DefaultColor = new Color(.8f, 1f, .45f);
++                }
++                else _stroke.DefaultColor = new Color(1f, .55f, .4f);
++                GetTree().CreateTimer(.35).Timeout += () =>
++                { if (IsInstanceValid(_stroke) && !_drawing) { _stroke.ClearPoints(); _stroke.DefaultColor = new Color(.4f, .93f, 1f); } };
++            }
++            GetViewport().SetInputAsHandled();
++        }
++        else if (_drawing && input is InputEventMouseMotion motion && _points.Count < 256)
++        {
++            if (_points[^1].DistanceTo(motion.Position) >= 5f)
++            { _points.Add(motion.Position); _stroke.AddPoint(motion.Position); }
++            GetViewport().SetInputAsHandled();
++        }
++    }
++
++    public static string Recognize(IReadOnlyList<Vector2> points)
++    {
++        if (points.Count < 3) return "";
++        float length = 0f;
++        Vector2 min = points[0], max = points[0];
++        int turns = 0, previousSign = 0;
++        for (int i = 1; i < points.Count; i++)
++        {
++            Vector2 step = points[i] - points[i - 1];
++            length += step.Length(); min = min.Min(points[i]); max = max.Max(points[i]);
++            if (Mathf.Abs(step.X) < 3f) continue;
++            int sign = step.X > 0f ? 1 : -1;
++            if (previousSign != 0 && sign != previousSign) turns++;
++            previousSign = sign;
++        }
++        if (length < 60f) return "";
++        float direct = points[0].DistanceTo(points[^1]);
++        Vector2 size = max - min;
++        if (direct / length > .91f) return "line";
++        if (size.X > 30f && size.Y > 30f && direct < size.Length() * .28f
++            && length > size.Length() * 1.8f && length < size.Length() * 3.4f) return "circle";
++        // ponytail: three coarse gestures; resample templates if the gesture vocabulary grows.
++        if (turns == 2 && size.X > 35f && size.Y > 35f && direct > size.Length() * .55f) return "zigzag";
++        return "";
++    }
++}
+--- a/scripts/Runtime/InputSetup.cs
++++ b/scripts/Runtime/InputSetup.cs
+@@ -53,6 +53,8 @@
+         Bind(MoveRight, Key.D, Key.Right);
+ 
+         Bind(Attack, Key.J);
++        var click = new InputEventMouseButton { ButtonIndex = MouseButton.Left };
++        if (!InputMap.ActionHasEvent(Attack, click)) InputMap.ActionAddEvent(Attack, click);
+         Bind(Guard, Key.K);
+         Bind(Bash, Key.L);
+         Bind(Warcry, Key.U);
+--- /dev/null
++++ b/scripts/Runtime/ReferenceChecks3D.cs
+@@ -0,0 +1,103 @@
++using System;
++using System.Collections.Generic;
++using Godot;
++using PixelMmo.Combat;
++
++namespace PixelMmo.Runtime;
++
++/// <summary>Run the complete 3D world with --reference-check; never load or write the player's save.</summary>
++public partial class ReferenceChecks3D : Node3D
++{
++    public ReferenceWorld3D View { get; set; }
++    private readonly List<string> _fail = new();
++    private void Expect(bool pass, string label) { if (!pass) _fail.Add(label); }
++    public override async void _Ready()
++    {
++        try
++        {
++            View.World.Player.DebugInvulnerable = true;
++            for (int i = 0; i < 4; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
++            Expect(View.ActorCount >= 110, "missing 3D actors/NPCs");
++            CheckMapConsistency();
++            foreach (var camp in MeadowLayout.Data.Camps)
++            {
++                Vector3 expected = ReferenceTerrain3D.Ground(camp.Center);
++                using var ray = PhysicsRayQueryParameters3D.Create(expected + Vector3.Up * 12f,
++                    expected - Vector3.Up * 4f, CollisionLayers.World);
++                var hit = GetWorld3D().DirectSpaceState.IntersectRay(ray);
++                Expect(hit.Count > 0 && Mathf.Abs(hit["position"].AsVector3().Y - expected.Y) < .03f,
++                    "ground collider/winding mismatch: " + camp.Id);
++            }
++            Vector2 start = WorldLayout.TileCenter(111, 48);
++            View.World.Player.GlobalPosition = start;
++            for (int i = 0; i < 20; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
++            Expect(View.PlayerBody.IsOnFloor(), "player must rest on the slope");
++            Expect(Mathf.Abs(View.PlayerBody.Position.Y - ReferenceTerrain3D.HeightAt(((IPlayerContext)View.World.Player).WorldPosition)) < .08f,
++                "floating/sinking player");
++            Input.ActionPress(InputSetup.MoveRight);
++            for (int i = 0; i < 22; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
++            Input.ActionRelease(InputSetup.MoveRight);
++            Vector2 end = ((IPlayerContext)View.World.Player).WorldPosition;
++            Expect(end.X > start.X + 8f && View.PlayerBody.IsOnFloor(), "walking must advance along a slope");
++            Expect(View.World.Tiles.IsWalkable(end), "3D movement entered blocked 2D footprint");
++            View.World.Player.GlobalPosition = WorldLayout.SpawnPoint;
++            for (int i = 0; i < 15; i++) await ToSignal(GetTree(), SceneTree.SignalName.PhysicsFrame);
++            Expect(View.World.Tiles.IsWalkable(((IPlayerContext)View.World.Player).WorldPosition) && View.PlayerBody.IsOnFloor(),
++                "respawn/load teleport must resolve to a safe standing spot");
++            var projectile = new Node2D(); AddChild(projectile);
++            bool wall = View.Sweep(projectile, WorldLayout.TileCenter(121, 43), new Vector2(250f, 0f), 2.5f,
++                CollisionLayers.World, new Godot.Collections.Array<Rid>(), out var body, out var contact);
++            Expect(wall && body == View.World.Tiles && contact.X < 127f * ReferenceTerrain3D.Unit, "projectile must stop at river bank");
++            Expect(!View.ClearSight(WorldLayout.TileCenter(110, 48), WorldLayout.TileCenter(125, 48)), "melee cannot reach a different elevation");
++            Expect(ReferenceTerrain3D.CoastalWater(WorldLayout.TileCenter(110, 4))
++                && !View.World.Tiles.IsWalkable(WorldLayout.TileCenter(110, 4)), "coastal water must block spawning");
++            Expect(Mathf.Abs(ReferenceTerrain3D.HeightAt(new Vector2(161f * 32f - .01f, 1552f))
++                - ReferenceTerrain3D.HeightAt(new Vector2(161f * 32f + .01f, 1552f))) < .01f, "height seam at meadow border");
++            Expect(GestureSkillInput.Recognize(new[] { Vector2.Zero, new Vector2(40, 0), new Vector2(90, 0) }) == "line", "line gesture");
++            var circle = new List<Vector2>();
++            for (int i = 0; i <= 24; i++) circle.Add(Vector2.FromAngle(Mathf.Tau * i / 24f) * 60f);
++            Expect(GestureSkillInput.Recognize(circle) == "circle", "circle gesture");
++            Expect(GestureSkillInput.Recognize(new[] { Vector2.Zero, new Vector2(100, 0), new Vector2(0, 70), new Vector2(100, 70) }) == "zigzag", "zigzag gesture");
++            Expect(GestureSkillInput.Recognize(new[] { Vector2.Zero, Vector2.One, new Vector2(2, 1) }) == "", "tiny gestures must not cast");
++            Expect(SaveSystem.Instance == null || !SaveSystem.Instance.Save(View.World.Player, "reference_check"), "test must not overwrite live saves");
++        }
++        catch (Exception e) { _fail.Add(e.ToString()); }
++        finally { Input.ActionRelease(InputSetup.MoveRight); }
++        foreach (var fail in _fail) GD.PrintErr("[reference-check] " + fail);
++        GD.Print($"[reference-check] {(_fail.Count == 0 ? "PASS" : "FAIL")} failures={_fail.Count}");
++        GetTree().Quit(_fail.Count == 0 ? 0 : 1);
++    }
++
++    private void CheckMapConsistency()
++    {
++        int samples = 0;
++        using var shape = new CapsuleShape3D { Radius = .2f, Height = .8f };
++        using var query = new PhysicsShapeQueryParameters3D { Shape = shape, CollisionMask = CollisionLayers.World };
++        void CheckPoint(Vector2 point, string label)
++        {
++            samples++;
++            Expect(View.World.Tiles.IsWalkable(point), "map route footprint: " + label);
++            query.Transform = new Transform3D(Basis.Identity, ReferenceTerrain3D.Ground(point) + Vector3.Up * .65f);
++            Expect(GetWorld3D().DirectSpaceState.IntersectShape(query, 1).Count == 0, "map route 3D obstruction: " + label);
++        }
++        foreach (var route in MeadowLayout.Data.Routes)
++            for (int i = 1; i < route.Length; i++)
++            {
++                Vector2 a = WorldLayout.TileCenter(route[i - 1][0], route[i - 1][1]);
++                Vector2 b = WorldLayout.TileCenter(route[i][0], route[i][1]);
++                int steps = Mathf.CeilToInt(a.DistanceTo(b) / 16f);
++                for (int n = 0; n <= steps; n++) CheckPoint(a.Lerp(b, n / (float)steps), $"{i}/{n}");
++            }
++        foreach (var (rect, a, b) in WorldLayout.Corridors())
++        {
++            Vector2I center = rect.Position + rect.Size / 2;
++            CheckPoint(WorldLayout.TileCenter(center.X, center.Y), a.Id + "/" + b.Id);
++        }
++        foreach (var camp in MeadowLayout.Data.Camps) CheckPoint(camp.Center + new Vector2(0f, 80f), camp.Id + "/supply");
++        using var map = View.World.Tiles.Minimap.GetImage();
++        Expect(map.GetPixel(110, 4).B > map.GetPixel(110, 4).R, "minimap coastline must show water");
++        Expect(map.GetPixel(110, 10).R > map.GetPixel(110, 10).B, "minimap beach must show sand");
++        Expect(map.GetPixel(124, 10).B > map.GetPixel(124, 10).R, "minimap river must stay water across beach");
++        GD.Print($"[reference-check] map routes/gates/supplies checked={samples}");
++    }
++}
+--- a/scripts/Runtime/SaveSystem.cs
++++ b/scripts/Runtime/SaveSystem.cs
+@@ -44,7 +44,7 @@
+     /// <summary>마을 진입·60초 주기·F5 가 모두 이 경로로 들어온다.</summary>
+     public bool Save(IPlayerContext player, string reason = "manual")
+     {
+-        if (player == null || DevCapture.IsRequested())
++        if (player == null || DevCapture.IsRequested() || ReferenceWorld3D.CheckRequested)
+             return false;
+ 
+         try
+--- a/scripts/World/MeadowEncounters.cs
++++ b/scripts/World/MeadowEncounters.cs
+@@ -60,6 +60,7 @@
+     private readonly List<Camp> _camps = new();
+     private GameWorld _world;
+     private float _redraw;
++    public bool SupplyReady(string id) => _camps.Exists(c => c.Def.Id == id && c.Cleared);
+ 
+     public override void _Ready()
+     {
+--- /dev/null
++++ b/scripts/World/ReferenceTerrain3D.cs
+@@ -0,0 +1,277 @@
++using System.Collections.Generic;
++using Godot;
++using PixelMmo.Combat;
++
++namespace PixelMmo.Runtime;
++
++/// <summary>The existing map's tiles and footprints, rendered on a continuous height field.</summary>
++public partial class ReferenceTerrain3D : Node3D
++{
++    public const float Unit = 32f;
++    public const float WaterLevel = -0.15f;
++    private readonly Dictionary<int, Material> _materials = new();
++    private readonly Dictionary<(Texture2D Texture, bool Decal, bool Flip, int X, int Z), List<(Transform3D Transform, Color Color)>> _props = new();
++    private readonly Dictionary<Texture2D, (Texture2D Texture, Vector2 Size, float CenterX)> _propTextures = new();
++    public int TriangleCount { get; private set; }
++    public int PropCount { get; private set; }
++
++    public static bool CoastalWater(Vector2 point)
++        => point.X >= 97f * Unit && point.X < 161f * Unit && point.Y < 8f * Unit && point.Y >= 0f;
++
++    public static bool CoastalSand(Vector2 point)
++        => point.X >= 97f * Unit && point.X < 161f * Unit && point.Y >= 8f * Unit && point.Y < 14f * Unit;
++
++    private static float VertexHeight(float x, float z)
++    {
++        // Town stays level; the existing meadow paths become gentle hillside routes.
++        if (x < 97f && z < 96f) return 1.2f;
++        if (x >= 97f && x <= 161f && z < 96f)
++        {
++            float inland = Mathf.SmoothStep(8f, 23f, z);
++            float river = Mathf.SmoothStep(1.5f, 10f, Mathf.Abs(x - 125f));
++            float hills = 2.3f + 2.0f * Mathf.Sin((x - 96f) * .065f) * Mathf.Sin(z * .035f);
++            float townBlend = Mathf.SmoothStep(97f, 104f, x);
++            float shore = z < 8f ? -.75f : WaterLevel + .06f;
++            return Mathf.Lerp(1.2f, Mathf.Lerp(shore, .25f + hills * river, inland), townBlend);
++        }
++        float outside = 2.4f + 1.8f * Mathf.Sin(x * .035f) * Mathf.Cos(z * .04f);
++        if (z < 96f) return Mathf.Lerp(VertexHeight(161f, z), outside, Mathf.SmoothStep(161f, 181f, x));
++        return Mathf.Lerp(VertexHeight(x, 95f), outside, Mathf.SmoothStep(95f, 112f, z));
++    }
++
++    public static float HeightAt(Vector2 point)
++    {
++        Vector2 p = point / Unit;
++        float x = Mathf.Floor(p.X), z = Mathf.Floor(p.Y), u = p.X - x, v = p.Y - z;
++        float a = VertexHeight(x, z), b = VertexHeight(x + 1f, z);
++        float c = VertexHeight(x, z + 1f), d = VertexHeight(x + 1f, z + 1f);
++        return u + v <= 1f ? a + (b - a) * u + (c - a) * v
++            : d + (c - d) * (1f - u) + (b - d) * (1f - v);
++    }
++
++    public static Vector3 Ground(Vector2 point) => new(point.X / Unit, HeightAt(point), point.Y / Unit);
++
++    public void Build(TileWorld tiles)
++    {
++        var surfaces = new Dictionary<(int, int, int), SurfaceTool>();
++        var walls = new Dictionary<(int, bool), List<int>>();
++        var water = WaterMaterial();
++        foreach (Vector2I cell in tiles.GetUsedCells())
++        {
++            int sourceId = tiles.GetCellSourceId(cell);
++            if (tiles.TileSet.GetSource(sourceId) is not TileSetAtlasSource atlas) continue;
++            var coords = tiles.GetCellAtlasCoords(cell);
++            Vector2 center = WorldLayout.TileCenter(cell.X, cell.Y);
++            bool wet = sourceId == 4 || (sourceId == 0 && coords.X is 4 or 5) || CoastalWater(center);
++            bool sand = CoastalSand(center);
++            bool bridge = sourceId == 0 && coords.X == 6;
++            int materialId = wet ? -1 : bridge ? -3 : sand ? -2 : sourceId;
++            if (!_materials.ContainsKey(materialId))
++            {
++                using var groundImage = atlas.Texture.GetImage();
++                groundImage.GenerateMipmaps();
++                _materials[materialId] = wet ? water : bridge ? new ShaderMaterial
++                {
++                    Shader = new Shader { Code = """
++                        shader_type spatial;
++                        varying vec3 world;
++                        void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
++                        void fragment() {
++                            float joint = step(0.075, fract(world.x * 4.0));
++                            float grain = 0.92 + 0.08 * sin(world.z * 75.0 + sin(world.x * 17.0));
++                            ALBEDO = mix(vec3(0.15, 0.09, 0.05), vec3(0.43, 0.28, 0.14) * grain, joint);
++                            ROUGHNESS = 1.0;
++                        }
++                        """ }
++                } : sand
++                    ? new StandardMaterial3D { AlbedoColor = new Color(.78f, .7f, .5f), Roughness = 1f, VertexColorUseAsAlbedo = true }
++                    : new StandardMaterial3D
++                {
++                    AlbedoTexture = ImageTexture.CreateFromImage(groundImage), Roughness = 1f,
++                    TextureFilter = BaseMaterial3D.TextureFilterEnum.NearestWithMipmapsAnisotropic,
++                    VertexColorUseAsAlbedo = true,
++                };
++            }
++            var key = (materialId, cell.X / 16, cell.Y / 16);
++            if (!surfaces.TryGetValue(key, out var st))
++            {
++                st = new SurfaceTool(); st.Begin(Mesh.PrimitiveType.Triangles);
++                st.SetMaterial(_materials[materialId]); surfaces[key] = st;
++            }
++            Rect2I region = atlas.GetTileTextureRegion(coords);
++            Vector2 texSize = atlas.Texture.GetSize();
++            Vector2 uv0 = (Vector2)region.Position / texSize;
++            Vector2 uv1 = (Vector2)(region.Position + region.Size) / texSize;
++            var positions = new[] { new Vector2(cell.X, cell.Y), new Vector2(cell.X + 1, cell.Y),
++                new Vector2(cell.X, cell.Y + 1), new Vector2(cell.X + 1, cell.Y + 1) };
++            Vector2[] uv = { uv0, new(uv1.X, uv0.Y), new(uv0.X, uv1.Y), uv1 };
++            var tint = Colors.White;
++            foreach (int i in new[] { 0, 1, 2, 1, 3, 2 })
++            {
++                float grain = sand ? .95f + .05f * Mathf.Sin(positions[i].X * 27.1f + positions[i].Y * 31.7f) : 1f;
++                st.SetUV(uv[i]); st.SetColor(tint * new Color(grain, grain, grain));
++                st.AddVertex(new Vector3(positions[i].X, wet ? WaterLevel : VertexHeight(positions[i].X, positions[i].Y), positions[i].Y));
++            }
++            TriangleCount += 2;
++            TileData tileData = tiles.GetCellTileData(cell);
++            bool blocked = tileData != null && tileData.GetCollisionPolygonsCount(0) > 0;
++            if (wet) AddBox(new Vector3(center.X / Unit, WaterLevel + 1f, center.Y / Unit), new Vector3(1f, 3f, 1f));
++            else if (blocked)
++            {
++                var wallKey = (cell.Y, sourceId == 0 && coords.X >= 15);
++                if (!walls.TryGetValue(wallKey, out var row)) walls[wallKey] = row = new List<int>();
++                row.Add(cell.X);
++            }
++        }
++        var wallMaterial = new StandardMaterial3D { AlbedoColor = new Color(.32f, .35f, .31f), Roughness = 1f };
++        foreach (var (wallKey, row) in walls)
++        {
++            int z = wallKey.Item1;
++            row.Sort();
++            for (int i = 0; i < row.Count; i++)
++            {
++                int start = row[i], end = start;
++                float low = VertexHeight(start, z), high = low;
++                while (i + 1 < row.Count && row[i + 1] == end + 1)
++                { end = row[++i]; float h = VertexHeight(end, z); low = Mathf.Min(low, h); high = Mathf.Max(high, h); }
++                var size = new Vector3(end - start + 1f, high - low + 1.8f, 1f);
++                var at = new Vector3((start + end + 1f) * .5f, low + size.Y * .5f, z + .5f);
++                AddBox(at, size);
++                if (wallKey.Item2)
++                    AddChild(new MeshInstance3D { Position = at - Vector3.Up * .2f,
++                        Mesh = new SphereMesh { Radius = .5f, Height = 1f, RadialSegments = 7, Rings = 3 },
++                        Scale = size * new Vector3(1.15f, 1.2f, 1.3f), MaterialOverride = wallMaterial });
++                else AddChild(new MeshInstance3D { Position = at, Mesh = new BoxMesh { Size = size }, MaterialOverride = wallMaterial });
++            }
++        }
++        foreach (var (key, st) in surfaces)
++        {
++            st.GenerateNormals(); st.Index();
++            ArrayMesh mesh = st.Commit(); st.Dispose();
++            AddChild(new MeshInstance3D { Mesh = mesh, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
++            if (key.Item1 != -1)
++            {
++                var body = new StaticBody3D { CollisionLayer = CollisionLayers.World, CollisionMask = 0 };
++                body.AddChild(new CollisionShape3D { Shape = mesh.CreateTrimeshShape() }); AddChild(body);
++            }
++        }
++        if (tiles.Props != null)
++            foreach (var node in tiles.Props.GetChildren())
++            {
++                if (node is Sprite2D sprite) AddProp(sprite);
++                if (node is StaticBody2D body)
++                    foreach (var child in body.GetChildren())
++                        if (child is CollisionShape2D shape && shape.Shape is RectangleShape2D box)
++                        {
++                            Vector2 at = shape.GlobalPosition;
++                            AddBox(Ground(at) + Vector3.Up * 1.4f, new Vector3(box.Size.X / Unit, 2.8f, box.Size.Y / Unit));
++                        }
++            }
++        BuildPropBatches();
++        var ocean = new MeshInstance3D { Position = new Vector3(192f, WaterLevel - .65f, 112f),
++            Mesh = new PlaneMesh { Size = new Vector2(650f, 450f) }, MaterialOverride = water };
++        AddChild(ocean);
++        GD.Print($"[Reference3D] terrain triangles={TriangleCount} props={PropCount}");
++    }
++
++    private void AddBox(Vector3 at, Vector3 size)
++    {
++        var body = new StaticBody3D { Position = at, CollisionLayer = CollisionLayers.World, CollisionMask = 0 };
++        body.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = size } }); AddChild(body);
++    }
++
++    private void AddProp(Sprite2D source)
++    {
++        // The bridge deck uses its actual walkable tiles; the old flat decoration has a different footprint.
++        string kind = source.GetMeta("prop_kind", "").AsString();
++        if (kind == "bridge") return;
++        if (!_propTextures.TryGetValue(source.Texture, out var art))
++        {
++            using var image = source.Texture.GetImage();
++            Rect2I used = image.GetUsedRect();
++            if (used.Size.Y < 1) return;
++            using var crop = image.GetRegion(used);
++            art = (ImageTexture.CreateFromImage(crop), used.Size, used.Position.X + used.Size.X * .5f - image.GetWidth() * .5f);
++            _propTextures[source.Texture] = art;
++        }
++        Vector2 foot = source.GlobalPosition + new Vector2(0f, 13f);
++        bool decal = source.ZIndex < 0;
++        bool flip = source.Scale.X < 0f;
++        if (decal)
++        {
++            // Ground art shares the original bottom anchor and follows slopes, including the bridge.
++            Vector2 corner = foot + new Vector2(art.CenterX * (flip ? -1f : 1f) - art.Size.X * .5f, -art.Size.Y);
++            using var surface = new SurfaceTool(); surface.Begin(Mesh.PrimitiveType.Triangles);
++            int columns = Mathf.CeilToInt(art.Size.X / 8f), rows = Mathf.CeilToInt(art.Size.Y / 8f);
++            for (int y = 0; y < rows; y++)
++            for (int x = 0; x < columns; x++)
++                foreach (var step in new[] { Vector2.Zero, Vector2.Right, Vector2.Down, Vector2.Right, Vector2.One, Vector2.Down })
++                {
++                    Vector2 uv = new((x + step.X) / columns, (y + step.Y) / rows);
++                    surface.SetUV(new Vector2(flip ? 1f - uv.X : uv.X, uv.Y));
++                    surface.AddVertex(Ground(corner + uv * art.Size) + Vector3.Up * .035f);
++                }
++            surface.GenerateNormals(); surface.Index();
++            AddChild(new MeshInstance3D { Mesh = surface.Commit(),
++                MaterialOverride = new StandardMaterial3D { AlbedoTexture = art.Texture, AlbedoColor = source.Modulate,
++                    Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, Roughness = 1f,
++                    TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest },
++                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off });
++            PropCount++; return;
++        }
++        var key = (source.Texture, decal, flip, Mathf.FloorToInt(foot.X / (Unit * 16f)), Mathf.FloorToInt(foot.Y / (Unit * 16f)));
++        if (!_props.TryGetValue(key, out var batch)) _props[key] = batch = new();
++        Vector3 origin = new(key.Item4 * 16f, 0f, key.Item5 * 16f);
++        Basis basis = decal ? new Basis(Vector3.Right, -Mathf.Pi * .5f) : Basis.Identity;
++        Vector3 position = Ground(foot) + Vector3.Up * (decal ? .035f : art.Size.Y / Unit * .5f);
++        position.X += art.CenterX * (flip ? -1f : 1f) / Unit;
++        Color tint = source.Modulate;
++        if (kind.Contains("tree") && foot.X > 97f * Unit)
++        {
++            int shade = Mathf.PosMod((int)(foot.X * 3 + foot.Y), 4);
++            tint = shade switch { 0 => new Color(1.35f, .75f, .65f), 1 => new Color(1.4f, 1.05f, .55f),
++                2 => new Color(1.18f, .8f, 1.04f), _ => Colors.White };
++        }
++        batch.Add((new Transform3D(basis, position - origin), tint)); PropCount++;
++    }
++
++    private void BuildPropBatches()
++    {
++        foreach (var (key, instances) in _props)
++        {
++            var art = _propTextures[key.Texture];
++            var material = new StandardMaterial3D { AlbedoTexture = art.Texture,
++                Transparency = BaseMaterial3D.TransparencyEnum.AlphaScissor, AlphaScissorThreshold = .45f,
++                CullMode = BaseMaterial3D.CullModeEnum.Disabled, VertexColorUseAsAlbedo = true,
++                BillboardMode = key.Decal ? BaseMaterial3D.BillboardModeEnum.Disabled : BaseMaterial3D.BillboardModeEnum.Enabled,
++                BillboardKeepScale = true, TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest, Roughness = 1f };
++            if (key.Flip) { material.Uv1Scale = new Vector3(-1f, 1f, 1f); material.Uv1Offset = new Vector3(1f, 0f, 0f); }
++            var mesh = new QuadMesh { Size = art.Size / Unit, Material = material };
++            var batch = new MultiMesh { TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
++                UseColors = true, Mesh = mesh, InstanceCount = instances.Count };
++            for (int i = 0; i < instances.Count; i++)
++            { batch.SetInstanceTransform(i, instances[i].Transform); batch.SetInstanceColor(i, instances[i].Color); }
++            AddChild(new MultiMeshInstance3D { Multimesh = batch, Position = new Vector3(key.X * 16f, 0f, key.Z * 16f),
++                VisibilityRangeEnd = 70f,
++                CastShadow = key.Decal ? GeometryInstance3D.ShadowCastingSetting.Off : GeometryInstance3D.ShadowCastingSetting.DoubleSided });
++        }
++        _props.Clear();
++    }
++
++    private static ShaderMaterial WaterMaterial() => new()
++    {
++        Shader = new Shader { Code = """
++            shader_type spatial;
++            render_mode cull_disabled;
++            varying vec3 world;
++            void vertex() { world = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
++            void fragment() {
++                float waves = sin(world.x * 8.0 + sin(world.z * 5.0 + TIME) * 1.4 + TIME * 1.3)
++                    * sin(world.z * 9.0 - TIME * 1.1 + sin(world.x * 4.0));
++                float foam = smoothstep(0.70, 0.95, waves);
++                ALBEDO = mix(vec3(0.08, 0.43, 0.58), vec3(0.72, 0.91, 0.94), foam * 0.7);
++                ROUGHNESS = 0.24; SPECULAR = 0.65;
++            }
++            """ }
++    };
++}
+--- /dev/null
++++ b/scripts/World/ReferenceWorld3D.cs
+@@ -0,0 +1,386 @@
++using System;
++using System.Collections.Generic;
++using Godot;
++using PixelMmo.Combat;
++
++namespace PixelMmo.Runtime;
++
++/// <summary>3D terrain/physics presentation; the existing skill, mastery and save model remains authoritative.</summary>
++public partial class ReferenceWorld3D : Node3D
++{
++    public static ReferenceWorld3D Instance { get; private set; }
++    public static bool Enabled => Array.IndexOf(OS.GetCmdlineUserArgs(), "--flat") < 0;
++    public GameWorld World { get; set; }
++    public static bool CheckRequested => Array.IndexOf(OS.GetCmdlineUserArgs(), "--reference-check") >= 0;
++    public CharacterBody3D PlayerBody => _actors[World.Player.GetInstanceId()].Body;
++    public int ActorCount => _actors.Count;
++    private Camera3D _camera;
++    private Vector3 _focus;
++    private float _distance = 21f;
++    private sealed class Actor
++    {
++        public Node2D Source;
++        public CharacterBody3D Body;
++        public Sprite3D Sprite;
++        public PlayerSprite PlayerSprite;
++        public MeshInstance3D Health;
++        public float Height;
++    }
++    private readonly Dictionary<ulong, Actor> _actors = new();
++    private readonly Dictionary<Rid, Rid> _rids = new();
++    private readonly Dictionary<Texture2D, AtlasTexture> _cropped = new();
++    private readonly Dictionary<ulong, float> _projectileHeights = new();
++    private double _elapsed;
++    private const float Gravity = 18f;
++    private MeadowEncounters _encounters;
++    private readonly List<(EncounterDefinition Def, Sprite3D Sprite, Label3D Label)> _supplies = new();
++
++    public override void _Ready()
++    {
++        Instance = this;
++        Name = "Reference3D";
++        ProcessPriority = 50;
++        ProcessPhysicsPriority = 50;
++        var terrain = new ReferenceTerrain3D(); AddChild(terrain); terrain.Build(World.Tiles);
++        var environment = new Godot.Environment
++        {
++            BackgroundMode = Godot.Environment.BGMode.Color, BackgroundColor = new Color(.59f, .75f, .81f),
++            AmbientLightSource = Godot.Environment.AmbientSource.Color,
++            AmbientLightColor = new Color(.77f, .84f, 1f), AmbientLightEnergy = .35f,
++            ReflectedLightSource = Godot.Environment.ReflectionSource.Disabled,
++            TonemapMode = Godot.Environment.ToneMapper.Linear,
++            FogEnabled = true, FogLightColor = new Color(.64f, .77f, .8f), FogDensity = .005f,
++        };
++        AddChild(new WorldEnvironment { Environment = environment });
++        AddChild(new DirectionalLight3D { RotationDegrees = new Vector3(-52f, -28f, 0f),
++            LightColor = new Color(1f, .95f, .86f), LightEnergy = .85f, ShadowEnabled = true,
++            DirectionalShadowMaxDistance = 45f });
++        _camera = new Camera3D { Fov = 36f, Near = .1f, Far = 85f, Current = true };
++        AddChild(_camera);
++        _focus = ReferenceTerrain3D.Ground(((IPlayerContext)World.Player).WorldPosition);
++        _camera.Position = _focus + new Vector3(0f, _distance * .66f, _distance * .75f);
++        _camera.LookAt(_focus);
++        foreach (var child in World.GetChildren())
++            if (child is CanvasLayer layer) layer.Reparent(this);
++        World.Visible = false;
++        World.Camera.Enabled = false;
++        var listener = new AudioListener2D(); World.Player.AddChild(listener); listener.MakeCurrent();
++        Scan(World);
++        foreach (var node in World.GetChildren()) if (node is MeadowEncounters encounters) _encounters = encounters;
++        foreach (var camp in MeadowLayout.Data.Camps)
++        {
++            var at = ReferenceTerrain3D.Ground(camp.Center + new Vector2(0f, 80f));
++            var chest = new Sprite3D { Texture = GD.Load<Texture2D>("res://art/objects32/crates.png"),
++                Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, PixelSize = .006f, Position = at + Vector3.Up * .3f,
++                AlphaCut = SpriteBase3D.AlphaCutMode.Discard, Shaded = true, TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest };
++            var label = new Label3D { Position = at + Vector3.Up * .75f, Text = "F 보급품",
++                Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 32, OutlineSize = 6, PixelSize = .009f };
++            AddChild(chest); AddChild(label); _supplies.Add((camp, chest, label));
++        }
++        GetTree().NodeAdded += OnNodeAdded;
++        AddChild(new GestureSkillInput());
++        GD.Print($"[Reference3D] ready actors={_actors.Count} camera=perspective native_3d_collision=true");
++        if (CheckRequested) Callable.From(() => AddChild(new ReferenceChecks3D { View = this })).CallDeferred();
++    }
++
++    public override void _ExitTree()
++    {
++        GetTree().NodeAdded -= OnNodeAdded;
++        if (Instance == this) Instance = null;
++    }
++
++    public override void _UnhandledInput(InputEvent input)
++    {
++        if (input is InputEventMouseButton { Pressed: true } wheel)
++        {
++            if (wheel.ButtonIndex == MouseButton.WheelUp) _distance = Mathf.Max(15f, _distance - 1.5f);
++            else if (wheel.ButtonIndex == MouseButton.WheelDown) _distance = Mathf.Min(34f, _distance + 1.5f);
++        }
++    }
++
++    private void Scan(Node parent)
++    {
++        foreach (var child in parent.GetChildren())
++        {
++            if (child == this) continue;
++            if (child is Node2D source && (source is CharacterBody2D or Npc or Arrow or SkillBolt)) Track(source);
++            Scan(child);
++        }
++    }
++
++    private void OnNodeAdded(Node node)
++    {
++        if (node is Node2D source && (source is CharacterBody2D or Npc or Arrow or SkillBolt))
++            Callable.From(() => { if (IsInstanceValid(source) && !source.IsQueuedForDeletion()) Track(source); }).CallDeferred();
++    }
++
++    private void Track(Node2D source)
++    {
++        ulong id = source.GetInstanceId();
++        if (_actors.ContainsKey(id)) return;
++        if (source is CharacterBody2D && !World.Tiles.IsWalkable(source.GlobalPosition))
++        {
++            Vector2 at = source.GlobalPosition;
++            if (World.FindStandingSpot(ref at, new HashSet<Vector2I>())) source.GlobalPosition = at;
++        }
++        bool projectile = source is Arrow or SkillBolt;
++        float radius = source is MonsterBase monster ? monster.Stats.Radius / ReferenceTerrain3D.Unit
++            : PixelMmo.Balance.PlayerTuning.BodySize * .5f / ReferenceTerrain3D.Unit;
++        uint layer = source is CollisionObject2D co && !projectile ? co.CollisionLayer : 0;
++        var body = new CharacterBody3D
++        {
++            Position = ReferenceTerrain3D.Ground(source.GlobalPosition) + Vector3.Up * .025f,
++            CollisionLayer = layer, CollisionMask = source is CharacterBody2D ? CollisionLayers.World : 0,
++            FloorSnapLength = .6f, FloorMaxAngle = Mathf.DegToRad(50f), SafeMargin = .005f,
++        };
++        float capsuleHeight = Mathf.Max(.9f, radius * 2f + .1f);
++        body.AddChild(new CollisionShape3D { Position = Vector3.Up * (capsuleHeight * .5f),
++            Shape = new CapsuleShape3D { Radius = radius, Height = capsuleHeight } });
++        body.SetMeta("logic", source);
++        AddChild(body);
++        if (source is CollisionObject2D collider) _rids[collider.GetRid()] = body.GetRid();
++        var sprite = new Sprite3D { Billboard = BaseMaterial3D.BillboardModeEnum.Enabled,
++            TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest, Shaded = true,
++            AlphaCut = SpriteBase3D.AlphaCutMode.Discard, AlphaScissorThreshold = .3f,
++            CastShadow = GeometryInstance3D.ShadowCastingSetting.DoubleSided };
++        body.AddChild(sprite);
++        var actor = new Actor { Source = source, Body = body, Sprite = sprite,
++            PlayerSprite = source is PlayerCharacter ? source.GetNodeOrNull<PlayerSprite>("PlayerSprite") : null };
++        _actors[id] = actor;
++        if (source is MonsterBase)
++        {
++            var material = new StandardMaterial3D { AlbedoColor = new Color(.91f, .22f, .19f),
++                ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, BillboardMode = BaseMaterial3D.BillboardModeEnum.Enabled };
++            actor.Health = new MeshInstance3D { Mesh = new QuadMesh { Size = new Vector2(.6f, .045f) },
++                MaterialOverride = material, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
++            body.AddChild(actor.Health);
++        }
++        if (source is Npc npc)
++            body.AddChild(new Label3D { Text = npc.Def?.Name ?? "", Position = Vector3.Up * 1.05f,
++                Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = 32, OutlineSize = 6, PixelSize = .007f });
++        if (source is TrainingDummy)
++        {
++            var texture = GD.Load<Texture2D>("res://art/objects32/training_dummy.png");
++            using var image = texture.GetImage();
++            Rect2 bounds = image.GetUsedRect();
++            sprite.Texture = new AtlasTexture { Atlas = texture, Region = bounds };
++            sprite.PixelSize = 1f / Mathf.Max(1f, bounds.Size.Y);
++            sprite.Position = Vector3.Up * .5f;
++            if (actor.Health != null) actor.Health.Visible = false;
++        }
++        if (projectile)
++        {
++            sprite.Visible = false;
++            body.AddChild(new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(.07f, .07f, .6f) },
++                MaterialOverride = new StandardMaterial3D { AlbedoColor = source is SkillBolt bolt ? bolt.VisualColor : PixelMmo.Balance.MonsterTuning.GoblinAttack.ArrowColor,
++                    ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded } });
++        }
++        source.TreeExiting += () =>
++        {
++            _actors.Remove(id); _projectileHeights.Remove(id);
++            if (source is CollisionObject2D c) _rids.Remove(c.GetRid());
++            if (IsInstanceValid(body)) body.QueueFree();
++        };
++        UpdateArt(actor);
++    }
++
++    public override void _PhysicsProcess(double delta)
++    {
++        float dt = (float)delta;
++        foreach (Actor actor in _actors.Values)
++        {
++            if (!IsInstanceValid(actor.Source) || actor.Source.IsQueuedForDeletion()) continue;
++            Vector2 requested = actor.Source.GlobalPosition;
++            Vector3 ground = ReferenceTerrain3D.Ground(requested);
++            if (actor.Source is MonsterBase distant && requested.DistanceSquaredTo(((IPlayerContext)World.Player).WorldPosition) > 900f * 900f)
++            { actor.Body.Position = ground; actor.Body.Velocity = Vector3.Zero; actor.Body.CollisionLayer = 0; continue; }
++            if (actor.Source is MonsterBase nearby) actor.Body.CollisionLayer = nearby.IsAlive ? CollisionLayers.Monster : 0;
++            if (actor.Source is CharacterBody2D)
++            {
++                Vector3 motion = ground - actor.Body.Position;
++                if (new Vector2(motion.X, motion.Z).Length() > 5f)
++                {
++                    Vector2 safe = requested;
++                    if (World.FindStandingSpot(ref safe, new HashSet<Vector2I>())) ground = ReferenceTerrain3D.Ground(safe);
++                    actor.Body.Position = ground + Vector3.Up * .03f;
++                    motion = Vector3.Zero;
++                }
++                actor.Body.Velocity = new Vector3(motion.X / dt,
++                    actor.Body.IsOnFloor() ? -.5f : actor.Body.Velocity.Y - Gravity * dt, motion.Z / dt);
++                actor.Body.MoveAndSlide();
++                // Resolve the requested horizontal step against real slopes/walls before the next combat tick.
++                actor.Source.GlobalPosition = new Vector2(actor.Body.Position.X, actor.Body.Position.Z) * ReferenceTerrain3D.Unit;
++            }
++            else if (actor.Source is Arrow or SkillBolt)
++            {
++                float y = _projectileHeights.TryGetValue(actor.Source.GetInstanceId(), out float height) ? height : ground.Y + .45f;
++                actor.Body.Position = new Vector3(ground.X, y, ground.Z);
++                actor.Body.Rotation = new Vector3(0f, -actor.Source.Rotation + Mathf.Pi * .5f, 0f);
++            }
++            else actor.Body.Position = ground;
++        }
++    }
++
++    public override void _Process(double delta)
++    {
++        _elapsed += delta;
++        IPlayerContext context = World.Player;
++        foreach (var (camp, chest, label) in _supplies)
++        {
++            bool claimed = context.HasFlag("supplies_" + camp.Id);
++            chest.Modulate = claimed ? new Color(.5f, .5f, .5f) : Colors.White;
++            label.Visible = !claimed && (_encounters?.SupplyReady(camp.Id) ?? false);
++        }
++        foreach (Actor actor in _actors.Values)
++            if (IsInstanceValid(actor.Source) && !actor.Source.IsQueuedForDeletion()) UpdateArt(actor);
++        if (_actors.TryGetValue(World.Player.GetInstanceId(), out var player))
++        {
++            Vector3 target = player.Body.Position + Vector3.Up * .5f;
++            _focus = _focus.Lerp(target, 1f - Mathf.Exp(-8f * (float)delta));
++            Vector2 shake = World.Camera.Offset / ReferenceTerrain3D.Unit;
++            _camera.Position = _focus + new Vector3(shake.X, _distance * .66f, _distance * .75f + shake.Y);
++            _camera.LookAt(_focus);
++        }
++    }
++
++    private void UpdateArt(Actor actor)
++    {
++        if (actor.Source is TrainingDummy) return;
++        if (actor.PlayerSprite != null)
++        {
++            var source = actor.PlayerSprite;
++            actor.Sprite.Texture = source.Texture;
++            actor.Sprite.PixelSize = source.Scale.X / ReferenceTerrain3D.Unit;
++            actor.Sprite.Position = new Vector3(source.Offset.X * actor.Sprite.PixelSize,
++                .42f - source.Offset.Y * actor.Sprite.PixelSize, 0f);
++            actor.Sprite.Modulate = source.Modulate;
++            actor.Sprite.Visible = ((IPlayerContext)World.Player).IsAlive;
++            return;
++        }
++        string key; Vector2 facing = Vector2.Down; float height;
++        if (actor.Source is MonsterBase monster)
++        {
++            key = monster is Ironjaw ? "ironjaw" : monster is GoblinArcher ? "goblin" : "slime_blob";
++            height = monster is Ironjaw ? 43f : monster is GoblinArcher ? 28f : 19f;
++            facing = monster.ArtFacing;
++            actor.Sprite.Modulate = monster.HitFlashing ? new Color(2f, 2f, 2f) : Colors.White;
++            actor.Sprite.Visible = monster.IsAlive;
++            float bob = monster.Velocity.Length() > 5f ? Mathf.Abs(Mathf.Sin((float)_elapsed * 12f)) * .055f : 0f;
++            actor.Sprite.Position = Vector3.Up * (height / ReferenceTerrain3D.Unit * .5f + bob);
++            if (actor.Health != null)
++            {
++                actor.Health.Visible = monster.IsAlive && monster.HpRatio < 1f;
++                actor.Health.Scale = new Vector3(Mathf.Max(.001f, monster.HpRatio), 1f, 1f);
++                actor.Health.Position = Vector3.Up * (height / ReferenceTerrain3D.Unit + .15f);
++            }
++        }
++        else if (actor.Source is Npc npc)
++        {
++            string role = npc.Def?.Role is "merchant" or "guard" or "trainer" ? npc.Def.Role : "quest";
++            key = "npc_" + role; height = 28f;
++            actor.Sprite.Position = Vector3.Up * (height / ReferenceTerrain3D.Unit * .5f);
++        }
++        else return;
++        var frame = ActorArt.FrameFor(key, facing);
++        if (frame.Texture == null) return;
++        if (!_cropped.TryGetValue(frame.Texture, out var texture))
++            _cropped[frame.Texture] = texture = new AtlasTexture { Atlas = frame.Texture, Region = frame.Bounds };
++        actor.Sprite.Texture = texture;
++        actor.Sprite.PixelSize = height / frame.ReferenceHeight / ReferenceTerrain3D.Unit;
++        actor.Height = height / ReferenceTerrain3D.Unit;
++    }
++
++    public Vector2 AimPoint()
++    {
++        Vector2 mouse = GetViewport().GetMousePosition();
++        Vector3 from = _camera.ProjectRayOrigin(mouse);
++        using var query = PhysicsRayQueryParameters3D.Create(from, from + _camera.ProjectRayNormal(mouse) * 150f, CollisionLayers.World);
++        var hit = GetWorld3D().DirectSpaceState.IntersectRay(query);
++        if (hit.Count == 0) return ((IPlayerContext)World.Player).WorldPosition;
++        Vector3 at = hit["position"].AsVector3();
++        return new Vector2(at.X, at.Z) * ReferenceTerrain3D.Unit;
++    }
++
++    public bool ClearSight(Vector2 from, Vector2 to)
++    {
++        Vector3 a = ReferenceTerrain3D.Ground(from) + Vector3.Up * .45f;
++        Vector3 b = ReferenceTerrain3D.Ground(to) + Vector3.Up * .45f;
++        if (Mathf.Abs(a.Y - b.Y) > 1.1f) return false;
++        using var query = PhysicsRayQueryParameters3D.Create(a, b, CollisionLayers.World);
++        query.HitFromInside = true;
++        return GetWorld3D().DirectSpaceState.IntersectRay(query).Count == 0;
++    }
++
++    public bool Sweep(Node2D owner, Vector2 from, Vector2 motion, float radius, uint mask,
++        Godot.Collections.Array<Rid> excluded, out Node2D body, out Vector2 position)
++    {
++        ulong id = owner.GetInstanceId();
++        if (!_projectileHeights.TryGetValue(id, out float y))
++        {
++            _projectileHeights[id] = y = ReferenceTerrain3D.HeightAt(from) + .45f;
++            owner.TreeExiting += () => _projectileHeights.Remove(id);
++        }
++        var exclude3d = new Godot.Collections.Array<Rid>();
++        foreach (Rid rid in excluded) if (_rids.TryGetValue(rid, out Rid mapped)) exclude3d.Add(mapped);
++        using var sphere = new SphereShape3D { Radius = radius / ReferenceTerrain3D.Unit };
++        var origin = new Vector3(from.X / ReferenceTerrain3D.Unit, y, from.Y / ReferenceTerrain3D.Unit);
++        var travel = new Vector3(motion.X, 0f, motion.Y) / ReferenceTerrain3D.Unit;
++        using var query = new PhysicsShapeQueryParameters3D { Shape = sphere, Transform = new Transform3D(Basis.Identity, origin),
++            CollisionMask = mask, Exclude = exclude3d, Margin = .001f };
++        var space = GetWorld3D().DirectSpaceState;
++        var hits = space.IntersectShape(query, 32);
++        body = null; position = from;
++        if (hits.Count == 0)
++        {
++            query.Motion = travel;
++            var fractions = space.CastMotion(query);
++            if (fractions.Length < 2 || fractions[0] >= 1f) { position = from + motion; return false; }
++            position = from + motion * fractions[0];
++            query.Transform = new Transform3D(Basis.Identity, origin + travel * fractions[1]);
++            query.Motion = Vector3.Zero; query.Margin = .004f;
++            hits = space.IntersectShape(query, 32);
++        }
++        foreach (var hit in hits)
++        {
++            var candidate = hit["collider"].AsGodotObject() as CollisionObject3D;
++            if (candidate == null) continue;
++            if ((candidate.CollisionLayer & CollisionLayers.World) != 0) { body = World.Tiles; return true; }
++            if (candidate.HasMeta("logic")) body ??= candidate.GetMeta("logic").AsGodotObject() as Node2D;
++        }
++        return true;
++    }
++
++    public void Popup(Vector2 point, float damage, bool heavy, bool hurt)
++    {
++        var label = new Label3D { Text = Mathf.RoundToInt(damage).ToString(),
++            Position = ReferenceTerrain3D.Ground(point) + Vector3.Up * 1.1f,
++            Billboard = BaseMaterial3D.BillboardModeEnum.Enabled, FontSize = heavy ? 58 : 44,
++            OutlineSize = 8, PixelSize = .009f, Modulate = hurt ? new Color(1f, .32f, .3f) : new Color(1f, .92f, .62f) };
++        AddChild(label);
++        var tween = CreateTween().SetParallel();
++        tween.TweenProperty(label, "position:y", label.Position.Y + .8f, .6);
++        tween.TweenProperty(label, "modulate:a", 0f, .6);
++        tween.Chain().TweenCallback(Callable.From(label.QueueFree));
++    }
++
++    public void Ring(Vector2 point, float radius, Color color, float seconds, float angle = 0f, float arc = Mathf.Tau)
++    {
++        var st = new SurfaceTool(); st.Begin(Mesh.PrimitiveType.Triangles);
++        float outer = Mathf.Max(.12f, radius / ReferenceTerrain3D.Unit), inner = outer * .78f;
++        for (int i = 0; i < 32; i++)
++        {
++            float a = angle - arc * .5f + arc * i / 32f, b = a + arc / 32f;
++            Vector3 P(float theta, float r) => new(Mathf.Cos(theta) * r, 0f, Mathf.Sin(theta) * r);
++            foreach (var v in new[] { P(a, inner), P(b, inner), P(a, outer), P(a, outer), P(b, inner), P(b, outer) }) st.AddVertex(v);
++        }
++        var material = new StandardMaterial3D { AlbedoColor = color, ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
++            Transparency = BaseMaterial3D.TransparencyEnum.Alpha, CullMode = BaseMaterial3D.CullModeEnum.Disabled };
++        var fx = new MeshInstance3D { Mesh = st.Commit(), MaterialOverride = material,
++            Position = ReferenceTerrain3D.Ground(point) + Vector3.Up * .3f, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
++        st.Dispose(); AddChild(fx);
++        var tween = CreateTween().SetParallel();
++        tween.TweenProperty(fx, "scale", new Vector3(1.22f, 1f, 1.22f), seconds);
++        tween.TweenProperty(material, "albedo_color:a", 0f, seconds);
++        tween.Chain().TweenCallback(Callable.From(fx.QueueFree));
++    }
++}
+--- a/scripts/World/TileWorld.cs
++++ b/scripts/World/TileWorld.cs
+@@ -195,6 +195,10 @@
+             var props = new System.Collections.Generic.List<PropPlacement>(_town.Props);
+             props.AddRange(ScatterZoneProps());
+             props.Add(BridgeProp());
++            if (ReferenceWorld3D.Enabled)
++                props.RemoveAll(p => ReferenceTerrain3D.CoastalWater(new Vector2(
++                    (p.Tiles.Position.X + p.Tiles.Size.X * .5f) * WorldLayout.TileSize,
++                    (p.Tiles.Position.Y + p.Tiles.Size.Y) * WorldLayout.TileSize)));
+             _props = new VillageProps(props);
+             ReportBlockedRoads();
+         }
+@@ -233,11 +237,18 @@
+                 int source = GetCellSourceId(new Vector2I(x, y));
+                 Color c;
+ 
+-                if (source == TownWallSourceId)
++                Vector2 point = WorldLayout.TileCenter(x, y);
++                int tile = GetCellAtlasCoords(new Vector2I(x, y)).X;
++                if ((ReferenceWorld3D.Enabled && ReferenceTerrain3D.CoastalWater(point))
++                    || source == GrassWaterSourceId || (source == SourceId && (tile == TileWaterA || tile == TileWaterB)))
++                    c = water;
++                else if (ReferenceWorld3D.Enabled && ReferenceTerrain3D.CoastalSand(point))
++                    c = new Color(.78f, .7f, .5f);
++                else if (source == TownWallSourceId)
+                     c = wall;
+-                else if (source == GrassWaterSourceId)
+-                    c = water;
+                 else if (_town != null && zone == WorldLayout.Town && _town.IsRoadCell(x, y))
++                    c = road;
++                else if (source == SourceId && (tile == TileBridge || tile == TileDirtA || tile == TileDirtB))
+                     c = road;
+                 else if (source == SourceId && IsSolid(GetCellAtlasCoords(new Vector2I(x, y)).X))
+                     c = zone.SolidColor;
+@@ -289,6 +300,7 @@
+     /// <summary>해당 월드 좌표가 벽이 아닌가.</summary>
+     public bool IsWalkable(Vector2 worldPosition)
+     {
++        if (ReferenceWorld3D.Enabled && ReferenceTerrain3D.CoastalWater(worldPosition)) return false;
+         // 집·우물은 타일이 아니라 스프라이트 + 충돌체다. 바닥 타일만 보면
+         // 집터가 '설 수 있는 자리'로 보이므로 소품에게 먼저 묻는다.
+         if (_props != null && _props.IsBlocked(worldPosition))
+@@ -709,6 +721,7 @@
+             Rect2I r = zone.Tiles;
+             int area = r.Size.X * r.Size.Y;
+             int want = Mathf.Min(area / TilesPerZoneProp * zone.Boulders / 10, ZonePropCap);
++            if (zone == WorldLayout.Meadow) want = 180;
+             if (want <= 0)
+                 continue;
+ 
+@@ -1273,9 +1286,9 @@
+         var zone = WorldLayout.Meadow.Tiles;
+         // Only existing meadow terrain is changed; river and bridge are painted afterward.
+         foreach (var camp in MeadowLayout.Data.Camps)
+-            for (int y = camp.Y - 4; y <= camp.Y + 4; y++)
+-                for (int x = camp.X - 4; x <= camp.X + 4; x++)
+-                    if (new Vector2(x - camp.X, y - camp.Y).Length() <= 4f)
++            for (int y = camp.Y - 2; y <= camp.Y + 2; y++)
++                for (int x = camp.X - 2; x <= camp.X + 2; x++)
++                    if (new Vector2(x - camp.X, y - camp.Y).Length() <= 2f)
+                         SetFloor(x, y, TileDirtA, TileDirtB);
+         foreach (var route in MeadowLayout.Data.Routes)
+             for (int i = 1; i < route.Length; i++)
+@@ -1286,10 +1299,7 @@
+                 for (int n = 0; n <= steps; n++)
+                 {
+                     var c = (Vector2I)a.Lerp(b, n / (float)Mathf.Max(1, steps)).Round();
+-                    for (int dy = -1; dy <= 1; dy++)
+-                        for (int dx = -1; dx <= 1; dx++)
+-                            if (zone.HasPoint(c + new Vector2I(dx, dy)))
+-                                SetFloor(c.X + dx, c.Y + dy, TileDirtA, TileDirtB);
++                    if (zone.HasPoint(c)) SetFloor(c.X, c.Y, TileDirtA, TileDirtB);
+                 }
+             }
+     }
+--- a/scripts/World/VillageProps.cs
++++ b/scripts/World/VillageProps.cs
+@@ -224,7 +224,7 @@
+         // 기준선에 두고 오프셋으로 그림을 제자리에 올린다 — 그래야 노드의 Y 가
+         // 곧 정렬 키가 된다.
+         float sortY = groundY - PlayerFootOffset;
+-        AddChild(new Sprite2D
++        var sprite = new Sprite2D
+         {
+             Texture = texture,
+             TextureFilter = CanvasItem.TextureFilterEnum.Nearest,
+@@ -238,7 +238,9 @@
+             Scale = prop.FlipH ? new Vector2(-1f, 1f) : Vector2.One,
+             ZIndex = decal ? -1 : 0,
+             Modulate = prop.Tint,
+-        });
++        };
++        sprite.SetMeta("prop_kind", prop.Texture);
++        AddChild(sprite);
+ 
+         if (!prop.Solid)
+             return;

@@ -1,0 +1,19 @@
+{
+  "id": "npc_villager_drunk",
+  "name": "취객 벤",
+  "role": "villager",
+  "zone": "town",
+  "tileX": 85,
+  "tileY": 107,
+  "color": "8a6a5a",
+  "lines": [
+    "…어어, 미안. 발 밟았나.",
+    "내가 왕년에 말이야, 저 숲까지 갔었어. 진짜라니까.",
+    "거기 나무들이… 말을 걸어. 안 믿지? 안 믿을 줄 알았어."
+  ],
+  "teachesJob": "",
+  "refuseLine": "",
+  "acceptLine": "",
+  "anchor": "tavern",
+  "restores": false
+}

@@ -1,0 +1,16 @@
+{
+  "id": "sk_ice_lance",
+  "name": "얼음창",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "bash",
+  "cooldown": 6.0,
+  "manaCost": 12.0,
+  "heavy": true,
+  "job": "job_apprentice_mage",
+  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
+  "damage": { "base": 20.0, "scaling": { "int": 1.5 } },
+  "projectile": { "speedPx": 460.0, "count": 1, "spreadDeg": 0.0, "lifeSeconds": 1.6, "radiusPx": 6.0, "pierce": true, "color": "7fd8ff" },
+  "effect": { "vfx": "arc", "color": "7fd8ff", "radiusPx": 24.0 },
+  "mastery": { "minInterval": 0.5, "damageBonusPer100": 0.07, "evolution": null }
+}

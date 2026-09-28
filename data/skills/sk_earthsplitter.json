@@ -1,0 +1,16 @@
+{
+  "id": "sk_earthsplitter",
+  "name": "지열 가르기",
+  "hidden": false,
+  "kind": "active",
+  "inputAction": "skill_4",
+  "cooldown": 11.0,
+  "manaCost": 0.0,
+  "heavy": true,
+  "job": "job_warrior",
+  "shape": { "kind": "cone", "angleDeg": 70.0, "rangePx": 52.0 },
+  "damage": { "base": 26.0, "scaling": { "str": 1.4, "vit": 0.3 } },
+  "stun": { "radiusPx": 52.0, "durationSeconds": 0.6 },
+  "effect": { "vfx": "cone", "color": "c88a3a", "radiusPx": 52.0 },
+  "mastery": { "minInterval": 1.0, "damageBonusPer100": 0.07, "evolution": null }
+}

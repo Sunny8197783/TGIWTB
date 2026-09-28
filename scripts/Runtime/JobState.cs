@@ -49,6 +49,48 @@ public sealed class JobState
             Learn(skillId);
     }
 
+    /// <summary>
+    /// 이 직업으로 갈 수 있는가. unlock 의 플래그·카운터·선행 직업 랭크를 전부 본다.
+    ///
+    /// 조건을 여기서만 본다 — NPC 든 패널이든 전직 입구가 늘어날 때마다
+    /// 같은 검사를 다시 쓰면 한쪽만 고쳐지는 사고가 난다.
+    /// </summary>
+    public bool CanStart(JobDefinition def, IPlayerContext ctx)
+    {
+        if (def == null || ctx == null)
+            return false;
+
+        // 이미 그 직업이면 다시 시작할 것이 없다.
+        if (def.Id == CurrentJobId)
+            return false;
+
+        var unlock = def.Unlock;
+        if (unlock == null)
+            return true;
+
+        foreach (string flag in unlock.RequiredFlags)
+        {
+            if (!ctx.HasFlag(flag))
+                return false;
+        }
+
+        foreach (var pair in unlock.RequiredCounters)
+        {
+            if (ctx.GetCounter(pair.Key) < pair.Value)
+                return false;
+        }
+
+        foreach (var pair in unlock.RequiredJobRanks)
+        {
+            // 지금 랭크가 아니라 '찍어 본 최고 랭크'로 본다. 전직으로 랭크가
+            // 리셋되는 구조가 아니더라도, 되돌아왔을 때 자격이 사라지면 안 된다.
+            if ((FindRecord(pair.Key)?.MaxRankReached ?? 0) < pair.Value)
+                return false;
+        }
+
+        return true;
+    }
+
     /// <summary>해당 랭크까지의 스킬을 보유 목록에 채운다. 중복은 무시.</summary>
     public void GrantRankSkills(JobDefinition def, int rank)
     {

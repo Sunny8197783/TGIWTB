@@ -1,0 +1,19 @@
+{
+  "id": "npc_quest_hunter",
+  "name": "사냥터 관리인 페트",
+  "role": "quest",
+  "zone": "town",
+  "tileX": 119,
+  "tileY": 113,
+  "lines": [
+    "새잎의 숲 슬라임은 세 마리까지야. 네 마리부터는 도망쳐.",
+    "고블린 궁수는 거리를 벌리려 들어. 붙어라, 붙어.",
+    "가죽 값은 나중에 쳐줄게. 살아 돌아오면."
+  ],
+  "color": "",
+  "teachesJob": "",
+  "refuseLine": "",
+  "acceptLine": "",
+  "anchor": "gate_east",
+  "restores": false
+}

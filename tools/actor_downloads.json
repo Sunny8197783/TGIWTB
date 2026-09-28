@@ -1,0 +1,226 @@
+[
+  {
+    "path": "art/actors/slime/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/south.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/east.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/north.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/west.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/south-east.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/north-east.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/north-west.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/slime/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/7985f06c-8f7a-4acc-a520-85c62412137b/rotations/south-west.png?t=1788756718"
+  },
+  {
+    "path": "art/actors/goblin/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/south.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/east.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/north.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/west.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/south-east.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/north-east.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/north-west.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/goblin/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/e45f7640-1df3-44c7-9cd7-fb759c4d52c6/rotations/south-west.png?t=1788756632"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/south.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/east.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/north.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/west.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/south-east.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/north-east.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/north-west.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_merchant/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/08960dad-045e-4788-a58f-5adda902491d/rotations/south-west.png?t=1788756747"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/south.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/east.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/north.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/west.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/south-east.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/north-east.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/north-west.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_guard/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/ad28ac8f-eb56-4e48-89a4-937f8f056db3/rotations/south-west.png?t=1788756742"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/south.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/east.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/north.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/west.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/south-east.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/north-east.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/north-west.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_trainer/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/83cf12ec-0594-4000-a21a-a10d3df6bf03/rotations/south-west.png?t=1788756646"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/south.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/east.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/north.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/west.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/south-east.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/north-east.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/north-west.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/npc_quest/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/1e01a2ea-b00a-4c89-ae10-f0e0f847985d/rotations/south-west.png?t=1788756654"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/south.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/south.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/south-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/south-east.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/east.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/north-east.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/north-east.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/north.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/north.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/north-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/north-west.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/west.png"
+  },
+  {
+    "path": "art/actors/ironjaw/idle/south-west.png",
+    "url": "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/d5accc0e-e7fb-4777-b7d9-3de794ea55b9/rotations/south-west.png"
+  }
+]
