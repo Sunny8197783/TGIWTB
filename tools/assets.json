@@ -1,0 +1,75 @@
+[
+ {
+  "dest": "art/env/lighthouse_0.png",
+  "object": "c0d40ba8-3b2b-4176-b492-006e13dabdbf"
+ },
+ {
+  "dest": "art/env/general_store_0.png",
+  "object": "f41717ea-e4af-43a2-98be-ed2fd13445e8"
+ },
+ {
+  "dest": "art/env/blacksmith_0.png",
+  "object": "112edc22-3a78-47a1-bc36-aadfae09c269"
+ },
+ {
+  "dest": "art/env/flower_shop_0.png",
+  "object": "29a218ac-72b9-4368-bd55-4dbf2b01fae6"
+ },
+ {
+  "dest": "art/env/bakery_0.png",
+  "object": "8e03d102-634d-439c-90a4-4977a502c23d"
+ },
+ {
+  "dest": "art/env/house_yellow_0.png",
+  "object": "94abb3be-3ca5-4ed6-a7ab-ba55bae65e42"
+ },
+ {
+  "dest": "art/env/house_green_0.png",
+  "object": "2aeba236-7999-439f-a3ec-c8467d29e42c"
+ },
+ {
+  "dest": "art/env/house_blue_0.png",
+  "object": "c684c9e8-0b81-430d-a4a7-0a394c1f29fc"
+ },
+ {
+  "dest": "art/env/tree_sakura_0.png",
+  "object": "1450c6f8-7eb5-4fd0-9b5d-a0c347181ee9",
+  "note": "스타일 기준 에셋"
+ },
+ {
+  "dest": "art/env/tree_oak_0.png",
+  "object": "df55d379-383c-498b-a43e-2ad18b59acc9"
+ },
+ {
+  "dest": "art/env/house_red_0.png",
+  "object": "bb54adbd-3188-4e0f-8ff5-9d076df2338c"
+ },
+ {
+  "dest": "art/env/tree_maple_0.png",
+  "object": "711b041c-f6ea-461d-af8f-b33d22250718"
+ },
+ {
+  "dest": "art/env/tree_pine_0.png",
+  "object": "4b464b0d-10a9-4a74-a86e-4fc504e5089b"
+ },
+ {
+  "dest": "art/characters/hero/run/{dir}/{i}.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "frames": 8,
+  "anim": {
+   "south": "0270d5e7-6e73-4e65-82c6-761799800db3",
+   "south-east": "20ed255b-325a-4b00-810d-6150fa4c5f20",
+   "east": "e74e5a1e-08a4-441d-b5c6-2741c26b8bf6",
+   "north-east": "26acf1ec-859f-4020-ba31-376d82841167",
+   "north": "307bf697-209c-4345-8ee2-15c24cdad404",
+   "north-west": "90dd0da3-7cc4-467c-b1da-f436b7faa480",
+   "west": "acda7d9a-e51d-4e25-9dce-04720a96ec8b",
+   "south-west": "f45f3197-ff7a-4e11-a34f-6a0b2f961769"
+  }
+ },
+ {
+  "dest": "art/characters/hero/rot/{dir}.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "rotations": true
+ }
+]

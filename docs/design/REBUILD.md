@@ -1,0 +1,59 @@
+# 전면 재시작 설계 (2026-09-28)
+
+## 왜 다시 시작하나 — 이전(astra 3D) 버전의 문제
+| 문제 | 원인 | 이번 해법 |
+|---|---|---|
+| 조잡해 보임 | 고해상도 3D 에 저해상도 스프라이트를 섞음, 평평한 단색 땅 | 3D 를 640x360 으로 그려 스프라이트와 같은 픽셀 밀도로 맞춤 |
+| 맵 반복감 | 같은 나무 몇 종 복사, 같은 타일 반복 | 지면은 좌표 해시로 그려 반복 없음, 구역마다 수종·색·지형이 다름 |
+| 방향마다 캐릭터가 다름 | 방향별로 따로 생성 | PixelLab v3 8방향 한 번에 생성 + skeleton-v3 애니메이션(정체성 유지) |
+| 시점이 멀어 몰입 안 됨 | 캐릭터가 화면 높이의 3.5% | 캐릭터 약 60px / 360px = **17%** (5배 가까움) |
+| 커스터마이징이 얕음 | 한 원화의 길이·색만 바꿈 | (후속) 체형·머리·의상이 다른 원화를 따로 생성해 조합 |
+
+## 화면 방향: "픽셀 디오라마"
+- A Short Hike 는 3D 를 저해상도 텍스처에 그린 뒤 확대해 픽셀아트처럼 보이게 한다. [1]
+- t3ssel8r 방식: 카메라를 텍셀 격자에 스냅하고 남은 소수점만큼 화면을 밀어 픽셀이 기어다니지 않게 한다. 툰 조명·구름 그림자·풀 빌보드. [2][3]
+- Octopath(HD-2D): 틸트시프트 피사계심도·블룸·동적 조명으로 디오라마 느낌. [4]
+- 이 노트북 벤치마크(같은 장면, 그림자·블룸·안개·물·입자 전부): Forward+ 크래시 / **Mobile 640x360 = 15.9ms** / 1280x720 = 27ms → Mobile + 저해상도 확정.
+
+## 맵: 하루미 섬 (224x224m)
+카메라가 북쪽을 보므로 남→북으로 걸을수록 풍경이 한 겹씩 열리게 짰다.
+마을(남) → 거울 호수(중앙, 섬 정자·석등·수련) → **폭포**(남향 절벽, 호수로 떨어짐) → **벚꽃 고원**(북서, 강·신사) → 단풍 언덕 → **등대 곶**(북동, 바다 절벽 전망).
+동쪽 풍차 들판, 서쪽 속삭이는 숲, 남쪽 해변. 구성 원칙은 BotW 의 삼각형 지형·랜드마크 길잡이. [9]
+- 하루 16분. 해는 동북동에서 떠 남쪽을 지나 서북서 바다로 진다 → 노을이 화면 위쪽 수평선에 걸린다.
+- 밤: 달빛 방향광, 별, 호수 위 달빛 윤슬, 등불 발광.
+
+## 전투 손맛 조사 요약 → 우리 수치
+- **히트스톱**: 칼이 맞으면 3~5프레임 멈춰 뇌가 충격을 등록할 시간을 준다. 강타는 60~90ms. [5]
+- **화면 흔들림은 방향성으로**: 무작위 떨림 대신 맞은 힘의 방향으로 밀렸다 돌아온다. [5]
+- **파편은 타격 방향으로** 튄다 — 히트스톱·흔들림·파편이 같은 프레임에 맞물려야 한다. [5]
+- **패링 vs 막기 (Sekiro)**: 막기는 약한 주황 불꽃·작은 금속음, 패링은 큰 불꽃 다발·크고 높은 금속음. 화면을 안 봐도 소리만으로 구분된다. [6]
+- **완벽 회피 슬로우 (Bayonetta Witch Time)**: 마지막 순간 회피에만 발동, **적만 느려지고 나는 정상 속도**, 그 동안 모든 행동이 가능해야 한다(자동 연출 X). [7] 명조도 약 1초 슬로우. [8]
+- **효과음은 층으로**: 휘두름(바람) + 재질 긁힘 + 맞는 소리(짧은 어택) + 강화음. 각 층은 한 가지 역할만, 매번 음높이를 조금씩 바꾼다. [10][11]
+
+## 스킬 이펙트 조사 요약
+- 베기: 고리 메시 위로 삼각 마스크를 쓸어 넘기고, 잡음 텍스처로 속을 채우고, 그라데이션으로 색, 블룸으로 발광. 파라미터 하나(0→1)로 드러났다 사라진다. [12]
+- 타격 순간 방향성 불꽃을 곁들인다. [13]
+- 우리 화면에서는 이 셰이더를 640x360 으로 그리므로 자동으로 픽셀 이펙트가 된다.
+
+## 단계
+- [x] M1 월드 기반: 픽셀 뷰·스냅 카메라, 지형·물·폭포·풀·하늘·낮밤, 소품 배치, 60fps
+- [ ] M2 주인공: 8방향 이동·달리기·회피, 근접 카메라, 발밑 그림자
+- [ ] M3 전투: 3연타, 막기/패링, 회피/완벽회피 슬로우, 히트스톱·방향 흔들림·파편·효과음, 몬스터
+- [ ] M4 맵 채우기: PixelLab 건물·소품 전량, 밤 등불, 전망 카메라, 환경음
+- [ ] M5 스킬 이펙트 시스템(데이터 구동), 숙련·진화 이식, HUD
+- [ ] M6 캐릭터 커스터마이징
+
+## 출처
+1. A Short Hike 픽셀 카메라 — https://www.youtube.com/watch?v=L-tNbbov6Bo , https://en.wikipedia.org/wiki/A_Short_Hike
+2. 3D Pixel Art Rendering (Godot) — https://www.davidhol.land/articles/3d-pixel-art-rendering/
+3. t3ssel8r 방식 재현 논의 — https://discussions.unity.com/t/recreating-t3ssel8rs-3d-pixel-art/928878
+4. HD-2D — https://en.wikipedia.org/wiki/HD-2D , https://www.unrealengine.com/en-US/developer-interviews/octopath-traveler-ii-builds-a-bigger-bolder-world-in-its-stunning-hd-2d-style
+5. Game feel (hitstop/shake/particles) — https://salivity.github.io/game-development/article/maximizing-game-feel-in-action-game-development , https://github.com/thaenor/neo-city/issues/17
+6. Sekiro 패링 해부 — https://medium.com/@gatherer286/song-of-sword-and-fist-sifu-sekiro-and-the-anatomy-of-a-perfect-parry-2f9c4c26867a
+7. Witch Time — https://parryeverything.com/2022/10/31/bayonettas-witch-time-is-better-than-most-of-its-derivatives/
+8. 명조 완벽 회피 — https://game8.co/games/Wuthering-Waves/archives/456639
+9. BotW 지형 구성 — https://www.blog.radiator.debacle.us/2017/10/open-world-level-design-spatial.html , https://book.leveldesignbook.com/process/blockout/massing/composition
+10. 검 효과음 4층 — https://www.daviddumaisaudio.com/the-4-secret-layers-behind-epic-sword-sound-effects/
+11. 타격음 층 쌓기 — https://pixflow.net/blog/punch-impact-sound-effects-for-fight-scenes/
+12. 베기 셰이더 — https://www.cyanilux.com/tutorials/sword-slash-shader-breakdown/
+13. 베기 VFX — https://realtimevfx.com/t/sword-slash-help/9407
