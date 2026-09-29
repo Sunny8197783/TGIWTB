@@ -53,6 +53,20 @@
   "note": "작은 땅 장식 A"
  },
  {
+  "object": "e210931e-430d-4df9-b128-6c969d0e8018",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "street_lamp_0",
+   "barrel_0",
+   "market_stall_0",
+   "fence_0",
+   "hay_bale_0",
+   "cart_0"
+  ],
+  "note": "마을 소품 B"
+ },
+ {
   "object": "9d79fc9e-05fd-4850-8689-a7e57312def1",
   "grid": 2,
   "cells": [
@@ -214,5 +228,20 @@
   "sheet": "art/characters/forest_goblin/rot.png",
   "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
   "rotations": true
+ },
+ {
+  "sheet": "art/characters/forest_goblin/attack.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_attack"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/move.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_move"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/hurt.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_hurt"
  }
 ]

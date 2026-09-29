@@ -16,6 +16,7 @@ public partial class NightLights : Node3D
     private const float Refresh = 0.2f;       // 가까운 등불을 다시 고르는 간격 (초)
     private const float Energy = 1.1f;
     private const float Range = 3.4f;
+    private const float LightHeight = 1.6f;   // 빛이 닿는 거리(Range)보다 충분히 낮게
     private static readonly Color Warm = new(1f, 0.8f, 0.48f);
 
     private readonly List<Vector3> _sources = new();
@@ -30,8 +31,8 @@ public partial class NightLights : Node3D
         {
             if (!PropCatalog.Kinds.TryGetValue(p.Type, out var kind) || kind.Glow <= 0f)
                 continue;
-            // 불이 달린 높이: 그림 윗부분 (가로등 머리, 석등 창)
-            float h = kind.Size.Y / Px.PerMeter * Px.UprightStretch * 0.8f;
+            // 빛 웅덩이가 땅에 닿아야 하므로 실제 등불 높이(가로등은 4m 가까이)가 아니라 낮게 단다
+            float h = Mathf.Min(kind.Size.Y / Px.PerMeter * Px.UprightStretch * 0.8f, LightHeight);
             _sources.Add(new Vector3(p.X, world.HeightAt(p.X, p.Z) + h, p.Z + 0.3f));
         }
     }

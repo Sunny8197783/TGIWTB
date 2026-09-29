@@ -74,6 +74,11 @@ public static class PropCatalog
         Add(new PropKind { Id = "signpost", Size = new(48, 96), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Lamp, Flip = false, Trunk = 0.2f, ShadowCaster = PropKind.Caster.Column });
         Add(new PropKind { Id = "well", Size = new(80, 96), Color = new Color(0.6f, 0.6f, 0.62f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.2f, 1.8f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "crates", Size = new(48, 64), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(1.3f, 1.0f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "barrel", Size = new(56, 72), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Trunk = 0.7f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "market_stall", Size = new(92, 92), Color = new Color(0.9f, 0.3f, 0.3f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.6f, 1.4f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "fence", Size = new(48, 48), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Footprint = new(1.5f, 0.3f) });
+        Add(new PropKind { Id = "hay_bale", Size = new(64, 64), Color = new Color(0.9f, 0.75f, 0.35f), Placeholder = PropKind.Shape.Bush, Flip = true, Trunk = 0.9f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "cart", Size = new(96, 56), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = true, Footprint = new(2.6f, 1.2f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "planter", Size = new(64, 48), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.0f, 0.9f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "fountain", Size = new(96, 80), Color = new Color(0.7f, 0.7f, 0.72f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(5.2f, 3.0f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "boat", Size = new(96, 64), Color = new Color(0.6f, 0.4f, 0.25f), Placeholder = PropKind.Shape.Box, Shadow = false, Flip = false });

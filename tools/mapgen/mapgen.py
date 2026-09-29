@@ -433,6 +433,8 @@ def main():
                 sc.add(kind, cx, front_z - 3, half, front_z=front_z)
                 # 집 앞 살림살이: 가게는 상자, 살림집은 화분. 문(가운데)은 비운다.
                 shop = kind in ("bakery", "general_store", "blacksmith", "flower_shop", "inn", "tavern")
+                if kind == "tavern":
+                    sc.add("barrel", cx + half + 0.6, front_z + 0.4, 0.9)
                 for side in (-1, 1):
                     dx = side * (half - 1.1)
                     deco = "crates" if shop and side == (1 if _hash(int(cx), int(front_z), 31) < 0.5 else -1) else "planter"
@@ -449,6 +451,22 @@ def main():
     wx, wz = PLAZA_C[0] + 10.5, PLAZA_C[1] - 1.0
     if sc.free(wx, wz, 1.6):
         sc.add("well", wx, wz, 1.6)
+    # 광장 남쪽 과일 가판대
+    stalls = 0
+    for dx, dz in ((-8.5, 6.5), (8.5, 6.5), (-9.5, 3.0), (9.5, 3.0), (-7.0, -7.5), (7.0, -7.5), (-10.5, -3.0)):
+        px, pz = PLAZA_C[0] + dx, PLAZA_C[1] + dz
+        if stalls < 2 and sc.free(px, pz, 1.4):
+            sc.add("market_stall", px, pz, 1.4)
+            stalls += 1
+    # 풍차 농장: 건초 더미, 손수레, 남쪽 울타리 한 줄
+    for hx, hz in ((178, 122), (181, 125), (190, 123), (193, 120)):
+        if dry(hx, hz) and sc.free(hx, hz, 1.2):
+            sc.add("hay_bale", hx, hz, 1.2)
+    if sc.free(191, 116, 1.6):
+        sc.add("cart", 191, 116, 1.6)
+    for fx in range(172, 199, 2):
+        if dry(fx + 0.5, 128.5) and sc.free(fx + 0.5, 128.5, 0.7):
+            sc.add("fence", fx + 0.5, 128.5, 0.7)
     # 마을 들머리 이정표
     for sz, x0, x1 in STREETS:
         for px in (x0 + 1.5, x1 - 1.5):
