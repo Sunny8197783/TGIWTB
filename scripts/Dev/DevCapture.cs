@@ -162,6 +162,11 @@ public partial class DevCapture : Node
     private void Shoot()
     {
         ReportPerf();
+        // 주인공이 찍을 자리에 없으면 알린다 (가끔 광장에 남은 채 찍힌 적이 있다)
+        var s = _shots[_index];
+        var hero = Combat.Hero.Instance;
+        if (hero != null && new Vector2(hero.GlobalPosition.X - s[0], hero.GlobalPosition.Z - s[1]).Length() > 3f)
+            GD.PushWarning($"[Capture] shot{_index:D2}: 주인공이 {hero.GlobalPosition} 에 있다 (목표 {s[0]},{s[1]})");
         var img = GetViewport().GetTexture().GetImage();
         string path = $"{_out}/shot_{_index:D2}.png";
         img.SavePng(path);

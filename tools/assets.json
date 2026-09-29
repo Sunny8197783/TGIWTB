@@ -53,6 +53,30 @@
   "note": "작은 땅 장식 A"
  },
  {
+  "dest": "art/env/fountain_0.png",
+  "object": "e1c2165f-225a-4a74-adab-2c7ecffa4b8f"
+ },
+ {
+  "dest": "art/env/torii_0.png",
+  "object": "29554efe-1aed-439a-a003-4f36b452bca6"
+ },
+ {
+  "dest": "art/env/shrine_0.png",
+  "object": "61770296-d9f6-44ab-a9b9-94183c1df69d"
+ },
+ {
+  "dest": "art/env/pavilion_0.png",
+  "object": "0c28ddc0-a382-4d17-aa5b-70d629161289"
+ },
+ {
+  "dest": "art/env/windmill_0.png",
+  "object": "e62a1e82-28dd-4bb8-a64c-e94dfd915fe9"
+ },
+ {
+  "dest": "art/env/inn_0.png",
+  "object": "169e2ad6-289f-43b7-b12d-2680351d9417"
+ },
+ {
   "dest": "art/env/lighthouse_0.png",
   "object": "c0d40ba8-3b2b-4176-b492-006e13dabdbf"
  },
@@ -165,5 +189,10 @@
   "sheet": "art/characters/sakura_slime/idle.png",
   "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
   "anim": "slime_idle"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/move.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_move"
  }
 ]

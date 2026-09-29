@@ -75,7 +75,7 @@ public static class PropCatalog
         Add(new PropKind { Id = "well", Size = new(80, 96), Color = new Color(0.6f, 0.6f, 0.62f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.2f, 1.8f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "crates", Size = new(48, 64), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(1.3f, 1.0f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "planter", Size = new(64, 48), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.0f, 0.9f), ShadowCaster = PropKind.Caster.Box });
-        Add(new PropKind { Id = "fountain", Size = new(96, 80), Color = new Color(0.7f, 0.7f, 0.72f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.6f, 2.0f) , ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "fountain", Size = new(96, 80), Color = new Color(0.7f, 0.7f, 0.72f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(5.2f, 3.0f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "boat", Size = new(96, 64), Color = new Color(0.6f, 0.4f, 0.25f), Placeholder = PropKind.Shape.Box, Shadow = false });
 
         House("house_red", new Color(0.8f, 0.3f, 0.26f));

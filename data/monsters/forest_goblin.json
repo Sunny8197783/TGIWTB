@@ -1,0 +1,25 @@
+{
+  "id": "forest_goblin",
+  "name": "숲 고블린",
+  "art": "res://art/characters/forest_goblin",
+  "hp": 90,
+  "poise": 18,
+  "speed": 3.0,
+  "sight": 9,
+  "radius": 0.4,
+  "knockback": 0.8,
+  "attack": {
+    "damage": 20,
+    "reach": 1.9,
+    "windup": 0.75,
+    "active": 0.2,
+    "recover": 0.9,
+    "lunge": 3.5,
+    "cooldown": 1.6
+  },
+  "sounds": {
+    "hit": "impactPunch_medium",
+    "windup": "drawKnife",
+    "death": "impactPunch_heavy"
+  }
+}

@@ -180,5 +180,9 @@ void light() {
 	float lit = 0.35 + 0.65 * mix(ndl, q, 0.6);
 	float shade = smoothstep(0.25, 0.75, ATTENUATION);
 	if (LIGHT_IS_DIRECTIONAL) shade = max(shade, dapple * 0.8) * cloud;
+	// 등불: 거리 감쇠를 4단으로 끊어 픽셀아트식 빛 웅덩이 (둥근 계단)
+	// Godot 점광원 감쇠는 등불 높이(약 2m)에서 이미 0.3 남짓 — 0..1 로 늘린 뒤 끊는다
+	// 바깥으로 갈수록 빨리 어두워지게 제곱한 뒤 3단으로 끊는다
+	else { float a = clamp(ATTENUATION * 3.0, 0.0, 1.0); shade = floor(a * a * 3.0 + 0.5) / 3.0; lit = 1.0; }
 	DIFFUSE_LIGHT += LIGHT_COLOR / PI * lit * shade;
 }

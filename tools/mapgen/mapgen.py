@@ -376,7 +376,7 @@ def main():
     sc.add("pavilion", ISLET_C[0], ISLET_C[1], 3.5)
     sc.add("dock", 112, 123.5, 2.5)
     sc.add("boat", 104, 121, 2.0)
-    sc.add("fountain", PLAZA_C[0], PLAZA_C[1], 2.5)
+    sc.add("fountain", PLAZA_C[0], PLAZA_C[1], 3.2)
     sc.add("dock_sea", 118, 205, 3.0)
 
     # 다리: 길이 물을 건너는 곳
@@ -529,6 +529,7 @@ def main():
         "monsters": [
             {"id": "sakura_slime", "x": 160, "z": 152, "radius": 5, "count": 3, "respawn": 8},
             {"id": "sakura_slime", "x": 66, "z": 44, "radius": 6, "count": 4, "respawn": 10},
+            {"id": "forest_goblin", "x": 52, "z": 120, "radius": 6, "count": 3, "respawn": 14},
         ],
         "viewpoints": [
             {"name": "등대 전망대", "x": 156, "z": 12, "radius": 7},

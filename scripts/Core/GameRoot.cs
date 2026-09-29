@@ -156,6 +156,7 @@ public partial class GameRoot : Node
         AddChild(Rig);
         Rig.Bind(View);
         Stage.AddChild(new Dust());
+        if (!off.Contains("nightlights")) Stage.AddChild(new NightLights(World));
         AddChild(new CombatFx());
 
         Vector2 spawn = World.Vec2("spawn");

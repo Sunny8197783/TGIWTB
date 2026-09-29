@@ -100,6 +100,20 @@ public partial class DayNight : Node
         return Dir(az, el);
     }
 
+    /// <summary>
+    /// 하늘에 그려지고 물에 비치는 달. 카메라가 북쪽을 보므로 남쪽 달은 수면에 윤슬을 못 만든다 —
+    /// 보이는 달은 북쪽 하늘을 낮게 지난다(노을을 북서쪽에 둔 것과 같은 이유).
+    /// 방향광(그림자)은 MoonDirection 그대로 남쪽: 북쪽에서 비추면 스프라이트 뒤 그림자 캡슐이 제 몸을 가린다.
+    /// </summary>
+    public static Vector3 VisibleMoonDirection(float hour)
+    {
+        float h = hour < 12f ? hour + 24f : hour;
+        float t = Mathf.Clamp((h - 19.5f) / (29.5f - 19.5f), 0f, 1f);
+        float az = Mathf.DegToRad(Mathf.Lerp(65f, -65f, t));   // 동북동 → 북 → 서북서
+        float el = Mathf.DegToRad(Mathf.Lerp(12f, 32f, Mathf.Sin(Mathf.Pi * t)));
+        return Dir(az, el);
+    }
+
     /// <summary>방위(북=0, 시계방향)와 고도 → 월드 방향. 북쪽이 -Z.</summary>
     private static Vector3 Dir(float az, float el)
         => new(Mathf.Sin(az) * Mathf.Cos(el), Mathf.Sin(el), -Mathf.Cos(az) * Mathf.Cos(el));
@@ -132,6 +146,7 @@ public partial class DayNight : Node
 
         Vector3 sun = SunDirection(Hour);
         Vector3 moon = MoonDirection(Hour);
+        Vector3 shownMoon = VisibleMoonDirection(Hour);
         bool sunUp = sun.Y > 0.02f;
         // 방향광 하나를 해/달이 번갈아 쓴다. 해가 지평선에 붙으면 그림자가 끝없이 길어지므로 고도를 바닥에 깐다.
         Vector3 lightDir = sunUp ? sun : moon;
@@ -152,10 +167,10 @@ public partial class DayNight : Node
         if (_skyTimer <= 0f)
         {
             _skyTimer = SkyRefresh;
-            _sky.SetShaderParameter("moon_dir", moon);
+            _sky.SetShaderParameter("moon_dir", shownMoon);
             _sky.SetShaderParameter("sunset", sunset);
             _sky.SetShaderParameter("night", night);
-            _sky.SetShaderParameter("sun_dir", sunUp ? sun : moon);
+            _sky.SetShaderParameter("sun_dir", sunUp ? sun : shownMoon);
             _sky.SetShaderParameter("sun_color", sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
             _sky.SetShaderParameter("sky_horizon", horizon);
             _sky.SetShaderParameter("sky_zenith", zenith);
@@ -165,7 +180,7 @@ public partial class DayNight : Node
         RenderingServer.GlobalShaderParameterSet("sky_horizon", horizon);
         RenderingServer.GlobalShaderParameterSet("sky_zenith", zenith);
         // 밤에는 '해' 자리에 달을 넣는다 — 물 위 반사 길(윤슬)이 달빛 쪽으로 생긴다
-        RenderingServer.GlobalShaderParameterSet("sun_dir", sunUp ? sun : moon);
+        RenderingServer.GlobalShaderParameterSet("sun_dir", sunUp ? sun : shownMoon);
         RenderingServer.GlobalShaderParameterSet("sun_color", sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
         RenderingServer.GlobalShaderParameterSet("night", night);
     }

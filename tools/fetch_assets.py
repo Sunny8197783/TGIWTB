@@ -151,14 +151,22 @@ def character_zip(char, force):
     """캐릭터 zip 을 한 번만 받는다. --force 가 아니면 art_src 에 있는 프레임은 다시 풀지 않는다."""
     if char not in _zips:
         path = os.path.join(SRC, f"{char}.zip")
-        download(ZIP.format(char=char), path)
-        _zips[char] = zipfile.ZipFile(path)
+        try:
+            download(ZIP.format(char=char), path)
+            _zips[char] = zipfile.ZipFile(path)
+        except subprocess.CalledProcessError:
+            # 그 캐릭터의 애니메이션을 만드는 중이면 zip 을 안 준다 — 이번엔 건너뛰고 있는 프레임으로만 묶는다
+            print("pending (생성 중)", char)
+            _zips[char] = None
     return _zips[char]
 
 
 def fetch_character(item, force):
     folder = src_dir(item)
     z = character_zip(item["char"], force)
+    if z is None:
+        pack(item)
+        return
     names = z.namelist()
     got = 0
     for d in DIRS:
