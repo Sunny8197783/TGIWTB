@@ -167,7 +167,8 @@
  {
   "sheet": "art/characters/hero/idle.png",
   "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
-  "anim": "hero_idle"
+  "anim": "hero_idle",
+  "note": "북쪽 1·2 프레임은 칼이 사라져 0·3 프레임으로 덮어씀 (art_src/hero/idle/north) — --force 로 다시 받으면 되살아난다"
  },
  {
   "sheet": "art/characters/hero/run.png",
@@ -237,7 +238,7 @@
  {
   "sheet": "art/characters/forest_goblin/move.png",
   "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
-  "anim": "goblin_move"
+  "anim": "goblin_walk"
  },
  {
   "sheet": "art/characters/forest_goblin/hurt.png",

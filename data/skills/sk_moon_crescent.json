@@ -10,6 +10,7 @@
   "palette": "moon",
   // 예비: 칼을 당기는 바람 소리 → 충돌: 한 바퀴 회전 베기 + 둘레 판정 + 달빛 고리 → 흩어짐: 옅은 두 번째 고리, 반짝이
   "events": [
+    { "t": 0.0,  "fx": "spin", "anim": "attack1", "frame": 6, "time": 0.3 },
     { "t": 0.0,  "fx": "sfx", "sound": "swing_heavy", "pitch": 0.8, "db": -2 },
     { "t": 0.0,  "fx": "sfx", "sound": "cloth", "db": -8 },
     { "t": 0.02, "fx": "slash", "shape": "spin", "radius": 2.8, "life": 0.32, "thickness": 1.5 },

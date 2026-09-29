@@ -134,6 +134,16 @@ public partial class CombatFx : Node
         Lightning(at + Vector3.Down * 12f, 0.05f, Palettes["thunder"]);
         SparkleBurst(at + Vector3.Down * 3f, 4, 0.5f, Palettes["teal"]);
         Petals(at + Vector3.Down * 3f, Vector3.Forward, 4, 0.5f);
+        // 궤적 메시도 처음 쓰는 순간 만들면 그 프레임이 끊긴다 — 기본 공격·스킬에 나오는 모양을 전부 미리
+        foreach (var step in CombatTuning.Combo)
+        {
+            WarmArc(step.Reach, step.Heavy ? 170f : 200f, step.Heavy || step.Anim == "attack2");
+            WarmArc(step.Reach, 200f, false);
+        }
+        foreach (var def in Data.SkillDef.All.Values)
+            foreach (var ev in def.Events)
+                if (ev.Fx == "slash")
+                    WarmArc(ev.Radius, ev.Shape == "spin" ? 360f : ev.Arc, ev.Shape is "reverse" or "vertical");
         // 개발: --fxtest 로 번개 하나를 오래 세워 둔다 (그림 확인용)
         foreach (string a in OS.GetCmdlineUserArgs())
             if (a == "--fxtest")
@@ -178,8 +188,12 @@ public partial class CombatFx : Node
     // ── 월드 이펙트 ─────────────────────────────────────
 
     /// <summary>불꽃: 맞은 방향(dir)으로 튄다.</summary>
+    private static readonly bool NoSparks = Dev.DevCapture.Disabled().Contains("sparks");
+
     public static void Sparks(Vector3 at, Vector3 dir, Spark kind)
     {
+        if (NoSparks)
+            return;
         var e = _i._sparks[_i._nextSpark];
         _i._nextSpark = (_i._nextSpark + 1) % _i._sparks.Count;
         var pm = (ParticleProcessMaterial)e.ProcessMaterial;
@@ -412,6 +426,13 @@ public partial class CombatFx : Node
             if (b.Age >= b.Life)
                 b.Live = b.Mesh.Visible = false;
         }
+    }
+
+    private void WarmArc(float radius, float arcDeg, bool reverse)
+    {
+        var key = (radius, arcDeg, reverse);
+        if (!_arcs.ContainsKey(key))
+            _arcs[key] = ArcMesh(radius, arcDeg, reverse);
     }
 
     private Pooled MakePooled(ShaderMaterial slash, StandardMaterial3D star)

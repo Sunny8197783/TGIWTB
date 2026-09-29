@@ -264,6 +264,12 @@ public partial class Hero : CharacterBody3D, IPlayerContext
                 _lastStepFrame = -1;
             }
         }
+        if (_spinLeft > 0f)
+        {
+            _spinLeft -= dt;
+            int step = Mathf.Min(7, (int)((1f - _spinLeft / _spinTime) * 8f));
+            _sprite.Dir = _spinLeft > 0f ? (_spinDir0 + 4 + step) % 8 : _spinDir0;
+        }
         _flash = Mathf.MoveToward(_flash, 0f, (float)delta * 6f);
         // 무적 동안 깜빡인다
         bool blink = _iframes > 0f && _state != State.Dash && Mathf.PosMod(_iframes, 0.12f) < 0.05f;
@@ -458,6 +464,25 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         return true;
     }
 
+    private string _spinAnim;
+    private int _spinFrame, _spinDir0;
+    private float _spinTime, _spinLeft;
+
+    /// <summary>
+    /// 회전 베기: 칼을 뻗은 칸에 세운 채 8방향 그림을 차례로 넘겨 한 바퀴 돈다 (젤다식).
+    /// 등 뒤에서 시작해 오른쪽 → 앞 → 왼쪽 — 회전 궤적(CombatFx.Slash spin)이 쓸고 가는 순서와 같다.
+    /// </summary>
+    public void Spin(string anim, int frame, float time)
+    {
+        if (!_sprite.Has(anim))
+            return;
+        _spinAnim = anim;
+        _spinFrame = frame;
+        _spinTime = _spinLeft = Mathf.Max(time, 0.05f);
+        _spinDir0 = _sprite.Dir;
+        _sprite.Hold(anim, frame);
+    }
+
     // ── 회피 ────────────────────────────────────────────
 
     private void StartDash(Vector3 wish)
@@ -618,7 +643,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
     private Vector3 FacingVector()
     {
-        float a = Mathf.DegToRad(_sprite.Dir * 45f);
+        // 회전 베기 중에는 그림만 돌고 몸이 보는 쪽은 그대로
+        float a = Mathf.DegToRad((_spinLeft > 0f ? _spinDir0 : _sprite.Dir) * 45f);
         return new Vector3(Mathf.Sin(a), 0f, Mathf.Cos(a));
     }
 

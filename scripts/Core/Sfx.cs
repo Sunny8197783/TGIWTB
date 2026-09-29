@@ -22,6 +22,8 @@ public partial class Sfx : Node
     private readonly List<AudioStreamPlayer> _players = new();
     private int _next;
     private static readonly RandomNumberGenerator Rng = new();
+    /// <summary>--no=sfx : 성능 A/B 용</summary>
+    private static readonly bool Muted = Dev.DevCapture.Disabled().Contains("sfx");
 
     /// <summary>슬로우모션 때 켜는 먹먹함 (SFX 버스의 저역통과).</summary>
     public static AudioEffectLowPassFilter Muffle { get; private set; }
@@ -56,6 +58,8 @@ public partial class Sfx : Node
     public static void Play(string group, float db = 0f, float pitch = 1f, float jitter = 0.06f, string bus = "SFX")
     {
         var s = _instance;
+        if (Muted)
+            return;
         if (s == null || !s._groups.TryGetValue(group, out var list))
         {
             GD.PushWarning($"[Sfx] 없는 소리: {group}");

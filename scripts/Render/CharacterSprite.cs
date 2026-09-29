@@ -114,6 +114,7 @@ public partial class CharacterSprite : Node3D
         if (anim == _anim && !restart)
             return;
         _keyed = false;
+        _holdFrame = -1;
         _anim = anim;
         _time = 0f;
         _frames = sheet.frames;
@@ -148,6 +149,18 @@ public partial class CharacterSprite : Node3D
     private bool _keyed;
     private int _keyStart, _keyFrame;
     private float _keyTime, _keyDuration;
+
+    /// <summary>한 칸에 멈춰 세운다 (회전 베기처럼 방향만 바꿔 가며 보여 줄 때).</summary>
+    public void Hold(string anim, int frame)
+    {
+        Play(anim, 0f, false, restart: true);
+        _keyed = false;
+        _time = 0f;
+        _holdFrame = Mathf.Clamp(frame, 0, _frames - 1);
+        Apply();
+    }
+
+    private int _holdFrame = -1;
 
     public void Advance(float dt)
     {
@@ -203,6 +216,8 @@ public partial class CharacterSprite : Node3D
                 ? _keyStart + (int)((_keyFrame - _keyStart) * _time / _keyTime)
                 : _keyFrame + (int)((_frames - _keyFrame) * (_time - _keyTime) / Mathf.Max(_keyDuration - _keyTime, 0.01f));
         }
+        if (_holdFrame >= 0)
+            f = _holdFrame;
         Frame = _loop ? f % _frames : Mathf.Min(f, _frames - 1);
         _mat.SetShaderParameter("frame", (float)(Dir * _frames + Frame));
     }

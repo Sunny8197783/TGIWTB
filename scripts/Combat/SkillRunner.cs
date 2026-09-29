@@ -114,6 +114,9 @@ public sealed class SkillRunner
             case "hit":
                 Hit(e, f, at);
                 break;
+            case "spin":
+                _hero.Spin(e.Anim, e.Frame, e.Time);
+                break;
             default:
                 GD.PushWarning($"[Skill] {_def.Id}: 모르는 이벤트 {e.Fx}");
                 break;

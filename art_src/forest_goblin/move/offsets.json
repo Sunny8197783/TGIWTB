@@ -1,1 +1,1 @@
-{"south": [-10, -10]}
+{"south": [3, 3], "south-east": [3, 2], "east": [0, -1], "north-east": [0, 1], "north": [-1, 2], "north-west": [-1, 1], "west": [0, 0], "south-west": [1, 1]}
