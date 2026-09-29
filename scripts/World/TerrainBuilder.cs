@@ -31,7 +31,6 @@ public static class TerrainBuilder
             }
         }
 
-        root.AddChild(BuildCollision(world));
         PublishMaps(world);
         return root;
     }
@@ -75,20 +74,6 @@ public static class TerrainBuilder
         var mesh = new ArrayMesh();
         mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
         return mesh;
-    }
-
-    private static StaticBody3D BuildCollision(WorldData w)
-    {
-        var shape = new HeightMapShape3D
-        {
-            MapWidth = w.Width + 1,
-            MapDepth = w.Height + 1,
-            MapData = w.Heights,
-        };
-        var body = new StaticBody3D { Name = "TerrainCollision" };
-        // HeightMapShape3D 는 원점이 가운데다
-        body.AddChild(new CollisionShape3D { Shape = shape, Position = new Vector3(w.Width * 0.5f, 0f, w.Height * 0.5f) });
-        return body;
     }
 
     /// <summary>셰이더(지형·물·풀)가 공유하는 지도 텍스처를 전역 변수로 올린다.</summary>

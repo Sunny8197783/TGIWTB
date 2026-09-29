@@ -69,19 +69,38 @@ public partial class PixelView : Control
     public void PlaceCamera(Transform3D desired)
     {
         Basis b = desired.Basis;
-        Vector3 right = b.X.Normalized();
-        Vector3 up = b.Y.Normalized();
         Vector3 p = desired.Origin;
-
-        float pr = p.Dot(right) * Px.PerMeter;
-        float pu = p.Dot(up) * Px.PerMeter;
-        float sr = Mathf.Round(pr), su = Mathf.Round(pu);
-        Vector3 snapped = p + right * ((sr - pr) / Px.PerMeter) + up * ((su - pu) / Px.PerMeter);
+        Vector3 snapped = Snap(p, b, out Vector2 rest);
         Camera.GlobalTransform = new Transform3D(b, snapped);
 
         // 카메라를 오른쪽으로 덜 옮겼으면(sr<pr) 그림은 왼쪽으로 덜 간 셈 → 화면을 왼쪽으로 민다.
-        Layout(new Vector2(-(pr - sr), (pu - su)));
+        Layout(new Vector2(-rest.X, rest.Y));
     }
+
+    /// <summary>
+    /// 움직이는 스프라이트(캐릭터·몬스터)도 같은 격자에 세운다. 카메라와 같은 격자에 서야
+    /// 텍셀 하나가 화면 픽셀 하나에 정확히 떨어진다 — 아니면 움직일 때 픽셀이 뭉개졌다 늘어났다 한다.
+    /// </summary>
+    public Vector3 SnapToTexel(Vector3 p) => Snap(p, Camera.GlobalTransform.Basis, out _);
+
+    /// <param name="rest">버린 소수점 (텍셀 단위, 오른쪽·위).</param>
+    private static Vector3 Snap(Vector3 p, Basis b, out Vector2 rest)
+    {
+        Vector3 right = b.X.Normalized();
+        Vector3 up = b.Y.Normalized();
+        float pr = p.Dot(right) * Px.PerMeter;
+        float pu = p.Dot(up) * Px.PerMeter;
+        float sr = Mathf.Round(pr), su = Mathf.Round(pu);
+        rest = new Vector2(pr - sr, pu - su);
+        return p + right * ((sr - pr) / Px.PerMeter) + up * ((su - pu) / Px.PerMeter);
+    }
+
+    /// <summary>화면 확대 배율 (720p ×2, 1080p ×3). HUD 픽셀도 이 배율로 찍는다.</summary>
+    public float PixelScale => _scale;
+
+    /// <summary>월드 좌표 → 창 좌표 (HUD 가 머리 위 체력바·피해 숫자를 붙일 때).</summary>
+    public Vector2 WorldToScreen(Vector3 world) =>
+        Screen.Position + Camera.UnprojectPosition(world) * _scale;
 
     private void Layout(Vector2 subPixel)
     {

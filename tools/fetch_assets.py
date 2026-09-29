@@ -2,8 +2,17 @@
 
 항목 종류:
   {"dest": "art/env/tree_oak_0.png", "object": "<object id>"}          단방향 오브젝트
-  {"dest": "art/characters/hero/run/{dir}/{i}.png", "anim": "<url 목록 파일 아님>" ...}
-캐릭터 애니메이션은 fetch_anim() 이 get_character 가 준 URL 목록(assets.json 의 "frames")으로 받는다.
+  {"sheet": "art/characters/hero/run.png", "char": "<id>", "anim": "hero_run_v3b"}   PixelLab 애니메이션 이름
+  {"sheet": "art/characters/hero/rot.png", "char": "<id>", "rotations": true}
+
+캐릭터는 PixelLab 이 요청 때마다 만들어 주는 zip(모든 방향·애니메이션, 이름별 폴더)을 받아 푼다.
+
+캐릭터 프레임 원본은 art_src/ (Godot 가 무시) 에 받아 두고, 애니메이션마다 시트 한 장으로 묶는다:
+가로 = 프레임, 세로 = 8방향(DIRS 순서), 칸 = CELL x CELL.
+PixelLab 은 애니메이션마다 캔버스 크기가 다르다(원화 64, v3 88, 스켈레톤 96). 그대로 쓰면 동작이 바뀔 때
+캐릭터가 몇 픽셀씩 튄다. 그래서 원화(rot)의 발밑 가운데를 칸의 ANCHOR 에 두고, 각 애니메이션은
+방향마다 첫 프레임을 원화에 겹쳐 가장 잘 맞는 자리에 놓는다(align, 결과는 offsets.json 에 캐시).
+없는 방향은 원화로 채운다 — 좌우 뒤집기는 칼 쥔 손이 바뀌어서 쓰지 않는다.
 
 오브젝트는 투명 여백을 잘라 낸다. 단 아래쪽 기준(발/밑동)과 좌우 가운데는 지킨다 —
 판을 그림의 아랫변 가운데에 세우기 때문에, 한쪽만 자르면 소품이 옆으로 밀리거나 공중에 뜬다.
@@ -12,6 +21,7 @@ import json
 import os
 import subprocess
 import sys
+import zipfile
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "mapgen"))
 import png  # noqa: E402
@@ -20,6 +30,9 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 OBJ = "https://backblaze.pixellab.ai/file/pixellab-characters/objects/b2f2eb25-bc38-463e-a6e5-95708f359131/{id}/rotations/unknown.png"
 CHAR = "https://backblaze.pixellab.ai/file/pixellab-characters/b2f2eb25-bc38-463e-a6e5-95708f359131/{char}"
 DIRS = ["south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west"]
+SRC = os.path.join(ROOT, "art_src")
+CELL = 128
+ANCHOR = (64, 116)  # 칸 안에서 발밑 가운데. scripts/Render/CharacterSprite.cs 와 같아야 한다
 
 
 def download(url, dest):
@@ -46,8 +59,8 @@ def main():
     manifest = json.load(open(os.path.join(ROOT, "tools", "assets.json"), encoding="utf-8"))
     force = "--force" in sys.argv
     for item in manifest:
-        dest = os.path.join(ROOT, item["dest"])
         if "object" in item:
+            dest = os.path.join(ROOT, item["dest"])
             if os.path.exists(dest) and not force:
                 continue
             try:
@@ -57,26 +70,127 @@ def main():
                 continue
             size = trim(dest) if item.get("trim", True) else None
             print("object", item["dest"], size)
-        elif "anim" in item:
-            # 캐릭터 애니메이션: 방향마다 애니메이션 id 가 따로 있다
-            got = 0
-            for d, anim in item["anim"].items():
-                for i in range(item["frames"]):
-                    fdest = dest.format(dir=d, i=i)
-                    if os.path.exists(fdest) and not force:
-                        continue
-                    try:
-                        download(f"{CHAR.format(char=item['char'])}/animations/{anim}/{d}/{i}.png", fdest)
-                        got += 1
-                    except subprocess.CalledProcessError:
-                        print("pending", fdest)
-            print("anim", item["dest"], got, "frames")
-        elif item.get("rotations"):
-            for d in DIRS:
-                fdest = dest.format(dir=d)
-                if not os.path.exists(fdest) or force:
-                    download(f"{CHAR.format(char=item['char'])}/rotations/{d}.png", fdest)
+        elif "sheet" in item:
+            fetch_character(item, force)
 
+
+ZIP = "https://api.pixellab.ai/mcp/characters/{char}/download"
+
+
+def src_dir(item):
+    """원본 프레임 폴더: art_src/<캐릭터 폴더>/<시트 이름>/<방향>/<i>.png"""
+    sheet = item["sheet"]
+    return os.path.join(SRC, os.path.basename(os.path.dirname(sheet)), os.path.splitext(os.path.basename(sheet))[0])
+
+
+_zips = {}
+
+
+def character_zip(char, force):
+    """캐릭터 zip 을 한 번만 받는다. --force 가 아니면 art_src 에 있는 프레임은 다시 풀지 않는다."""
+    if char not in _zips:
+        path = os.path.join(SRC, f"{char}.zip")
+        download(ZIP.format(char=char), path)
+        _zips[char] = zipfile.ZipFile(path)
+    return _zips[char]
+
+
+def fetch_character(item, force):
+    folder = src_dir(item)
+    z = character_zip(item["char"], force)
+    names = z.namelist()
+    got = 0
+    for d in DIRS:
+        if item.get("rotations"):
+            members = [n for n in names if n.endswith(f"/rotations/{d}.png")]
+        else:
+            prefix = f"/animations/{item['anim']}/{d}/"
+            members = sorted(n for n in names if prefix in n)
+        for i, m in enumerate(members):
+            fdest = os.path.join(folder, d, f"{i}.png")
+            if os.path.exists(fdest) and not force:
+                continue
+            os.makedirs(os.path.dirname(fdest), exist_ok=True)
+            with open(fdest, "wb") as f:
+                f.write(z.read(m))
+            got += 1
+    pack(item)
+    print("sheet", item["sheet"], got, "new frames")
+
+
+def frame_count(folder):
+    counts = [len([f for f in os.listdir(os.path.join(folder, d)) if f.endswith(".png")])
+              for d in DIRS if os.path.isdir(os.path.join(folder, d))]
+    return max(counts) if counts else 1
+
+
+def opaque_rows(w, h, px):
+    return [y for y in range(h) if any(px[y * w + x][3] > 127 for x in range(w))]
+
+
+def align(ref, img, guess, reach=12):
+    """img 를 ref(같은 방향 원화) 위에 겹쳤을 때 색이 가장 많이 맞는 (dx, dy).
+    PixelLab 은 캔버스 안 캐릭터 위치가 방식마다 달라서(스켈레톤은 가운데가 아님) 그림으로 맞춘다."""
+    rw, rh, rpx = ref
+    w, h, px = img
+    ref_pts = {(x, y): rpx[y * rw + x] for y in range(rh) for x in range(rw) if rpx[y * rw + x][3] > 127}
+    pts = [(x, y, px[y * w + x]) for y in range(h) for x in range(w) if px[y * w + x][3] > 127]
+    best, best_off = -1, guess
+    for dy in range(guess[1] - reach, guess[1] + reach + 1):
+        for dx in range(guess[0] - reach, guess[0] + reach + 1):
+            score = 0
+            for x, y, c in pts:
+                r = ref_pts.get((x + dx, y + dy))
+                if r and abs(r[0] - c[0]) + abs(r[1] - c[1]) + abs(r[2] - c[2]) < 60:
+                    score += 1
+            if score > best:
+                best, best_off = score, (dx, dy)
+    return best_off
+
+
+def pack(item):
+    folder = src_dir(item)
+    frames = 1 if item.get("rotations") else frame_count(folder)
+    rot_dir = os.path.join(SRC, os.path.basename(os.path.dirname(item["sheet"])), "rot")
+    cache_path = os.path.join(folder, "offsets.json")
+    cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+    W, H = CELL * frames, CELL * len(DIRS)
+    out = [(0, 0, 0, 0)] * (W * H)
+    for row, d in enumerate(DIRS):
+        rot_path = os.path.join(rot_dir, d, "0.png")
+        if not os.path.exists(rot_path):
+            continue
+        ref = png.read_rgba(rot_path)
+        # 원화 자리: 캔버스 가운데와 발밑 줄을 ANCHOR 에
+        rx = ANCHOR[0] - ref[0] // 2
+        ry = ANCHOR[1] - max(opaque_rows(*ref))
+        paths = [os.path.join(folder, d, f"{i}.png") for i in range(frames)]
+        if item.get("rotations") or not all(os.path.exists(p) for p in paths):
+            imgs, off = [ref] * frames, (0, 0)  # 아직 없는 방향은 서 있는 원화
+        else:
+            imgs = [png.read_rgba(p) for p in paths]
+            if d not in cache:
+                w, h, px = imgs[0]
+                guess = ((ref[0] - w) // 2, max(opaque_rows(*ref)) - max(opaque_rows(w, h, px)))
+                cache[d] = align(ref, imgs[0], guess)
+            off = tuple(cache[d])
+        for col, (w, h, px) in enumerate(imgs):
+            ox = col * CELL + rx + off[0]
+            oy = row * CELL + ry + off[1]
+            for y in range(h):
+                ty = oy + y
+                if not row * CELL <= ty < (row + 1) * CELL:
+                    continue
+                for x in range(w):
+                    tx = ox + x
+                    c = px[y * w + x]
+                    if c[3] > 127 and col * CELL <= tx < (col + 1) * CELL:
+                        out[ty * W + tx] = (c[0], c[1], c[2], 255)
+    if cache:
+        json.dump(cache, open(cache_path, "w"))
+    dest = os.path.join(ROOT, item["sheet"])
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    png.write_rgba(dest, W, H, out)
 
 if __name__ == "__main__":
     main()

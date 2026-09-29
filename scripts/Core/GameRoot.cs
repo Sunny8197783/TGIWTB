@@ -1,4 +1,5 @@
 using Godot;
+using PixelMmo.Combat;
 using PixelMmo.Render;
 using PixelMmo.World;
 
@@ -20,14 +21,64 @@ public partial class GameRoot : Node
     /// <summary>셰이더 시계. 슬로우모션이면 같이 느려진다.</summary>
     public float WorldTime { get; private set; }
 
-    /// <summary>월드 시간 배율(1 = 정상). 완벽 회피 때 떨어진다. 플레이어는 이 값을 따로 무시한다.</summary>
-    public float WorldScale = 1f;
+    /// <summary>
+    /// 세계(적·물·입자·셰이더) 시간 배율. 히트스톱 때 0, 완벽 회피 슬로우 때 SlowScale.
+    /// 주인공은 HeroScale 을 쓴다 — 슬로우 중에도 나는 정상 속도로 움직여야 한다 (Witch Time).
+    /// </summary>
+    public float WorldScale { get; private set; } = 1f;
+    /// <summary>주인공 시간 배율. 히트스톱 때만 0.</summary>
+    public float HeroScale { get; private set; } = 1f;
+    /// <summary>0..1 슬로우 연출 세기 (셰이더 전역 time_slow). 들어갈 때 빠르게, 나올 때 천천히.</summary>
+    public float SlowAmount { get; private set; }
+
+    private float _hitStop;
+    private float _slowLeft;
+    private float _slowScale = 1f;
+    private bool _wasSlow;
+
+    /// <summary>칼이 맞는 순간 모두 멈춘다 (실제 시간). 겹치면 긴 쪽.</summary>
+    public void HitStop(float seconds) => _hitStop = Mathf.Max(_hitStop, seconds);
+
+    /// <summary>세계만 느리게 (실제 시간 seconds 동안).</summary>
+    public void SlowWorld(float scale, float seconds)
+    {
+        _slowScale = scale;
+        _slowLeft = seconds;
+    }
+
+    public bool WorldSlowed => _slowLeft > 0f;
+
+    private void TickClock(float real)
+    {
+        _hitStop -= real;
+        _slowLeft -= real;
+        bool stop = _hitStop > 0f;
+        bool slow = _slowLeft > 0f;
+        HeroScale = stop ? 0f : 1f;
+        WorldScale = stop ? 0f : slow ? _slowScale : 1f;
+        float amount = Mathf.MoveToward(SlowAmount, slow ? 1f : 0f, real * (slow ? 8f : 2.5f));
+        // 바뀔 때만 넣는다: 하늘 셰이더가 이 값을 읽어서, 넣을 때마다 하늘 광원 맵을 다시 굽는다
+        if (amount != SlowAmount)
+            RenderingServer.GlobalShaderParameterSet("time_slow", amount);
+        SlowAmount = amount;
+        if (slow != _wasSlow)
+            Sfx.SetMuffled(slow);
+        _wasSlow = slow;
+        // 세계의 입자도 같이 느려진다
+        foreach (var n in GetTree().GetNodesInGroup(WorldParticles))
+            ((GpuParticles3D)n).SpeedScale = WorldScale;
+    }
+
+    /// <summary>이 그룹의 GpuParticles3D 는 세계 시간을 따른다.</summary>
+    public const string WorldParticles = "world_particles";
 
     public override void _EnterTree() => Instance = this;
 
     public override void _Ready()
     {
         ulong t0 = Time.GetTicksMsec();
+        Controls.Register();
+        AddChild(new Sfx());
         World = WorldData.Load();
 
         var ui = new CanvasLayer { Name = "ScreenLayer", Layer = -1 };
@@ -104,9 +155,24 @@ public partial class GameRoot : Node
         Rig = new CameraRig();
         AddChild(Rig);
         Rig.Bind(View);
+        Stage.AddChild(new Dust());
+        AddChild(new CombatFx());
+
         Vector2 spawn = World.Vec2("spawn");
-        Rig.Target = new Vector3(spawn.X, World.HeightAt(spawn.X, spawn.Y), spawn.Y);
+        var feet = new Vector3(spawn.X, World.HeightAt(spawn.X, spawn.Y), spawn.Y);
+        Rig.Target = feet;
         Rig.SnapNext();
+        if (!off.Contains("hero"))
+        {
+            Stage.AddChild(new Hero());
+            Hero.Instance.Teleport(feet);
+        }
+        if (!off.Contains("monsters"))
+            AddChild(new MonsterSpawner());
+        var hud = new Hud();
+        ui.AddChild(hud);
+        if (Hero.Instance != null)
+            hud.Bind(Hero.Instance);
 
         if (Dev.DevCapture.Requested())
             AddChild(new Dev.DevCapture());
@@ -118,6 +184,7 @@ public partial class GameRoot : Node
 
     public override void _Process(double delta)
     {
+        TickClock((float)delta);
         float dt = (float)delta * WorldScale;
         WorldTime += dt;
         RenderingServer.GlobalShaderParameterSet("world_time", WorldTime);

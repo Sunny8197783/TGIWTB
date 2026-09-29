@@ -494,6 +494,11 @@ def main():
         "lake_surface": LAKE_SURFACE,
         "waterfalls": [{"x": 112.0, "top_z": plateau_edge(112) - 1.0, "top_y": river_surface(1.0),
                         "bottom_y": LAKE_SURFACE, "width": 4.5}],
+        # 몬스터 무리: 중심·반경 안에 count 마리, 죽으면 respawn 초 뒤 다시
+        "monsters": [
+            {"id": "sakura_slime", "x": 160, "z": 152, "radius": 5, "count": 3, "respawn": 8},
+            {"id": "sakura_slime", "x": 66, "z": 44, "radius": 6, "count": 4, "respawn": 10},
+        ],
         "viewpoints": [
             {"name": "등대 전망대", "x": 156, "z": 12, "radius": 7},
             {"name": "폭포 위", "x": 106, "z": 66, "radius": 6},

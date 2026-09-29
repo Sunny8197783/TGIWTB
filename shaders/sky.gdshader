@@ -57,5 +57,5 @@ void sky() {
 	col += vec3(0.9, 0.93, 1.0) * step(0.9990, md) * night * 1.4;
 	col += vec3(0.5, 0.6, 0.9) * pow(max(md, 0.0), 40.0) * night * 0.3;
 
-	COLOR = col;
+	COLOR = slow_tint(col);
 }

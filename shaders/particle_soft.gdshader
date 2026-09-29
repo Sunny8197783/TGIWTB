@@ -2,6 +2,8 @@
 shader_type spatial;
 render_mode blend_add, unshaded, depth_draw_never, cull_disabled;
 
+#include "res://shaders/common.gdshaderinc"
+
 uniform float px_size = 6.0;     // 입자 한 장을 몇 픽셀 격자로 끊을지
 uniform float softness = 1.0;    // 1 = 둥근 점, 0 = 사각 픽셀
 uniform float intensity = 1.0;
@@ -17,7 +19,7 @@ void fragment() {
 	vec2 q = (floor(UV * px_size) + 0.5) / px_size - 0.5;
 	float d = length(q) * 2.0;
 	float a = mix(step(d, 1.0), clamp(1.0 - d, 0.0, 1.0), softness);
-	ALBEDO = COLOR.rgb * intensity;
+	ALBEDO = slow_tint(COLOR.rgb) * intensity;
 	ALPHA = a * COLOR.a;
 	EMISSION = COLOR.rgb * intensity * a * COLOR.a;
 }

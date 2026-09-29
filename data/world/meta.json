@@ -16,6 +16,24 @@
       "width": 4.5
     }
   ],
+  "monsters": [
+    {
+      "id": "sakura_slime",
+      "x": 160,
+      "z": 152,
+      "radius": 5,
+      "count": 3,
+      "respawn": 8
+    },
+    {
+      "id": "sakura_slime",
+      "x": 66,
+      "z": 44,
+      "radius": 6,
+      "count": 4,
+      "respawn": 10
+    }
+  ],
   "viewpoints": [
     {
       "name": "등대 전망대",

@@ -43,3 +43,11 @@ float cloud_shade(vec2 xz, float t, vec2 wind_dir) {
 	float c = fbm3(p);
 	return mix(1.0, 0.62, smoothstep(0.52, 0.66, c));
 }
+
+// 완벽 회피 슬로우: 세계는 채도가 빠지고 보랏빛으로 가라앉는다. 주인공 스프라이트는 빠진다(slow_exempt).
+global uniform float time_slow;
+vec3 slow_tint(vec3 c) {
+	float l = dot(c, vec3(0.3, 0.59, 0.11));
+	vec3 grey = vec3(l) * vec3(0.8, 0.74, 1.08);
+	return mix(c, grey, time_slow * 0.78);
+}

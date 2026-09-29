@@ -156,7 +156,7 @@ void fragment() {
 	}
 
 	cloud = cloud_shade(wpos.xz, world_time, wind);
-	ALBEDO = col;
+	ALBEDO = slow_tint(col);
 	ROUGHNESS = 1.0;
 }
 

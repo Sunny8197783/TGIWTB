@@ -137,7 +137,7 @@ public static class WaterfallBuilder
         mat.SetShaderParameter("intensity", intensity);
         var quad = new QuadMesh { Size = Vector2.One, Material = mat };
 
-        return new GpuParticles3D
+        var particles = new GpuParticles3D
         {
             Position = pos,
             Amount = amount,
@@ -148,5 +148,7 @@ public static class WaterfallBuilder
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             Preprocess = lifetime,
         };
+        particles.AddToGroup(Core.GameRoot.WorldParticles);
+        return particles;
     }
 }

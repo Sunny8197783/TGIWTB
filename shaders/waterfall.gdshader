@@ -44,7 +44,7 @@ void fragment() {
 	// 밤에는 하늘빛을 받아 푸르게 가라앉는다
 	col = mix(col, col * vec3(0.45, 0.55, 0.9), night * 0.7);
 
-	ALBEDO = col;
+	ALBEDO = slow_tint(col);
 	ALPHA = mix(0.78, 0.95, step(0.45, streak)) * fall + 0.05;
 	// 반짝이는 물방울: 드문드문 한 픽셀이 번쩍
 	float glint = step(0.993, hash21(tp + vec2(floor(world_time * 9.0) * 7.0, 0.0)));

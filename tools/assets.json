@@ -53,23 +53,64 @@
   "object": "4b464b0d-10a9-4a74-a86e-4fc504e5089b"
  },
  {
-  "dest": "art/characters/hero/run/{dir}/{i}.png",
+  "sheet": "art/characters/hero/rot.png",
   "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
-  "frames": 8,
-  "anim": {
-   "south": "0270d5e7-6e73-4e65-82c6-761799800db3",
-   "south-east": "20ed255b-325a-4b00-810d-6150fa4c5f20",
-   "east": "e74e5a1e-08a4-441d-b5c6-2741c26b8bf6",
-   "north-east": "26acf1ec-859f-4020-ba31-376d82841167",
-   "north": "307bf697-209c-4345-8ee2-15c24cdad404",
-   "north-west": "90dd0da3-7cc4-467c-b1da-f436b7faa480",
-   "west": "acda7d9a-e51d-4e25-9dce-04720a96ec8b",
-   "south-west": "f45f3197-ff7a-4e11-a34f-6a0b2f961769"
-  }
+  "rotations": true,
+  "note": "다른 시트의 빈 방향을 채우는 기준이라 맨 앞"
  },
  {
-  "dest": "art/characters/hero/rot/{dir}.png",
+  "sheet": "art/characters/hero/idle.png",
   "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_idle"
+ },
+ {
+  "sheet": "art/characters/hero/run.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_run_v3b"
+ },
+ {
+  "sheet": "art/characters/hero/dash.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_dash_b"
+ },
+ {
+  "sheet": "art/characters/hero/guard.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_guard_b"
+ },
+ {
+  "sheet": "art/characters/hero/attack1.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack1"
+ },
+ {
+  "sheet": "art/characters/hero/attack2.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack2"
+ },
+ {
+  "sheet": "art/characters/hero/attack3.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack3"
+ },
+ {
+  "sheet": "art/characters/hero/hurt.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/rot.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
   "rotations": true
+ },
+ {
+  "sheet": "art/characters/sakura_slime/attack.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_attack"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/idle.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_idle"
  }
 ]

@@ -86,7 +86,7 @@ void fragment() {
 	col = mix(col, vec3(0.95, 0.98, 1.0), foam);
 	cloud = cloud_shade(wpos.xz, world_time, wind);
 
-	ALBEDO = col;
+	ALBEDO = slow_tint(col);
 	ROUGHNESS = 0.18;
 	METALLIC = 0.0;
 	SPECULAR = 0.35;
