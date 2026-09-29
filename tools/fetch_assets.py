@@ -4,6 +4,9 @@
   {"dest": "art/env/tree_oak_0.png", "object": "<object id>"}          단방향 오브젝트
   {"sheet": "art/characters/hero/run.png", "char": "<id>", "anim": "hero_run_v3b"}   PixelLab 애니메이션 이름
   {"sheet": "art/characters/hero/rot.png", "char": "<id>", "rotations": true}
+  {"object": "<id>", "grid": 3, "cells": ["bush_0", "bush_pink_0", ...]}   작은 소품 여럿을 한 장에 격자로 뽑은 것.
+      가로·세로 칸 수가 다르면 "cols"/"rows". 이름은 왼쪽 위부터 읽는 순서.
+      칸마다 잘라 art/env/<이름>.png 로. 빈 이름("")은 건너뛴다. 한 번 생성으로 소품 9개 — 화풍도 저절로 맞는다.
 
 캐릭터는 PixelLab 이 요청 때마다 만들어 주는 zip(모든 방향·애니메이션, 이름별 폴더)을 받아 푼다.
 
@@ -59,7 +62,9 @@ def main():
     manifest = json.load(open(os.path.join(ROOT, "tools", "assets.json"), encoding="utf-8"))
     force = "--force" in sys.argv
     for item in manifest:
-        if "object" in item:
+        if "object" in item and "cells" in item:
+            fetch_packed(item, force)
+        elif "object" in item:
             dest = os.path.join(ROOT, item["dest"])
             if os.path.exists(dest) and not force:
                 continue
@@ -75,6 +80,62 @@ def main():
 
 
 ZIP = "https://api.pixellab.ai/mcp/characters/{char}/download"
+
+
+def fetch_packed(item, force):
+    """격자로 모아 뽑은 소품 시트를 칸마다 잘라 낸다. 칸 경계를 살짝 넘은 잎사귀는
+    그 덩어리의 중심이 있는 칸으로 보낸다 (연결 요소 단위로 나눔)."""
+    names = item["cells"]
+    dests = [os.path.join(ROOT, "art", "env", f"{n}.png") for n in names if n]
+    if all(os.path.exists(d) for d in dests) and not force:
+        return
+    sheet = os.path.join(SRC, "packed", f"{item['object']}.png")
+    try:
+        download(OBJ.format(id=item["object"]), sheet)
+    except subprocess.CalledProcessError:
+        print("pending", item["object"])
+        return
+    w, h, px = png.read_rgba(sheet)
+    cols = item.get("cols", item.get("grid"))
+    rows = item.get("rows", item.get("grid"))
+    cw, ch = w // cols, h // rows
+    seen = [False] * (w * h)
+    cells = {}
+    for start in range(w * h):
+        if seen[start] or px[start][3] <= 8:
+            continue
+        stack, comp = [start], []
+        seen[start] = True
+        while stack:
+            i = stack.pop()
+            comp.append(i)
+            x, y = i % w, i // w
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h:
+                        j = ny * w + nx
+                        if not seen[j] and px[j][3] > 8:
+                            seen[j] = True
+                            stack.append(j)
+        cx = sum(i % w for i in comp) / len(comp)
+        cy = sum(i // w for i in comp) / len(comp)
+        key = min(int(cy // ch), rows - 1) * cols + min(int(cx // cw), cols - 1)
+        cells.setdefault(key, []).extend(comp)
+    for k, name in enumerate(names):
+        if not name or k not in cells:
+            continue
+        comp = cells[k]
+        xs = [i % w for i in comp]
+        ys = [i // w for i in comp]
+        x0, x1, y0, y1 = min(xs) - 1, max(xs) + 1, min(ys) - 1, max(ys) + 1
+        keep = set(comp)
+        ow, oh = x1 - x0 + 1, y1 - y0 + 1
+        out = [px[(y0 + y) * w + x0 + x] if ((y0 + y) * w + x0 + x) in keep else (0, 0, 0, 0)
+               for y in range(oh) for x in range(ow)]
+        dest = os.path.join(ROOT, "art", "env", f"{name}.png")
+        png.write_rgba(dest, ow, oh, out)
+        print("packed", name, (ow, oh))
 
 
 def src_dir(item):

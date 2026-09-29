@@ -1,5 +1,58 @@
 [
  {
+  "object": "3d9d769e-c5b0-4e58-8e24-fd157c48f0ce",
+  "grid": 3,
+  "cells": [
+   "bush_0",
+   "bush_pink_0",
+   "bush_orange_0",
+   "flowers_mix_0",
+   "fern_0",
+   "",
+   "rock_0",
+   "reeds_0",
+   "bush_1"
+  ],
+  "note": "자연 소품 A"
+ },
+ {
+  "object": "5ccf20d9-5033-4ada-9786-53b53b644e70",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "stone_lantern_0",
+   "signpost_0",
+   "well_0",
+   "crates_0",
+   "bench_0",
+   "planter_0"
+  ],
+  "note": "마을 소품 A (가로등·통은 안 나옴)"
+ },
+ {
+  "object": "4c17aee1-97dc-444e-a69e-2488dbdaf0bc",
+  "grid": 4,
+  "cells": [
+   "flowers_yellow_0",
+   "flowers_white_0",
+   "flowers_blue_0",
+   "flowers_pink_0",
+   "mushrooms_0",
+   "mushrooms_1",
+   "pebbles_0",
+   "stone_0",
+   "fern_small_0",
+   "grass_tuft_0",
+   "petals_0",
+   "lily_pad_0",
+   "lily_pad_1",
+   "sapling_0",
+   "lavender_0",
+   "dandelion_0"
+  ],
+  "note": "작은 땅 장식 A"
+ },
+ {
   "dest": "art/env/lighthouse_0.png",
   "object": "c0d40ba8-3b2b-4176-b492-006e13dabdbf"
  },

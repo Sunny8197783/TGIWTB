@@ -28,6 +28,8 @@ const int AUTUMN = 7;
 const int GRAVEL = 8;
 const int PEBBLE = 9;
 
+varying float dapple;
+
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	wnorm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -57,8 +59,16 @@ vec3 ground_color(int t, vec2 tp, float big) {
 	float h2 = hash21(floor(tp * 0.5));
 	if (t == GRASS) return grass_color(tp, big, vec3(0.34, 0.64, 0.22));
 	if (t == FOREST) {
-		vec3 c = grass_color(tp, big, vec3(0.22, 0.42, 0.22));
-		if (h2 > 0.93) c = mix(c, vec3(0.45, 0.32, 0.18), 0.7); // 낙엽
+		// 이끼 얼룩: 짙은 초록과 볕 든 연두가 큰 덩어리로 번갈아
+		// 부드러운 잡음을 3단으로 끊는다 (픽셀아트식 색 띠). 값 잡음을 그대로 쓰면 격자 모양이 보였다
+		float moss = floor(clamp((fbm3(tp / PPM * 0.22) - 0.3) * 2.5, 0.0, 0.99) * 3.0) / 2.0;
+		vec3 c = grass_color(tp, big, mix(vec3(0.16, 0.36, 0.2), vec3(0.3, 0.5, 0.2), moss));
+		// 낙엽은 흩뿌린 점이 아니라 무더기로 모인다
+		float litter = vnoise(tp * 0.06 + 40.0);
+		if (litter > 0.64 && hash21(floor(tp * 0.5) + 13.0) > 0.6) {
+			float k = hash21(floor(tp * 0.5) + 3.0);
+			c = k < 0.4 ? vec3(0.55, 0.36, 0.18) : k < 0.7 ? vec3(0.7, 0.46, 0.2) : vec3(0.4, 0.27, 0.16);
+		}
 		return c;
 	}
 	if (t == MEADOW) {
@@ -156,6 +166,9 @@ void fragment() {
 	}
 
 	cloud = cloud_shade(wpos.xz, world_time, wind);
+	// 숲 그늘에 나뭇잎 사이로 드는 햇빛 조각 (바람에 천천히 흔들린다). 그늘 안에서만 보인다 — light() 참고
+	bool woods = t == FOREST || t == SAKURA || t == AUTUMN;
+	dapple = woods ? step(0.68, vnoise(tp * 0.05 + wind * world_time * 1.5)) : 0.0;
 	ALBEDO = slow_tint(col);
 	ROUGHNESS = 1.0;
 }
@@ -166,6 +179,6 @@ void light() {
 	float q = floor(ndl * 3.0 + 0.5) / 3.0;
 	float lit = 0.35 + 0.65 * mix(ndl, q, 0.6);
 	float shade = smoothstep(0.25, 0.75, ATTENUATION);
-	if (LIGHT_IS_DIRECTIONAL) shade *= cloud;
+	if (LIGHT_IS_DIRECTIONAL) shade = max(shade, dapple * 0.8) * cloud;
 	DIFFUSE_LIGHT += LIGHT_COLOR / PI * lit * shade;
 }

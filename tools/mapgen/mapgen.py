@@ -97,6 +97,8 @@ def poly_dist(px, pz, pts):
 RIVER = [(46, 20), (58, 27), (72, 30), (86, 40), (97, 50), (106, 60), (112, 72)]
 # 호수에서 나와 마을을 지나 남동 해변으로
 STREAM = [(137, 112), (145, 126), (149, 142), (157, 160), (166, 178), (174, 196), (178, 214)]
+STREAM_BED = 1.6    # 이 안쪽은 물 바닥 (m)
+STREAM_BANK = 3.0   # 여기서 둑이 끝나고 원래 땅
 # 길
 PATHS = [
     # 마을 동쪽 → 풍차 언덕 → 고원 오르막 → 등대
@@ -206,16 +208,16 @@ def height_at(x, z):
         if d > 2.6:
             h = max(h, surface + 0.5 * smoothstep(2.6, 4.0, d))
 
-    # 호수 → 바다 개울
+    # 호수 → 바다 개울: 좁고 둑이 가파른 물길. 넓고 완만하면 얕은 물이 비탈을 덮어 유리판처럼 보인다.
     d, s = poly_dist(x, z, STREAM)
-    if d < 4.5:
+    if d < STREAM_BANK:
         surface = lerp(LAKE_SURFACE, 0.05, s)
-        bed = surface - 0.8
-        h = lerp(h, min(h, bed), smoothstep(4.5, 1.8, d))
+        bed = surface - 0.7
+        h = lerp(h, min(h, bed), smoothstep(STREAM_BANK, STREAM_BED, d))
 
     # 마을: 평평하게 고른다 (북쪽이 아주 약간 높다)
     vil = smoothstep(12, 4, max(76 - x, x - 150, 0) + max(128 - z, z - 172, 0))
-    if vil > 0 and poly_dist(x, z, STREAM)[0] > 4.0:
+    if vil > 0 and poly_dist(x, z, STREAM)[0] > STREAM_BANK:
         h = lerp(h, 2.5 + (172 - z) * 0.012, vil)
 
     # 섬 바깥은 바다. 고원 쪽 해안은 절벽, 남쪽은 모래 해변.
@@ -240,9 +242,9 @@ def water_at(x, z, h):
         if surf - 1.6 < h < surf + 0.35:
             return surf
     d, s = poly_dist(x, z, STREAM)
-    if d < 5.0:
+    if d < STREAM_BED + 0.8:
         surf = lerp(LAKE_SURFACE, 0.05, s)
-        if surf - 1.6 < h < surf + 0.35:
+        if surf - 1.2 < h < surf + 0.1:
             return surf
     # 바다는 맨 마지막. 호수 바닥도 해수면보다 낮아서, 먼저 물으면 호수 가운데가 '바다'가 된다.
     if h < SEA + 0.35:
@@ -411,10 +413,30 @@ def main():
                 math.hypot(cx - PLAZA_C[0], front_z - 3 - PLAZA_C[1]) < PLAZA_R + half
             if not blocked and sc.free(cx, front_z - 3, half):
                 sc.add(kind, cx, front_z - 3, half, front_z=front_z)
+                # 집 앞 살림살이: 가게는 상자, 살림집은 화분. 문(가운데)은 비운다.
+                shop = kind in ("bakery", "general_store", "blacksmith", "flower_shop", "inn", "tavern")
+                for side in (-1, 1):
+                    dx = side * (half - 1.1)
+                    deco = "crates" if shop and side == (1 if _hash(int(cx), int(front_z), 31) < 0.5 else -1) else "planter"
+                    sc.add(deco, cx + dx, front_z + 0.7, 0.8)
                 ki += 1
                 x += half * 2 + 3.0
             else:
                 x += 2.0
+    # 광장: 가운데 분수, 둘레에 벤치 넷, 동쪽에 우물
+    for bx, bz in ((-5.5, 3.5), (5.5, 3.5), (-5.5, -4.5), (5.5, -4.5)):
+        px, pz = PLAZA_C[0] + bx, PLAZA_C[1] + bz
+        if sc.free(px, pz, 1.2):
+            sc.add("bench", px, pz, 1.2)
+    wx, wz = PLAZA_C[0] + 10.5, PLAZA_C[1] - 1.0
+    if sc.free(wx, wz, 1.6):
+        sc.add("well", wx, wz, 1.6)
+    # 마을 들머리 이정표
+    for sz, x0, x1 in STREETS:
+        for px in (x0 + 1.5, x1 - 1.5):
+            pz = sz - 2.4
+            if dry(px, pz) and sc.free(px, pz, 0.8):
+                sc.add("signpost", px, pz, 0.8)
     # 가로등: 거리 남쪽 가장자리를 따라
     for sz, x0, x1 in STREETS:
         for x in range(x0 + 2, x1, 9):
@@ -435,12 +457,21 @@ def main():
             sc.add("stone_lantern", px, pz, 1.0)
 
     # 3) 나무와 풀꽃: 지역마다 종류와 밀도가 다르다
+    # (종류, 차지 반경, 칸당 확률). 작은 장식(반경 < 0.6)은 가까이서 봐야 보이는 것들 — 카메라가 가까워서 촘촘해야 한다.
     rules = {
-        SAKURA: [("tree_sakura", 3.2, 0.10), ("bush_pink", 1.0, 0.05), ("flowers_white", 0.6, 0.06)],
-        AUTUMN: [("tree_maple", 3.0, 0.10), ("bush_orange", 1.0, 0.05)],
-        FOREST: [("tree_oak", 3.0, 0.08), ("tree_pine", 2.4, 0.06), ("bush", 1.0, 0.06), ("mushrooms", 0.5, 0.04), ("fern", 0.6, 0.08)],
-        MEADOW: [("flowers_mix", 0.6, 0.10), ("flowers_yellow", 0.6, 0.06), ("tree_oak", 3.0, 0.006), ("bush", 1.0, 0.01)],
-        GRASS: [("tree_oak", 3.0, 0.012), ("tree_pine", 2.4, 0.006), ("bush", 1.0, 0.02), ("flowers_mix", 0.6, 0.02), ("rock", 0.8, 0.006)],
+        SAKURA: [("tree_sakura", 3.2, 0.10), ("bush_pink", 1.0, 0.05), ("flowers_white", 0.6, 0.05),
+                 ("petals", 0.45, 0.12), ("flowers_pink", 0.4, 0.04), ("grass_tuft", 0.4, 0.03)],
+        AUTUMN: [("tree_maple", 3.0, 0.10), ("bush_orange", 1.0, 0.05), ("mushrooms", 0.4, 0.05),
+                 ("fern_small", 0.4, 0.04), ("stone", 0.5, 0.02)],
+        FOREST: [("tree_oak", 3.0, 0.08), ("tree_pine", 2.4, 0.06), ("bush", 1.0, 0.06), ("fern", 0.9, 0.05),
+                 ("fern_small", 0.4, 0.07), ("mushrooms", 0.4, 0.06), ("stone", 0.5, 0.02), ("sapling", 0.5, 0.02),
+                 ("grass_tuft", 0.4, 0.04)],
+        MEADOW: [("flowers_mix", 0.8, 0.08), ("flowers_yellow", 0.4, 0.06), ("flowers_blue", 0.4, 0.05),
+                 ("flowers_pink", 0.4, 0.04), ("lavender", 0.5, 0.03), ("dandelion", 0.4, 0.04), ("flowers_white", 0.4, 0.04),
+                 ("tree_oak", 3.0, 0.006), ("bush", 1.0, 0.01)],
+        GRASS: [("tree_oak", 3.0, 0.012), ("tree_pine", 2.4, 0.006), ("bush", 1.0, 0.02), ("flowers_mix", 0.8, 0.015),
+                ("rock", 0.8, 0.006), ("grass_tuft", 0.4, 0.05), ("flowers_yellow", 0.4, 0.02), ("dandelion", 0.4, 0.015),
+                ("pebbles", 0.4, 0.008), ("stone", 0.5, 0.006)],
     }
     rng_seed = 7
     # 큰 나무를 먼저 전부 심고 그다음 풀꽃. 한 번에 돌면 먼저 놓인 덤불이
@@ -476,7 +507,7 @@ def main():
                 xi, zi = int(px), int(pz)
                 w = cell_w(xi, zi)
                 if w == LAKE_SURFACE and h_at(px, pz) < LAKE_SURFACE - 0.6 and _hash(x, z, 9) < 0.05 and sc.free(px, pz, 0.8):
-                    sc.add("lily_pad", px, pz, 0.8, v=int(_hash(x, z, 10) * 3))
+                    sc.add("lily_pad", px, pz, 0.8, v=int(_hash(x, z, 10) * 2))
                 continue
             if slope(px, pz) > 1.5 and _hash(x, z, 11) < 0.08 and sc.free(px, pz, 1.0):
                 sc.add("rock", px, pz, 1.0, v=int(_hash(x, z, 12) * 4))

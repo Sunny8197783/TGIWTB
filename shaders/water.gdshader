@@ -90,7 +90,8 @@ void fragment() {
 	ROUGHNESS = 0.18;
 	METALLIC = 0.0;
 	SPECULAR = 0.35;
-	ALPHA = mix(0.6, 0.94, d01) + foam;
+	// 불투명도는 색보다 빨리 올린다: 개울처럼 1m 안쪽 물이 바닥을 다 비추면 유리판처럼 보인다
+	ALPHA = mix(0.55, 0.95, smoothstep(0.0, 1.0, depth)) + foam;
 	// 밤에는 반짝임을 달빛/등불 색으로 약하게
 	vec3 glint = mix(sun_color.rgb * 2.2, vec3(0.7, 0.8, 1.2) * 1.2, night);
 	EMISSION = sparkle * glint * cloud;

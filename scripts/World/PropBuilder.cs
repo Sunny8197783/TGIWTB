@@ -73,7 +73,9 @@ public static class PropBuilder
                 {
                     float wy = world.WaterAt(p.X, p.Z);
                     float y = (wy > WorldData.NoWater + 1 ? wy : world.HeightAt(p.X, z)) + 0.03f;
-                    var basis = Basis.Identity.Rotated(Vector3.Up, rng.Randf() * Mathf.Tau).Scaled(new Vector3(wM, 1f, size.Y / Px.PerMeter));
+                    // 돌리지 않는다 (픽셀 격자가 깨진다). 내려다보면 세로가 sin(피치)만큼 줄어드니 그만큼 늘려 1:1 로.
+                    float sinPitch = Mathf.Sin(Mathf.DegToRad(Px.PitchDeg));
+                    var basis = Basis.Identity.Scaled(new Vector3(wM * (rng.Randf() < 0.5f ? -1f : 1f), 1f, size.Y / Px.PerMeter / sinPitch));
                     xf = new Transform3D(basis, new Vector3(p.X, y, p.Z));
                 }
                 else

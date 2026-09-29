@@ -53,6 +53,17 @@ public static class PropCatalog
         Small("flowers_white", new Color(0.97f, 0.97f, 0.92f));
         Small("fern", new Color(0.3f, 0.6f, 0.3f));
         Small("mushrooms", new Color(0.86f, 0.3f, 0.26f));
+        // 작은 땅 장식 — 발밑에서 보이는 것들
+        Small("flowers_blue", new Color(0.4f, 0.55f, 0.95f));
+        Small("flowers_pink", new Color(0.95f, 0.55f, 0.75f));
+        Small("lavender", new Color(0.6f, 0.45f, 0.85f));
+        Small("dandelion", new Color(0.95f, 0.95f, 0.9f));
+        Small("fern_small", new Color(0.3f, 0.6f, 0.3f));
+        Small("grass_tuft", new Color(0.36f, 0.66f, 0.26f));
+        Small("sapling", new Color(0.4f, 0.6f, 0.3f));
+        Small("pebbles", new Color(0.6f, 0.6f, 0.62f));
+        Small("stone", new Color(0.55f, 0.56f, 0.52f));
+        Add(new PropKind { Id = "petals", Size = new(32, 24), Color = new Color(0.98f, 0.75f, 0.85f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
         Add(new PropKind { Id = "reeds", Size = new(32, 48), Color = new Color(0.5f, 0.62f, 0.3f), Placeholder = PropKind.Shape.Flowers, Sway = 0.05f, Shadow = false });
         Add(new PropKind { Id = "lily_pad", Size = new(32, 32), Color = new Color(0.3f, 0.6f, 0.3f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
         Add(new PropKind { Id = "rock", Size = new(48, 40), Color = new Color(0.55f, 0.53f, 0.5f), Placeholder = PropKind.Shape.Rock, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
@@ -60,6 +71,10 @@ public static class PropCatalog
         Add(new PropKind { Id = "street_lamp", Size = new(32, 96), Color = new Color(0.25f, 0.25f, 0.3f), Placeholder = PropKind.Shape.Lamp, Glow = 1f, Trunk = 0.15f, Flip = false, ShadowCaster = PropKind.Caster.Column });
         Add(new PropKind { Id = "stone_lantern", Size = new(32, 64), Color = new Color(0.6f, 0.6f, 0.58f), Placeholder = PropKind.Shape.Lamp, Glow = 1f, Trunk = 0.3f, Flip = false, ShadowCaster = PropKind.Caster.Column });
         Add(new PropKind { Id = "bench", Size = new(64, 48), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false });
+        Add(new PropKind { Id = "signpost", Size = new(48, 96), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Lamp, Flip = false, Trunk = 0.2f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "well", Size = new(80, 96), Color = new Color(0.6f, 0.6f, 0.62f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.2f, 1.8f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "crates", Size = new(48, 64), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(1.3f, 1.0f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "planter", Size = new(64, 48), Color = new Color(0.6f, 0.42f, 0.26f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.0f, 0.9f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "fountain", Size = new(96, 80), Color = new Color(0.7f, 0.7f, 0.72f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(2.6f, 2.0f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "boat", Size = new(96, 64), Color = new Color(0.6f, 0.4f, 0.25f), Placeholder = PropKind.Shape.Box, Shadow = false });
 
