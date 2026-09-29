@@ -44,6 +44,14 @@ public sealed class WorldData
                 Variant = e.TryGetProperty("v", out var v) ? v.GetInt32() : 0,
                 FrontZ = e.TryGetProperty("front_z", out var f) ? f.GetSingle() : float.NaN,
             });
+            if (e.GetProperty("type").GetString() == "bridge")
+            {
+                float ang = e.GetProperty("dir").GetSingle();
+                data.Bridges.Add(new Bridge(
+                    new Vector2(e.GetProperty("x").GetSingle(), e.GetProperty("z").GetSingle()),
+                    new Vector2(MathF.Cos(ang), MathF.Sin(ang)),
+                    e.GetProperty("len").GetSingle() * 0.5f, Bridge.HalfWidth, e.GetProperty("deck").GetSingle()));
+            }
         }
 
         int expected = (data.Width + 1) * (data.Height + 1);
@@ -94,10 +102,10 @@ public sealed class WorldData
             if (d.LengthSquared() < 1e-6f)
                 return false;
             Vector3 q = p + d.Normalized() * probe + d * dt;
-            if (WaterAt(q.X, q.Z) - HeightAt(q.X, q.Z) > wadeDepth)
+            if (!OnBridge(q.X, q.Z) && WaterAt(q.X, q.Z) - HeightAt(q.X, q.Z) > wadeDepth)
                 return true;
             float run = new Vector2(q.X - p.X, q.Z - p.Z).Length();
-            return MathF.Abs(HeightAt(q.X, q.Z) - HeightAt(p.X, p.Z)) > maxSlope * run;
+            return MathF.Abs(WalkHeightAt(q.X, q.Z) - WalkHeightAt(p.X, p.Z)) > maxSlope * run;
         }
         if (!Blocked(vel))
             return vel;
@@ -106,6 +114,37 @@ public sealed class WorldData
             return onlyX;
         var onlyZ = new Vector3(0f, 0f, vel.Z);
         return Blocked(onlyZ) ? Vector3.Zero : onlyZ;
+    }
+
+    /// <summary>다리: 길이 물을 건너는 직사각형. 위는 걸을 수 있고 발 높이는 Deck.</summary>
+    public readonly record struct Bridge(Vector2 Center, Vector2 Axis, float HalfLength, float HalfWidthM, float Deck)
+    {
+        public const float HalfWidth = 1.3f;
+
+        public bool Contains(float x, float z)
+        {
+            var d = new Vector2(x, z) - Center;
+            return MathF.Abs(d.Dot(Axis)) <= HalfLength && MathF.Abs(d.Dot(new Vector2(-Axis.Y, Axis.X))) <= HalfWidthM;
+        }
+    }
+
+    public List<Bridge> Bridges { get; } = new();
+
+    /// <summary>걷는 높이: 다리 위면 다리 바닥, 아니면 지면.</summary>
+    public float WalkHeightAt(float x, float z)
+    {
+        foreach (var b in Bridges)
+            if (b.Contains(x, z))
+                return MathF.Max(b.Deck, HeightAt(x, z));
+        return HeightAt(x, z);
+    }
+
+    private bool OnBridge(float x, float z)
+    {
+        foreach (var b in Bridges)
+            if (b.Contains(x, z))
+                return true;
+        return false;
     }
 
     public float WaterAt(float x, float z)

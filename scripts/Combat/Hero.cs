@@ -187,7 +187,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         body.Velocity = new Vector3(vel.X, 0f, vel.Z) * timeScale;
         body.MoveAndSlide();
         Vector3 p = body.GlobalPosition;
-        p.Y = world.HeightAt(p.X, p.Z);
+        p.Y = world.WalkHeightAt(p.X, p.Z);
         body.GlobalPosition = p;
     }
 
@@ -219,7 +219,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         bool blink = _iframes > 0f && _state != State.Dash && Mathf.PosMod(_iframes, 0.12f) < 0.05f;
         _sprite.SetFlash(Mathf.Max(_flash, blink ? 0.45f : 0f), _flash > 0f ? _flashColor : Colors.White);
         _sprite.Advance(dt);
-        _sprite.PlaceAt(feet, world.HeightAt(feet.X, feet.Z));
+        _sprite.PlaceAt(feet, world.WalkHeightAt(feet.X, feet.Z));
 
         // 카메라: 달리는 쪽을 조금 앞서 본다
         Vector3 lookTarget = _state == State.Move ? _vel / T.RunSpeed * T.LookAhead : _look;

@@ -15,7 +15,8 @@
     "active": 0.2,
     "recover": 0.9,
     "lunge": 3.5,
-    "cooldown": 1.6
+    "cooldown": 1.6,
+    "telegraph": true
   },
   "sounds": {
     "hit": "impactPunch_medium",

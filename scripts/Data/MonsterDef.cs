@@ -33,6 +33,8 @@ public sealed class MonsterDef
         /// <summary>공격하며 돌진하는 속도 (m/s).</summary>
         public float Lunge { get; set; }
         public float Cooldown { get; set; }
+        /// <summary>강한 공격: 예고 동안 바닥에 빨간 원이 차오른다.</summary>
+        public bool Telegraph { get; set; }
     }
 
     public sealed class SoundDef

@@ -144,6 +144,7 @@ public partial class GameRoot : Node
         Stage.AddChild(TerrainBuilder.Build(World));
         if (!off.Contains("water")) Stage.AddChild(WaterBuilder.Build(World));
         if (!off.Contains("props")) Stage.AddChild(PropBuilder.Build(World));
+        Stage.AddChild(BridgeBuilder.Build(World));
         if (!off.Contains("falls")) Stage.AddChild(WaterfallBuilder.Build(World));
         if (!off.Contains("grass")) Stage.AddChild(GrassBuilder.Build(World));
         if (off.Contains("shadows")) sun.ShadowEnabled = false;

@@ -46,6 +46,8 @@ public partial class Enemy : CharacterBody3D
     private Vector3 _wanderTarget;
     private float _flash;
     private Color _flashColor = Colors.White;
+    private MeshInstance3D _warn;
+    private ShaderMaterial _warnMat;
 
     public Enemy(MonsterDef def, Vector3 home)
     {
@@ -129,6 +131,11 @@ public partial class Enemy : CharacterBody3D
                 // 주황 깜빡임이 점점 빨라진다
                 float k = _stateTime / a.Windup;
                 SetFlash(Mathf.Sin(k * k * 30f) > 0f ? 0.55f * k : 0f, new Color(1f, 0.55f, 0.15f));
+                if (_warn != null)
+                {
+                    _warn.GlobalPosition = WarnCenter();
+                    _warnMat.SetShaderParameter("fill", Mathf.Clamp(k, 0f, 1f));
+                }
                 if (_stateTime >= a.Windup)
                     Enter(State.Active);
                 break;
@@ -195,7 +202,7 @@ public partial class Enemy : CharacterBody3D
         }
         _sprite.Advance(dt);
         Vector3 feet = GlobalPosition;
-        _sprite.PlaceAt(feet, world.HeightAt(feet.X, feet.Z));
+        _sprite.PlaceAt(feet, world.WalkHeightAt(feet.X, feet.Z));
     }
 
     /// <summary>주인공의 칼에 맞았다. 죽었으면 true.</summary>
@@ -289,6 +296,8 @@ public partial class Enemy : CharacterBody3D
     {
         _state = s;
         _stateTime = 0f;
+        if (Def.Attack.Telegraph)
+            ShowWarning(s == State.Windup);
         var a = Def.Attack;
         switch (s)
         {
@@ -307,6 +316,42 @@ public partial class Enemy : CharacterBody3D
                 SetFlash(0f, Colors.White);
                 break;
         }
+    }
+
+    /// <summary>강한 공격 예고 원: 공격이 떨어질 자리(앞쪽 사거리 중간)에 깐다.</summary>
+    private void ShowWarning(bool on)
+    {
+        if (_warn == null)
+        {
+            if (!on)
+                return;
+            float d = Def.Attack.Reach * 1.6f;
+            float sinPitch = Mathf.Sin(Mathf.DegToRad(Px.PitchDeg));
+            _warnMat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/ground_warn.gdshader") };
+            _warnMat.SetShaderParameter("px", d * Px.PerMeter);
+            _warn = new MeshInstance3D
+            {
+                // 내려다보면 세로가 sin(피치)만큼 줄어든다 — 화면에서 동그랗게 보이도록 늘린다
+                Mesh = new PlaneMesh { Size = new Vector2(d, d / sinPitch) },
+                MaterialOverride = _warnMat,
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                TopLevel = true,
+            };
+            AddChild(_warn);
+        }
+        _warn.Visible = on;
+        if (on)
+        {
+            _warn.GlobalPosition = WarnCenter();
+            _warnMat.SetShaderParameter("fill", 0f);
+        }
+    }
+
+    private Vector3 WarnCenter()
+    {
+        Vector3 c = GlobalPosition + _facing * Def.Attack.Reach * 0.55f;
+        c.Y = GameRoot.Instance.World.HeightAt(c.X, c.Z) + 0.06f;
+        return c;
     }
 
     private void SetFlash(float amount, Color c)

@@ -378,25 +378,43 @@ def main():
     sc.add("boat", 104, 121, 2.0)
     sc.add("fountain", PLAZA_C[0], PLAZA_C[1], 3.2)
     sc.add("dock_sea", 118, 205, 3.0)
+    sc.add("fish_crates", 115, 202, 1.2)
+    sc.add("buoy", 124, 210, 1.0)
+    sc.add("buoy", 111, 212, 1.0)
 
-    # 다리: 길이 물을 건너는 곳
+    # 다리: 길이 물을 건너는 곳. 길을 촘촘히 따라가다 물에 들어간 곳과 나온 곳을 찾아
+    # 양쪽 마른 둑을 잇는다. 게임은 이 직사각형 위를 걸을 수 있고(깊은 물 막힘 해제), 발 높이는 deck.
+    def add_bridge(a, b):
+        ln = math.hypot(b[0] - a[0], b[1] - a[1]) + 1.0
+        if ln > 16.0:
+            return  # 너무 길면 다리가 아니라 둑길 — 놓지 않는다
+        deck = max(h_at(*a), h_at(*b)) + 0.05
+        cx, cz = (a[0] + b[0]) * 0.5, (a[1] + b[1]) * 0.5
+        sc.add("bridge", cx, cz, ln * 0.5, dir=round(math.atan2(b[1] - a[1], b[0] - a[0]), 3),
+               len=round(ln, 2), deck=round(deck, 2))
+
+    def bridge_along(pts, step=0.25):
+        last_dry, inside = None, False
+        for k in range(len(pts) - 1):
+            (x0, z0), (x1, z1) = pts[k], pts[k + 1]
+            n = max(1, int(math.hypot(x1 - x0, z1 - z0) / step))
+            for i in range(n + 1):
+                px, pz = lerp(x0, x1, i / n), lerp(z0, z1, i / n)
+                xi, zi = int(px), int(pz)
+                wet = 0 <= xi < W and 0 <= zi < H and cell_w(xi, zi) is not None
+                if wet and not inside:
+                    inside = True
+                elif not wet and inside:
+                    inside = False
+                    if last_dry is not None:
+                        add_bridge(last_dry, (px, pz))
+                if not wet:
+                    last_dry = (px, pz)
+
     for pts in PATHS:
-        for i in range(60):
-            t = i / 59
-            # 폴리라인 위 등간격 표본
-            seg = t * (len(pts) - 1)
-            k = min(int(seg), len(pts) - 2)
-            f = seg - k
-            px = lerp(pts[k][0], pts[k + 1][0], f)
-            pz = lerp(pts[k][1], pts[k + 1][1], f)
-            xi, zi = int(px), int(pz)
-            if 0 <= xi < W and 0 <= zi < H and cell_w(xi, zi) is not None and h_at(px, pz) > SEA - 3:
-                if sc.free(px, pz, 3.0):
-                    sc.add("bridge", px, pz, 3.0)
+        bridge_along(pts)
     for sz, x0, x1 in STREETS:
-        for x in range(x0, x1):
-            if cell_w(x, sz) is not None and sc.free(x, sz, 3.0):
-                sc.add("bridge", x + 0.5, sz, 3.0)
+        bridge_along([(x0, sz), (x1, sz)])
 
     # 2) 집: 남쪽을 보고 줄지어 선다. 개울과 광장은 비운다.
     kinds = ["house_red", "house_blue", "house_green", "bakery", "house_yellow", "flower_shop",

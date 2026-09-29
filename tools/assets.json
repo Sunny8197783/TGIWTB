@@ -53,6 +53,21 @@
   "note": "작은 땅 장식 A"
  },
  {
+  "object": "9d79fc9e-05fd-4850-8689-a7e57312def1",
+  "grid": 2,
+  "cells": [
+   "boat_0",
+   "dock_0",
+   "buoy_0",
+   "fish_crates_0"
+  ],
+  "note": "물가 소품"
+ },
+ {
+  "dest": "art/env/tavern_0.png",
+  "object": "98fd96fd-1b26-4863-b249-cb03c86ad20a"
+ },
+ {
   "dest": "art/env/fountain_0.png",
   "object": "e1c2165f-225a-4a74-adab-2c7ecffa4b8f"
  },
@@ -194,5 +209,10 @@
   "sheet": "art/characters/sakura_slime/move.png",
   "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
   "anim": "slime_move"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/rot.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "rotations": true
  }
 ]
