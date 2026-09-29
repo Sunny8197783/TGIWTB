@@ -35,15 +35,17 @@ public partial class GameRoot : Node
     private float _slowLeft;
     private float _slowScale = 1f;
     private bool _wasSlow;
+    private bool _slowTint = true;
 
     /// <summary>칼이 맞는 순간 모두 멈춘다 (실제 시간). 겹치면 긴 쪽.</summary>
     public void HitStop(float seconds) => _hitStop = Mathf.Max(_hitStop, seconds);
 
-    /// <summary>세계만 느리게 (실제 시간 seconds 동안).</summary>
-    public void SlowWorld(float scale, float seconds)
+    /// <summary>세계만 느리게 (실제 시간 seconds 동안). tint = 완벽 회피 연출(보랏빛 무채색·먹먹한 소리)도 켤지.</summary>
+    public void SlowWorld(float scale, float seconds, bool tint = true)
     {
         _slowScale = scale;
         _slowLeft = seconds;
+        _slowTint = tint;
     }
 
     public bool WorldSlowed => _slowLeft > 0f;
@@ -56,14 +58,15 @@ public partial class GameRoot : Node
         bool slow = _slowLeft > 0f;
         HeroScale = stop ? 0f : 1f;
         WorldScale = stop ? 0f : slow ? _slowScale : 1f;
-        float amount = Mathf.MoveToward(SlowAmount, slow ? 1f : 0f, real * (slow ? 8f : 2.5f));
+        bool tinted = slow && _slowTint;
+        float amount = Mathf.MoveToward(SlowAmount, tinted ? 1f : 0f, real * (tinted ? 8f : 2.5f));
         // 바뀔 때만 넣는다: 하늘 셰이더가 이 값을 읽어서, 넣을 때마다 하늘 광원 맵을 다시 굽는다
         if (amount != SlowAmount)
             RenderingServer.GlobalShaderParameterSet("time_slow", amount);
         SlowAmount = amount;
-        if (slow != _wasSlow)
-            Sfx.SetMuffled(slow);
-        _wasSlow = slow;
+        if (tinted != _wasSlow)
+            Sfx.SetMuffled(tinted);
+        _wasSlow = tinted;
         // 세계의 입자도 같이 느려진다
         foreach (var n in GetTree().GetNodesInGroup(WorldParticles))
             ((GpuParticles3D)n).SpeedScale = WorldScale;

@@ -15,6 +15,18 @@ public partial class CombatFx : Node
 {
     public enum Spark { Hit, Heavy, Block, Parry }
 
+    /// <summary>4단 색 램프: 흰 심 → 밝은 → 중간 → 짙은. 이펙트는 이 넷만으로 칠해 픽셀아트답게.</summary>
+    public readonly record struct Palette(Color Core, Color Bright, Color Mid, Color Deep);
+
+    public static readonly Dictionary<string, Palette> Palettes = new()
+    {
+        ["teal"] = new(Colors.White, new Color(0.55f, 0.98f, 1f), new Color(0.16f, 0.72f, 0.82f), new Color(0.04f, 0.3f, 0.42f)),
+        ["moon"] = new(Colors.White, new Color(0.75f, 0.9f, 1f), new Color(0.4f, 0.6f, 1f), new Color(0.2f, 0.22f, 0.6f)),
+        ["sakura"] = new(Colors.White, new Color(1f, 0.82f, 0.9f), new Color(1f, 0.5f, 0.7f), new Color(0.6f, 0.18f, 0.42f)),
+        ["thunder"] = new(Colors.White, new Color(1f, 0.97f, 0.6f), new Color(0.6f, 0.8f, 1f), new Color(0.3f, 0.3f, 0.9f)),
+    };
+    public static Palette PaletteOf(string name) => name != null && Palettes.TryGetValue(name, out var p) ? p : Palettes["teal"];
+
     private static CombatFx _i;
 
     // 카메라: 킥은 용수철(맞은 쪽으로 밀렸다 돌아옴), 흔들림은 충격량²에 비례하는 떨림
@@ -51,6 +63,11 @@ public partial class CombatFx : Node
     private int _nextSpark, _nextSlash, _nextStar;
     private readonly Dictionary<(float, float, bool), ArrayMesh> _arcs = new();
     private readonly Dictionary<Spark, GradientTexture1D> _ramps = new();
+    private readonly List<Pooled> _rings = new();
+    private readonly List<Pooled> _bolts = new();
+    private readonly List<GpuParticles3D> _sparkles = new();
+    private readonly List<GpuParticles3D> _petals = new();
+    private int _nextRing, _nextBolt, _nextSparkle, _nextPetal;
     private Shader _slashShader, _sparkShader;
     private ImageTexture _starTex;
 
@@ -84,6 +101,19 @@ public partial class CombatFx : Node
                 EmissionEnergyMultiplier = 2.2f,
             }));
         }
+        var ringShader = GD.Load<Shader>("res://shaders/shockwave.gdshader");
+        var boltShader = GD.Load<Shader>("res://shaders/lightning.gdshader");
+        for (int i = 0; i < 4; i++)
+        {
+            var ring = MakePooled(new ShaderMaterial { Shader = ringShader }, null);
+            ring.Mesh.Mesh = new PlaneMesh { Size = Vector2.One };
+            _rings.Add(ring);
+            var bolt = MakePooled(new ShaderMaterial { Shader = boltShader }, null);
+            bolt.Mesh.Mesh = new QuadMesh { Size = new Vector2(32f / Px.PerMeter, 8f), CenterOffset = new Vector3(0f, 4f, 0f) };
+            _bolts.Add(bolt);
+            _sparkles.Add(MakeBurstEmitter(sparkle: true));
+            _petals.Add(MakeBurstEmitter(sparkle: false));
+        }
         CallDeferred(nameof(Prewarm));
     }
 
@@ -100,6 +130,14 @@ public partial class CombatFx : Node
         Star(at, 0.5f, Colors.Black, 0.2f);
         Sparks(at + Vector3.Down * 3f, Vector3.Forward, Spark.Hit);
         Dust.Puff(at + Vector3.Down * 3f);
+        Shockwave(at + Vector3.Down * 3f, 1f, 0.1f, Palettes["teal"]);
+        Lightning(at + Vector3.Down * 12f, 0.05f, Palettes["thunder"]);
+        SparkleBurst(at + Vector3.Down * 3f, 4, 0.5f, Palettes["teal"]);
+        Petals(at + Vector3.Down * 3f, Vector3.Forward, 4, 0.5f);
+        // 개발: --fxtest 로 번개 하나를 오래 세워 둔다 (그림 확인용)
+        foreach (string a in OS.GetCmdlineUserArgs())
+            if (a == "--fxtest")
+                GetTree().CreateTimer(1.2).Timeout += () => Lightning(Hero.Instance.GlobalPosition + new Vector3(1.5f, 0f, 0f), 5f, Palettes["thunder"]);
     }
 
     // ── 카메라 ─────────────────────────────────────────
@@ -191,8 +229,9 @@ public partial class CombatFx : Node
     /// forward = 호의 가운데가 향하는 쪽, bend = 호가 휘어 나가는 쪽 (가로 베기면 둘 다 수평, 내려찍기면 bend = 위).
     /// </summary>
     public static void Slash(Vector3 center, Vector3 forward, Vector3 bend, float radius, float arcDeg,
-        float duration, bool reverse = false, float thickness = 1f)
+        float duration, bool reverse = false, float thickness = 1f, Palette? palette = null)
     {
+        var pal = palette ?? Palettes["teal"];
         var key = (radius, arcDeg, reverse);
         if (!_i._arcs.TryGetValue(key, out var arc))
             _i._arcs[key] = arc = ArcMesh(radius, arcDeg, reverse);
@@ -207,10 +246,80 @@ public partial class CombatFx : Node
         sl.Slash.SetShaderParameter("dissolve", 0f);
         sl.Slash.SetShaderParameter("thickness", thickness);
         sl.Slash.SetShaderParameter("seed", GD.Randf() * 100f);
+        sl.Slash.SetShaderParameter("core", pal.Core);
+        sl.Slash.SetShaderParameter("bright", pal.Bright);
+        sl.Slash.SetShaderParameter("mid", pal.Mid);
+        sl.Slash.SetShaderParameter("deep", pal.Deep);
         sl.Mesh.Visible = true;
         sl.Age = 0f;
         sl.Life = duration;
         sl.Live = true;
+    }
+
+    /// <summary>바닥 충격파 고리. radius = 다 퍼졌을 때 반지름 (m).</summary>
+    public static void Shockwave(Vector3 center, float radius, float life, Palette pal)
+    {
+        var r = _i._rings[_i._nextRing];
+        _i._nextRing = (_i._nextRing + 1) % _i._rings.Count;
+        float d = radius * 2f;
+        float sinPitch = Mathf.Sin(Mathf.DegToRad(Px.PitchDeg));
+        r.Mesh.Scale = new Vector3(d, 1f, d / sinPitch); // 화면에서 동그랗게
+        r.Mesh.GlobalPosition = new Vector3(center.X, GameRoot.Instance.World.WalkHeightAt(center.X, center.Z) + 0.08f, center.Z);
+        r.Slash.SetShaderParameter("px", d * Px.PerMeter);
+        r.Slash.SetShaderParameter("core", pal.Core);
+        r.Slash.SetShaderParameter("bright", pal.Bright);
+        r.Slash.SetShaderParameter("mid", pal.Mid);
+        r.Slash.SetShaderParameter("deep", pal.Deep);
+        r.Slash.SetShaderParameter("progress", 0f);
+        r.Mesh.Visible = true;
+        r.Age = 0f;
+        r.Life = life;
+        r.Live = true;
+    }
+
+    /// <summary>하늘에서 땅으로 떨어지는 번개 줄기. 몇 프레임마다 모양이 바뀌며 번쩍인다.</summary>
+    public static void Lightning(Vector3 ground, float life, Palette pal)
+    {
+        var b = _i._bolts[_i._nextBolt];
+        _i._nextBolt = (_i._nextBolt + 1) % _i._bolts.Count;
+        b.Mesh.GlobalPosition = ground;
+        b.Slash.SetShaderParameter("core", pal.Core);
+        b.Slash.SetShaderParameter("glow", pal.Bright);
+        b.Slash.SetShaderParameter("fade", 1f);
+        b.Mesh.Visible = true;
+        b.Age = 0f;
+        b.Life = life;
+        b.Live = true;
+    }
+
+    /// <summary>반짝이 폭발: 사방으로 튀었다가 천천히 떠오르며 깜빡인다.</summary>
+    public static void SparkleBurst(Vector3 center, int count, float radius, Palette pal)
+    {
+        var e = _i._sparkles[_i._nextSparkle];
+        _i._nextSparkle = (_i._nextSparkle + 1) % _i._sparkles.Count;
+        var pm = (ParticleProcessMaterial)e.ProcessMaterial;
+        pm.EmissionSphereRadius = radius * 0.4f;
+        pm.InitialVelocityMin = radius * 1.2f;
+        pm.InitialVelocityMax = radius * 2.6f;
+        pm.Color = pal.Bright;
+        if (e.Amount != count)
+            e.Amount = count;
+        e.GlobalPosition = center;
+        e.Restart();
+    }
+
+    /// <summary>꽃잎: dir 쪽으로 휘날리며 흩어진다.</summary>
+    public static void Petals(Vector3 center, Vector3 dir, int count, float radius)
+    {
+        var e = _i._petals[_i._nextPetal];
+        _i._nextPetal = (_i._nextPetal + 1) % _i._petals.Count;
+        var pm = (ParticleProcessMaterial)e.ProcessMaterial;
+        pm.EmissionSphereRadius = radius;
+        pm.Direction = (dir.Normalized() + Vector3.Up * 0.5f).Normalized();
+        if (e.Amount != count)
+            e.Amount = count;
+        e.GlobalPosition = center;
+        e.Restart();
     }
 
     public override void _Process(double delta)
@@ -280,6 +389,29 @@ public partial class CombatFx : Node
             }
             st.Mesh.Scale = Vector3.One * (k < 0.5f ? 1f : Mathf.Lerp(1f, 0.3f, (k - 0.5f) * 2f));
         }
+        // 충격파는 세계 시간 — 슬로우 중이면 천천히 퍼진다
+        float worldDt = real * GameRoot.Instance.WorldScale;
+        foreach (var r in _rings)
+        {
+            if (!r.Live)
+                continue;
+            r.Age += worldDt;
+            r.Slash.SetShaderParameter("progress", Mathf.Min(r.Age / r.Life, 1f));
+            if (r.Age >= r.Life)
+                r.Live = r.Mesh.Visible = false;
+        }
+        foreach (var b in _bolts)
+        {
+            if (!b.Live)
+                continue;
+            b.Age += real;
+            // 3프레임마다 새 모양, 끝으로 갈수록 깜빡이며 사라진다
+            b.Slash.SetShaderParameter("seed", Mathf.Floor(b.Age * 20f));
+            float k = b.Age / b.Life;
+            b.Slash.SetShaderParameter("fade", k < 0.7f ? 1f : (Mathf.PosMod(b.Age, 0.06f) < 0.03f ? 1f - k : 0f));
+            if (b.Age >= b.Life)
+                b.Live = b.Mesh.Visible = false;
+        }
     }
 
     private Pooled MakePooled(ShaderMaterial slash, StandardMaterial3D star)
@@ -322,6 +454,68 @@ public partial class CombatFx : Node
             CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
             LocalCoords = false,
             VisibilityAabb = new Aabb(new Vector3(-6, -3, -6), new Vector3(12, 8, 12)),
+        };
+        e.AddToGroup(GameRoot.WorldParticles);
+        GameRoot.Instance.Stage.AddChild(e);
+        return e;
+    }
+
+    private GpuParticles3D MakeBurstEmitter(bool sparkle)
+    {
+        var pm = new ParticleProcessMaterial
+        {
+            EmissionShape = ParticleProcessMaterial.EmissionShapeEnum.Sphere,
+            EmissionSphereRadius = 0.5f,
+            Direction = Vector3.Up,
+            Spread = sparkle ? 180f : 60f,
+            InitialVelocityMin = sparkle ? 2f : 3f,
+            InitialVelocityMax = sparkle ? 5f : 7f,
+            Gravity = sparkle ? new Vector3(0f, 0.8f, 0f) : new Vector3(0f, -1.2f, 0f),
+            DampingMin = sparkle ? 5f : 2f,
+            DampingMax = sparkle ? 8f : 3f,
+            TurbulenceEnabled = !sparkle,
+            TurbulenceNoiseStrength = 2f,
+            TurbulenceNoiseScale = 2f,
+            ScaleMin = sparkle ? 0.1f : 0.08f,
+            ScaleMax = sparkle ? 0.16f : 0.12f,
+            Color = sparkle ? Colors.White : new Color(1f, 0.72f, 0.84f),
+        };
+        var fade = new Gradient();
+        fade.SetColor(0, Colors.White);
+        fade.SetColor(1, new Color(1, 1, 1, 0));
+        if (sparkle)
+        {
+            // 깜빡이며 사라지는 반짝임
+            fade.AddPoint(0.5f, new Color(1, 1, 1, 0.3f));
+            fade.AddPoint(0.6f, Colors.White);
+            fade.AddPoint(0.75f, new Color(1, 1, 1, 0.2f));
+        }
+        pm.ColorRamp = new GradientTexture1D { Gradient = fade };
+        if (!sparkle)
+        {
+            // 꽃잎은 분홍·연분홍·흰색이 섞인다
+            var tint = new Gradient();
+            tint.SetColor(0, new Color(1f, 0.6f, 0.78f));
+            tint.SetColor(1, Colors.White);
+            tint.AddPoint(0.5f, new Color(1f, 0.82f, 0.9f));
+            pm.ColorInitialRamp = new GradientTexture1D { Gradient = tint };
+        }
+        var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/particle_soft.gdshader") };
+        mat.SetShaderParameter("px_size", sparkle ? 4f : 3f);
+        mat.SetShaderParameter("softness", 0f);
+        mat.SetShaderParameter("intensity", sparkle ? 2.6f : 1.1f);
+        var e = new GpuParticles3D
+        {
+            OneShot = true,
+            Emitting = false,
+            Amount = 16,
+            Lifetime = sparkle ? 0.7f : 1.2f,
+            Explosiveness = sparkle ? 0.95f : 0.7f,
+            ProcessMaterial = pm,
+            DrawPass1 = new QuadMesh { Size = Vector2.One, Material = mat },
+            LocalCoords = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            VisibilityAabb = new Aabb(new Vector3(-8, -3, -8), new Vector3(16, 10, 16)),
         };
         e.AddToGroup(GameRoot.WorldParticles);
         GameRoot.Instance.Stage.AddChild(e);

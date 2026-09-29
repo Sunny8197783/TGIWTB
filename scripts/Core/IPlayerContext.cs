@@ -12,4 +12,7 @@ public interface IPlayerContext
     float MaxHp { get; }
     bool IsAlive { get; }
     Vector3 WorldPosition { get; }
+    /// <summary>스킬 칸에 든 스킬 id (빈 칸은 null)</summary>
+    System.Collections.Generic.IReadOnlyList<string> Skills { get; }
+    float CooldownRemaining(string skillId);
 }

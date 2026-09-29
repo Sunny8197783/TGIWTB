@@ -25,6 +25,14 @@ public partial class Hud : Control
     private static readonly Color Chip = new(1f, 0.93f, 0.8f);
 
     // 3x5 숫자 (위에서 아래로 한 줄씩, 1 = 칠함)
+    // 스킬 칸 키 글자 (같은 3x5)
+    private static readonly Dictionary<char, string> Letters = new()
+    {
+        ['Q'] = "111101101111001", ['E'] = "111100111100111", ['R'] = "110101110101101",
+    };
+    private const string SlotKeys = "QER";
+    private const int SlotSize = 20, SlotGap = 6;
+
     private static readonly string[] Digits =
     {
         "111101101101111", "010110010010111", "111001111100111", "111001111001111", "101101111001001",
@@ -71,7 +79,10 @@ public partial class Hud : Control
         float px = view.PixelScale;
 
         if (_player != null)
+        {
             Bar(new Vector2(8, 8) * px, 72, 5, _player.Hp / _player.MaxHp, _chip, px);
+            SkillSlots(px);
+        }
 
         double now = Time.GetTicksMsec() / 1000.0;
         foreach (var e in Combat.Enemy.All)
@@ -94,6 +105,54 @@ public partial class Hud : Control
             Vector2 p = view.WorldToScreen(at) - new Vector2(0, rise) * px;
             Number(Snap(p, px), value, scale, c, px);
         }
+    }
+
+    /// <summary>화면 아래 가운데 스킬 칸: 스킬 색, 대기 중이면 위에서부터 어둡게 덮고, 준비되면 흰 테두리.</summary>
+    private void SkillSlots(float px)
+    {
+        var skills = _player.Skills;
+        Vector2 screen = GetViewportRect().Size;
+        int n = skills.Count;
+        float total = (n * SlotSize + (n - 1) * SlotGap) * px;
+        Vector2 origin = Snap(new Vector2((screen.X - total) * 0.5f, screen.Y - (SlotSize + 12) * px), px);
+        for (int i = 0; i < n; i++)
+        {
+            string id = skills[i];
+            Vector2 pos = origin + new Vector2(i * (SlotSize + SlotGap) * px, 0f);
+            var size = new Vector2(SlotSize, SlotSize) * px;
+            if (id == null || !Data.SkillDef.All.TryGetValue(id, out var def))
+            {
+                DrawRect(new Rect2(pos, size), Back);
+                continue;
+            }
+            var pal = Combat.CombatFx.PaletteOf(def.Palette);
+            float cd = _player.CooldownRemaining(id);
+            bool ready = cd <= 0f;
+            DrawRect(new Rect2(pos - Vector2.One * px, size + Vector2.One * 2 * px), ready ? Colors.White : Outline);
+            DrawRect(new Rect2(pos, size), pal.Deep);
+            // 안쪽 무늬: 가운데 밝은 마름모 (스킬 색)
+            for (int y = 0; y < SlotSize; y++)
+            {
+                int half = SlotSize / 2 - 3 - System.Math.Abs(y - SlotSize / 2);
+                if (half <= 0)
+                    continue;
+                DrawRect(new Rect2(pos + new Vector2(SlotSize / 2 - half, y) * px, new Vector2(half * 2, 1) * px), y < SlotSize / 2 ? pal.Bright : pal.Mid);
+            }
+            if (!ready)
+            {
+                int covered = Mathf.CeilToInt(SlotSize * Mathf.Clamp(cd / def.Cooldown, 0f, 1f));
+                DrawRect(new Rect2(pos, new Vector2(SlotSize, covered) * px), new Color(0f, 0f, 0f, 0.65f));
+            }
+            Glyph(Letters[SlotKeys[i]], pos + new Vector2(SlotSize / 2 - 1, SlotSize + 3) * px, px, Colors.White);
+        }
+    }
+
+    private void Glyph(string g, Vector2 topLeft, float px, Color c)
+    {
+        for (int y = 0; y < 5; y++)
+            for (int x = 0; x < 3; x++)
+                if (g[y * 3 + x] == '1')
+                    DrawRect(new Rect2(topLeft + new Vector2(x, y) * px, Vector2.One * px), c);
     }
 
     private void Bar(Vector2 pos, int w, int h, float ratio, float chip, float px)

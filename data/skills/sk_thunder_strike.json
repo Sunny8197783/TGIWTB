@@ -1,0 +1,32 @@
+{
+  "id": "sk_thunder_strike",
+  "name": "뇌격",
+  "cooldown": 9.0,
+  "duration": 0.95,
+  "cancel_at": 0.78,
+  "anim": "attack3",
+  "anim_hit_frame": 7,
+  "anim_hit_at": 0.42,
+  "palette": "thunder",
+  // 예비: 칼끝에 전기가 모인다(반짝이 둘, 치직 소리) → 충돌: 내려찍는 순간 하늘에서 번개 두 줄기, 큰 고리,
+  // 짧은 슬로우와 화면 섬광 → 흩어짐: 두 번째 고리, 사방으로 튀는 불꽃
+  "events": [
+    { "t": 0.0,  "fx": "sfx", "sound": "swing_heavy", "pitch": 0.6, "db": -3 },
+    { "t": 0.05, "fx": "sparkle", "count": 10, "radius": 0.5 },
+    { "t": 0.2,  "fx": "sparkle", "count": 12, "radius": 0.6 },
+    { "t": 0.2,  "fx": "sfx", "sound": "impactMetal_light", "pitch": 1.9, "db": -9 },
+    { "t": 0.3,  "fx": "sfx", "sound": "impactMetal_light", "pitch": 2.2, "db": -9 },
+    { "t": 0.38, "fx": "slash", "shape": "vertical", "radius": 2.4, "arc": 170, "life": 0.26, "thickness": 1.6 },
+    { "t": 0.42, "fx": "lightning", "forward": 1.6, "life": 0.3 },
+    { "t": 0.42, "fx": "hit", "shape": "circle", "forward": 1.6, "radius": 2.7, "damage": 45, "impact": "heavy" },
+    { "t": 0.42, "fx": "ring", "forward": 1.6, "radius": 4.6, "life": 0.5 },
+    { "t": 0.42, "fx": "flash", "amount": 0.35 },
+    { "t": 0.42, "fx": "shake", "amount": 0.6 },
+    { "t": 0.42, "fx": "slow", "amount": 0.3, "time": 0.14 },
+    { "t": 0.42, "fx": "sfx", "sound": "impactPlate_heavy", "pitch": 0.55, "db": 0 },
+    { "t": 0.42, "fx": "sfx", "sound": "impactBell_heavy", "pitch": 0.5, "db": -3 },
+    { "t": 0.46, "fx": "lightning", "forward": 2.4, "life": 0.22 },
+    { "t": 0.46, "fx": "sparkle", "count": 30, "radius": 2.0, "forward": 1.6 },
+    { "t": 0.52, "fx": "ring", "forward": 1.6, "radius": 3.0, "life": 0.35 }
+  ]
+}

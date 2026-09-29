@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Godot;
 using PixelMmo.Core;
+using PixelMmo.Data;
 using PixelMmo.Render;
 using T = PixelMmo.Combat.CombatTuning;
 
@@ -19,7 +21,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 {
     public static Hero Instance { get; private set; }
 
-    private enum State { Move, Attack, Dash, DashRecover, Guard, Hurt, Dead }
+    private enum State { Move, Attack, Skill, Dash, DashRecover, Guard, Hurt, Dead }
 
     private CharacterSprite _sprite;
     private State _state = State.Move;
@@ -42,11 +44,20 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private float _flash;
     private Color _flashColor = Colors.White;
     private Vector3 _spawn;
+    private SkillRunner _skill;
+    private readonly string[] _loadout = new string[Controls.SkillSlots.Length];
+    private readonly Dictionary<string, float> _cooldowns = new();
+    private int _skillBuffer = -1;          // 누른 스킬 칸 (버퍼 시간 동안 기억)
+    private float _skillBufferTime;
 
     public float Hp => _hp;
     public float MaxHp => T.HeroMaxHp;
     public bool IsAlive => _state != State.Dead;
     public Vector3 WorldPosition => GlobalPosition;
+    public IReadOnlyList<string> Skills => _loadout;
+    public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
+    /// <summary>바라보는 쪽 (8방향 중 하나)</summary>
+    public Vector3 Forward => FacingVector();
 
     public override void _EnterTree() => Instance = this;
 
@@ -65,6 +76,10 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _sprite = new CharacterSprite("res://art/characters/hero");
         AddChild(_sprite);
         _sprite.ExemptFromSlow();
+        _skill = new SkillRunner(this);
+        var equipped = Json.ParseString(FileAccess.GetFileAsString("res://data/player/loadout.json")).AsGodotDictionary()["skills"].AsStringArray();
+        for (int i = 0; i < _loadout.Length && i < equipped.Length; i++)
+            _loadout[i] = equipped[i];
     }
 
     /// <summary>순간이동 (시작 위치·캡처). 처음 부르면 부활 자리로 기억한다.</summary>
@@ -93,6 +108,10 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _dashAge += dt;
         _guardAge += dt;
         _iframes -= dt;
+        _skillBufferTime -= dt;
+        foreach (var id in _loadout)
+            if (id != null && _cooldowns.ContainsKey(id))
+                _cooldowns[id] -= dt;
 
         Vector2 stick = Input.GetVector(Controls.Left, Controls.Right, Controls.Up, Controls.Down);
         var wish = new Vector3(stick.X, 0f, stick.Y); // 화면 위 = 북(-Z)
@@ -110,11 +129,20 @@ public partial class Hero : CharacterBody3D, IPlayerContext
                 Face(Flat(threat.GlobalPosition - GlobalPosition), snap: true);
         }
         bool guardHeld = Input.IsActionPressed(Controls.Guard);
+        for (int i = 0; i < Controls.SkillSlots.Length; i++)
+        {
+            if (Input.IsActionJustPressed(Controls.SkillSlots[i]))
+            {
+                _skillBuffer = i;
+                _skillBufferTime = T.InputBuffer;
+            }
+        }
 
         switch (_state)
         {
             case State.Move:
                 if (_dodgeBuffer > 0f && _dashCooldown <= 0f) { StartDash(wish); break; }
+                if (TryStartSkill(wish)) break;
                 if (_attackBuffer > 0f) { StartAttack(0, wish, counter: false); break; }
                 if (guardHeld) { Enter(State.Guard); break; }
                 Run(wish, 1f, dt);
@@ -122,6 +150,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
             case State.Guard:
                 if (_dodgeBuffer > 0f && _dashCooldown <= 0f) { StartDash(wish); break; }
+                if (TryStartSkill(wish)) break;
                 if (_attackBuffer > 0f) { StartAttack(0, wish, counter: false); break; }
                 if (!guardHeld) { Enter(State.Move); break; }
                 Run(wish, T.GuardMoveScale, dt);
@@ -129,6 +158,26 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
             case State.Attack:
                 UpdateAttack(wish, dt);
+                break;
+
+            case State.Skill:
+                _skill.Update(dt);
+                // 돌진 이벤트가 몸을 밀고, 아니면 멈춘다
+                _vel = _skill.DashVelocity.LengthSquared() > 0f
+                    ? _skill.DashVelocity
+                    : _vel.MoveToward(Vector3.Zero, T.RunSpeed / T.DecelTime * dt);
+                if (_skill.DashVelocity.LengthSquared() > 0f)
+                {
+                    _ghostTimer -= dt;
+                    if (_ghostTimer <= 0f)
+                    {
+                        _ghostTimer = T.GhostInterval;
+                        _sprite.SpawnGhost(CombatFx.PaletteOf(_skill.Def.Palette).Mid, T.GhostLife);
+                    }
+                }
+                if (_skill.Cancelable && _dodgeBuffer > 0f && _dashCooldown <= 0f) { StartDash(wish); break; }
+                if (_skill.Done)
+                    Enter(State.Move);
                 break;
 
             case State.Dash:
@@ -155,6 +204,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
             case State.DashRecover:
                 _vel = _vel.MoveToward(Vector3.Zero, T.RunSpeed / T.DecelTime * dt);
+                if (TryStartSkill(wish)) break;
                 if (_attackBuffer > 0f) { StartAttack(1, wish, counter: true); break; }
                 if (_stateTime >= T.DashRecovery)
                     Enter(State.Move);
@@ -289,6 +339,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         if (t >= s.CancelAt)
         {
             if (_dodgeBuffer > 0f && _dashCooldown <= 0f) { StartDash(wish); return; }
+            if (TryStartSkill(wish)) return;
             if (_attackBuffer > 0f && _combo < T.Combo.Length - 1 && t / s.Duration >= T.ComboBufferFrom)
             {
                 StartAttack(_combo + 1, wish, counter: false);
@@ -340,25 +391,10 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (!inArc && !inSlam)
                 continue;
             hits++;
-            Vector3 dir = d > 0.01f ? to / d : f;
-            bool wasStaggered = e.Staggered;
-            e.TakeHit(damage, dir, heavy);
-            Vector3 at = e.GlobalPosition + Vector3.Up * 0.5f - dir * e.Radius * 0.5f;
-            CombatFx.Sparks(at, dir, heavy ? CombatFx.Spark.Heavy : CombatFx.Spark.Hit);
-            CombatFx.Star(at, heavy || wasStaggered ? 1.0f : 0.6f, heavy ? new Color(0.8f, 1f, 1f) : Colors.White, heavy ? 0.14f : 0.08f);
-            Sfx.Play("knifeSlice", -5f, 1.1f, 0.1f, "Hero");
+            Strike(e, damage, d > 0.01f ? to / d : f, heavy);
         }
         if (hits > 0)
-        {
-            var impact = s.Heavy ? T.HitHeavy : _counter ? T.HitCounter : T.HitNormal;
-            Apply(impact, f);
-            Sfx.Play(heavy ? "impactPunch_heavy" : "impactPunch_medium", -2f, 1f, 0.08f, "Hero");
-            if (heavy)
-            {
-                Sfx.Play("impactPlate_heavy", -6f, 0.7f, 0.05f, "Hero");
-                CombatFx.Flash(Colors.White, 0.3f); // 임팩트 프레임
-            }
-        }
+            ApplyImpact(s.Heavy ? T.HitHeavy : _counter ? T.HitCounter : T.HitNormal, f);
         if (s.Heavy)
         {
             // 맞든 안 맞든 땅을 찍는다
@@ -370,6 +406,56 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (hits == 0)
                 CombatFx.Shake(0.22f);
         }
+    }
+
+    /// <summary>적 하나를 벤다: 피해 + 불꽃 + 임팩트 별 + 베는 소리. 기본 공격과 스킬이 같이 쓴다.</summary>
+    public void Strike(Enemy e, float damage, Vector3 dir, bool heavy)
+    {
+        bool wasStaggered = e.Staggered;
+        e.TakeHit(damage, dir, heavy);
+        Vector3 at = e.GlobalPosition + Vector3.Up * 0.5f - dir * e.Radius * 0.5f;
+        CombatFx.Sparks(at, dir, heavy ? CombatFx.Spark.Heavy : CombatFx.Spark.Hit);
+        CombatFx.Star(at, heavy || wasStaggered ? 1.0f : 0.6f, heavy ? new Color(0.8f, 1f, 1f) : Colors.White, heavy ? 0.14f : 0.08f);
+        Sfx.Play("knifeSlice", -5f, 1.1f, 0.1f, "Hero");
+    }
+
+    /// <summary>한 번 휘두름(또는 스킬 판정 하나)에 한 번: 히트스톱·킥·흔들림 + 맞는 소리 층.</summary>
+    public void ApplyImpact(Impact impact, Vector3 kickDir)
+    {
+        bool heavy = impact.HitStop >= T.HitHeavy.HitStop;
+        Apply(impact, kickDir);
+        Sfx.Play(heavy ? "impactPunch_heavy" : "impactPunch_medium", -2f, 1f, 0.08f, "Hero");
+        if (heavy)
+        {
+            Sfx.Play("impactPlate_heavy", -6f, 0.7f, 0.05f, "Hero");
+            CombatFx.Flash(Colors.White, 0.3f); // 임팩트 프레임
+        }
+    }
+
+    // ── 스킬 ────────────────────────────────────────────
+
+    /// <summary>버퍼에 스킬 입력이 있고 대기시간이 끝났으면 쓴다.</summary>
+    private bool TryStartSkill(Vector3 wish)
+    {
+        if (_skillBuffer < 0 || _skillBufferTime <= 0f)
+            return false;
+        string id = _loadout[_skillBuffer];
+        _skillBuffer = -1;
+        if (id == null || !SkillDef.All.TryGetValue(id, out var def) || CooldownRemaining(id) > 0f)
+            return false;
+        _cooldowns[id] = def.Cooldown;
+        Vector3 aim = wish.LengthSquared() > 0.01f ? wish.Normalized() : FacingVector();
+        var target = NearestEnemy(aim, 4f, 70f);
+        if (target != null)
+            aim = Flat(target.GlobalPosition - GlobalPosition).Normalized();
+        Face(aim, snap: true);
+        _carry = Vector3.Zero;
+        Enter(State.Skill);
+        _ghostTimer = 0f;
+        if (_sprite.Has(def.Anim))
+            _sprite.PlayKeyed(def.Anim, def.Duration, 0, def.AnimHitFrame, def.AnimHitAt);
+        _skill.Start(def);
+        return true;
     }
 
     // ── 회피 ────────────────────────────────────────────
@@ -415,7 +501,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     {
         if (!IsAlive)
             return HitResult.Dodged;
-        if ((_state == State.Dash && _dashAge <= T.DashIFrames) || _iframes > 0f)
+        if ((_state == State.Dash && _dashAge <= T.DashIFrames) || _iframes > 0f || (_state == State.Skill && _skill.Invulnerable))
             return HitResult.Dodged;
         Vector3 toEnemy = Flat(src.GlobalPosition - GlobalPosition).Normalized();
         bool facingIt = Mathf.RadToDeg(FacingVector().AngleTo(toEnemy)) <= T.GuardArcDeg;
