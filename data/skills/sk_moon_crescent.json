@@ -7,6 +7,8 @@
   "anim": "attack2",
   "anim_hit_frame": 5,
   "anim_hit_at": 0.12,
+  // 산 적에게 맞은 시전만 센다 (규칙 3). 30번이면 만월참으로
+  "mastery": { "damage_bonus_per100": 0.3, "evolution": { "at": 30, "into": "sk_full_moon", "announce": "달이 가득 찼다." } },
   "palette": "moon",
   // 예비: 칼을 당기는 바람 소리 → 충돌: 한 바퀴 회전 베기 + 둘레 판정 + 달빛 고리 → 흩어짐: 옅은 두 번째 고리, 반짝이
   "events": [

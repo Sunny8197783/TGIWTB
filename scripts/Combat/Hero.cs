@@ -49,6 +49,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private readonly Dictionary<string, float> _cooldowns = new();
     private int _skillBuffer = -1;          // 누른 스킬 칸 (버퍼 시간 동안 기억)
     private float _skillBufferTime;
+    private Mastery _mastery;
+    private bool _persist;                  // 캡처(검증) 실행은 진짜 세이브를 읽지도 쓰지도 않는다
 
     public float Hp => _hp;
     public float MaxHp => T.HeroMaxHp;
@@ -56,6 +58,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     public Vector3 WorldPosition => GlobalPosition;
     public IReadOnlyList<string> Skills => _loadout;
     public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
+    public float MasteryProgress(string skillId) => skillId != null && SkillDef.All.TryGetValue(skillId, out var def) ? _mastery.Progress(def) : -1f;
+    public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def);
     /// <summary>바라보는 쪽 (8방향 중 하나)</summary>
     public Vector3 Forward => FacingVector();
 
@@ -80,6 +84,31 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         var equipped = Json.ParseString(FileAccess.GetFileAsString("res://data/player/loadout.json")).AsGodotDictionary()["skills"].AsStringArray();
         for (int i = 0; i < _loadout.Length && i < equipped.Length; i++)
             _loadout[i] = equipped[i];
+
+        _mastery = new Mastery(SkillDef.All.Values);
+        _persist = !Dev.DevCapture.Requested();
+        if (_persist)
+        {
+            var save = SaveData.Load();
+            _mastery.Load(save);
+            // 진화한 칸은 세이브 쪽을 따른다 (없는 스킬 id 는 버린다)
+            for (int i = 0; save.Loadout != null && i < _loadout.Length && i < save.Loadout.Count; i++)
+                if (save.Loadout[i] != null && SkillDef.All.ContainsKey(save.Loadout[i]))
+                    _loadout[i] = save.Loadout[i];
+        }
+        foreach (var (id, value) in Dev.DevCapture.MasterySeeds())
+            _mastery.Seed(id, value);
+    }
+
+    public override void _ExitTree() => Save();
+
+    private void Save()
+    {
+        if (!_persist)
+            return;
+        var save = new SaveData { Loadout = new List<string>(_loadout) };
+        _mastery.Save(save);
+        save.Write();
     }
 
     /// <summary>순간이동 (시작 위치·캡처). 처음 부르면 부활 자리로 기억한다.</summary>
@@ -464,6 +493,44 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         return true;
     }
 
+    // ── 숙련·진화·히든 ──────────────────────────────────
+
+    /// <summary>스킬이 산 적에게 처음 맞았다 (SkillRunner 가 시전마다 한 번 부른다).</summary>
+    public void CreditSkill(SkillDef def, Enemy target)
+    {
+        var r = _mastery.Use(def, target.GetInstanceId(), Time.GetTicksMsec() / 1000.0);
+        if (r.EvolvedInto != null && SkillDef.All.TryGetValue(r.EvolvedInto, out var next))
+            Evolve(def, next);
+    }
+
+    /// <summary>칸의 스킬을 진화형으로 바꾼다. 지금 쓰는 시전은 옛 모습 그대로 끝난다.</summary>
+    private void Evolve(SkillDef from, SkillDef to)
+    {
+        int slot = System.Array.IndexOf(_loadout, from.Id);
+        if (slot < 0)
+            return;
+        _loadout[slot] = to.Id;
+        _mastery.Transfer(from.Id, to.Id);
+        _cooldowns[to.Id] = CooldownRemaining(from.Id);
+        var pal = CombatFx.PaletteOf(to.Palette);
+        CombatFx.Shockwave(GlobalPosition, 3.5f, 0.6f, pal);
+        CombatFx.SparkleBurst(GlobalPosition + Vector3.Up * 0.9f, 40, 1.4f, pal);
+        Sfx.Play("impactBell_heavy", -2f, 0.8f, 0f, "UI");
+        Hud.Announce(from.Mastery.Evolution.Announce, $"{from.Name} → {to.Name}", pal.Bright);
+        Save();
+    }
+
+    /// <summary>히든 조건이 걸린 사건. 무엇이 몇 번인지는 data/skills 만 안다 (규칙 4).</summary>
+    private void CountHidden(string counter)
+    {
+        var learned = _mastery.Count(counter, _hp / MaxHp);
+        if (learned == null)
+            return;
+        Sfx.Play("impactBell_heavy", -4f, 1.2f, 0f, "UI");
+        Hud.Announce(learned.Learn.Announce, learned.Name, new Color(0.85f, 0.8f, 1f));
+        Save();
+    }
+
     private string _spinAnim;
     private int _spinFrame, _spinDir0;
     private float _spinTime, _spinLeft;
@@ -505,11 +572,12 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     /// <summary>적 공격이 닿을 뻔한 순간 막 돌진했으면 완벽 회피. 적이 판정 프레임마다 묻는다.</summary>
     public bool TryPerfectDodge(Enemy src)
     {
-        if (_state != State.Dash || _dashAge > T.PerfectDodgeWindow)
+        if (_state != State.Dash || _dashAge > _mastery.Passive(p => p.PerfectDodgeWindow, T.PerfectDodgeWindow))
             return false;
         if (!_perfectUsed)
         {
             _perfectUsed = true;
+            CountHidden("perfect_dodge");
             Apply(T.PerfectDodge, Vector3.Zero);
             GameRoot.Instance.SlowWorld(T.WitchScale, T.WitchTime);
             CombatFx.Ring(GlobalPosition + Vector3.Up * 0.8f);
@@ -534,8 +602,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
         if (_state == State.Guard && facingIt)
         {
-            if (_guardAge <= T.ParryWindow)
+            if (_guardAge <= _mastery.Passive(p => p.ParryWindow, T.ParryWindow))
             {
+                CountHidden("parry");
                 // 패링: 큰 불꽃 다발 + 높고 큰 금속음 — 소리만 들어도 막기와 구분된다 (세키로)
                 Apply(T.Parried, toEnemy);
                 CombatFx.Sparks(contact, toEnemy, CombatFx.Spark.Parry);

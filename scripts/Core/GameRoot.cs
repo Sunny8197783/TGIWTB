@@ -80,6 +80,15 @@ public partial class GameRoot : Node
     public override void _Ready()
     {
         ulong t0 = Time.GetTicksMsec();
+        if (System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--selftest") >= 0)
+        {
+            int code = 0;
+            try { Combat.Mastery.SelfCheck(); }
+            catch (System.Exception e) { GD.PrintErr(e.Message); code = 1; }
+            ProcessMode = ProcessModeEnum.Disabled; // 나머지를 만들지 않았으니 한 프레임도 돌지 않게
+            GetTree().Quit(code);
+            return;
+        }
         Controls.Register();
         AddChild(new Sfx());
         World = WorldData.Load();

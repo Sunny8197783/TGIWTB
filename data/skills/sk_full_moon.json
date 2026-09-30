@@ -1,0 +1,35 @@
+{
+  "id": "sk_full_moon",
+  "name": "만월참",
+  "cooldown": 5.0,
+  "duration": 0.8,
+  "cancel_at": 0.6,
+  "anim": "attack2",
+  "anim_hit_frame": 5,
+  "anim_hit_at": 0.12,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "moon",
+  // 월광참의 진화형: 두 바퀴. 둘째 바퀴가 더 크고, 마지막에 달빛이 한 번 더 번진다
+  "events": [
+    { "t": 0.0,  "fx": "spin", "anim": "attack1", "frame": 6, "time": 0.26 },
+    { "t": 0.0,  "fx": "sfx", "sound": "swing_heavy", "pitch": 0.8, "db": -2 },
+    { "t": 0.0,  "fx": "sfx", "sound": "cloth", "db": -8 },
+    { "t": 0.02, "fx": "slash", "shape": "spin", "radius": 3.0, "life": 0.3, "thickness": 1.5 },
+    { "t": 0.1,  "fx": "hit", "shape": "circle", "radius": 3.2, "damage": 22 },
+    { "t": 0.1,  "fx": "ring", "radius": 4.0, "life": 0.4 },
+    { "t": 0.1,  "fx": "sparkle", "count": 24, "radius": 1.6 },
+    { "t": 0.1,  "fx": "sfx", "sound": "impactBell_heavy", "pitch": 1.6, "db": -8 },
+    { "t": 0.28, "fx": "spin", "anim": "attack1", "frame": 6, "time": 0.26 },
+    { "t": 0.28, "fx": "sfx", "sound": "swing_heavy", "pitch": 0.65, "db": -1 },
+    { "t": 0.3,  "fx": "slash", "shape": "spin", "radius": 3.7, "life": 0.34, "thickness": 1.8 },
+    { "t": 0.38, "fx": "hit", "shape": "circle", "radius": 3.8, "damage": 28, "impact": "heavy" },
+    { "t": 0.38, "fx": "ring", "radius": 5.2, "life": 0.55 },
+    { "t": 0.38, "fx": "sparkle", "count": 44, "radius": 2.4 },
+    { "t": 0.38, "fx": "flash", "amount": 0.2 },
+    { "t": 0.38, "fx": "shake", "amount": 0.35 },
+    { "t": 0.38, "fx": "slow", "amount": 0.4, "time": 0.1 },
+    { "t": 0.38, "fx": "sfx", "sound": "impactBell_heavy", "pitch": 1.2, "db": -4 },
+    { "t": 0.52, "fx": "slash", "shape": "spin", "radius": 4.2, "life": 0.3, "thickness": 0.7 },
+    { "t": 0.54, "fx": "ring", "radius": 3.0, "life": 0.4 }
+  ]
+}

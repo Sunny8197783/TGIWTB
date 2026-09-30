@@ -4,7 +4,7 @@ namespace PixelMmo.Core;
 
 /// <summary>
 /// 플레이어 상태에 접근하는 유일한 통로 (CLAUDE.md 규칙 2 — 나중에 서버 권위로 옮기기 위함).
-/// 지금은 전투에 필요한 만큼만. 직업·숙련·세이브는 M5 에서 archive/astra-3d 의 것을 옮기며 늘린다.
+/// 지금은 전투·스킬 칸에 필요한 만큼만. 직업은 나중에 archive/astra-3d 의 것을 옮기며 늘린다.
 /// </summary>
 public interface IPlayerContext
 {
@@ -15,4 +15,6 @@ public interface IPlayerContext
     /// <summary>스킬 칸에 든 스킬 id (빈 칸은 null)</summary>
     System.Collections.Generic.IReadOnlyList<string> Skills { get; }
     float CooldownRemaining(string skillId);
+    /// <summary>진화까지 숙련 진행도 0~1. 진화가 없으면 -1.</summary>
+    float MasteryProgress(string skillId);
 }

@@ -103,7 +103,7 @@ public partial class CombatFx : Node
         }
         var ringShader = GD.Load<Shader>("res://shaders/shockwave.gdshader");
         var boltShader = GD.Load<Shader>("res://shaders/lightning.gdshader");
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < 6; i++) // 진화형 뇌격이 번개 다섯 줄기를 한꺼번에 쓴다
         {
             var ring = MakePooled(new ShaderMaterial { Shader = ringShader }, null);
             ring.Mesh.Mesh = new PlaneMesh { Size = Vector2.One };

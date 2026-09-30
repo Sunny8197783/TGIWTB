@@ -14,9 +14,18 @@ public partial class Hud : Control
     private IPlayerContext _player;
     private float _chip = 1f;      // 깎인 만큼 늦게 따라오는 흰 잔상
     private readonly List<(Vector3 at, int value, bool heavy, float age)> _numbers = new();
+    private string _announce, _announceSub;
+    private Color _announceColor;
+    private float _announceAge = 99f;
+    private Font _font;
 
     private const float EnemyBarShow = 3f;   // 맞은 뒤 체력바를 띄워 두는 시간 (초)
     private const float NumberLife = 0.7f;
+    private const float AnnounceLife = 3.5f;
+    // 한글은 3x5 로 못 찍는다 — 윈도우 굴림의 12px 비트맵 글자를 안티앨리어싱 없이 픽셀 그대로 키운다
+    // ponytail: 시스템 글꼴 의존. 다른 OS 로 가면 OFL 픽셀 한글 글꼴(갈무리 등)을 넣는다
+    private static readonly string[] FontNames = { "Gulim", "Dotum", "Malgun Gothic" };
+    private const int FontPx = 12, SubFontPx = 12;
 
     private static readonly Color Outline = new(0.08f, 0.06f, 0.1f);
     private static readonly Color Back = new(0.22f, 0.16f, 0.2f);
@@ -45,6 +54,17 @@ public partial class Hud : Control
             _i._numbers.Add((at, Mathf.RoundToInt(value), heavy, 0f));
     }
 
+    /// <summary>화면 위쪽 가운데 한 줄 알림 (진화·히든 습득). 조건은 절대 쓰지 않는다 (규칙 4).</summary>
+    public static void Announce(string line, string sub, Color color)
+    {
+        if (_i == null || string.IsNullOrEmpty(line))
+            return;
+        _i._announce = line;
+        _i._announceSub = sub;
+        _i._announceColor = color;
+        _i._announceAge = 0f;
+    }
+
     public override void _EnterTree() => _i = this;
 
     public override void _Ready()
@@ -52,6 +72,13 @@ public partial class Hud : Control
         Name = "Hud";
         MouseFilter = MouseFilterEnum.Ignore;
         SetAnchorsPreset(LayoutPreset.FullRect);
+        TextureFilter = TextureFilterEnum.Nearest;
+        _font = new SystemFont
+        {
+            FontNames = FontNames,
+            Antialiasing = TextServer.FontAntialiasing.None,
+            SubpixelPositioning = TextServer.SubpixelPositioning.Disabled,
+        };
     }
 
     public void Bind(IPlayerContext player) => _player = player;
@@ -59,6 +86,7 @@ public partial class Hud : Control
     public override void _Process(double delta)
     {
         float dt = (float)delta;
+        _announceAge += dt;
         if (_player != null)
             _chip = Mathf.MoveToward(_chip, _player.Hp / _player.MaxHp, dt * (_chip > _player.Hp / _player.MaxHp ? 0.6f : 5f));
         for (int i = _numbers.Count - 1; i >= 0; i--)
@@ -83,6 +111,8 @@ public partial class Hud : Control
             Bar(new Vector2(8, 8) * px, 72, 5, _player.Hp / _player.MaxHp, _chip, px);
             SkillSlots(px);
         }
+        if (_announceAge < AnnounceLife)
+            DrawAnnounce(px);
 
         double now = Time.GetTicksMsec() / 1000.0;
         foreach (var e in Combat.Enemy.All)
@@ -143,8 +173,48 @@ public partial class Hud : Control
                 int covered = Mathf.CeilToInt(SlotSize * Mathf.Clamp(cd / def.Cooldown, 0f, 1f));
                 DrawRect(new Rect2(pos, new Vector2(SlotSize, covered) * px), new Color(0f, 0f, 0f, 0.65f));
             }
-            Glyph(Letters[SlotKeys[i]], pos + new Vector2(SlotSize / 2 - 1, SlotSize + 3) * px, px, Colors.White);
+            // 숙련: 칸 바로 아래 한 줄이 진화까지 차오른다
+            float mastery = _player.MasteryProgress(id);
+            if (mastery >= 0f)
+            {
+                Vector2 bar = pos + new Vector2(0, SlotSize + 1) * px;
+                DrawRect(new Rect2(bar, new Vector2(SlotSize, 1) * px), Outline);
+                DrawRect(new Rect2(bar, new Vector2(Mathf.RoundToInt(SlotSize * mastery), 1) * px), pal.Bright);
+            }
+            Glyph(Letters[SlotKeys[i]], pos + new Vector2(SlotSize / 2 - 1, SlotSize + 4) * px, px, Colors.White);
         }
+    }
+
+    /// <summary>톡 떨어지며 나타났다가 서서히 사라지는 두 줄. 저해상도 좌표로 찍고 px 배로 키운다.</summary>
+    private void DrawAnnounce(float px)
+    {
+        float k = _announceAge;
+        float alpha = Mathf.Min(k / 0.15f, 1f) * Mathf.Clamp((AnnounceLife - k) / 0.6f, 0f, 1f);
+        int drop = Mathf.RoundToInt(6f * (1f - Mathf.Min(k / 0.2f, 1f)));
+        float lowW = GetViewportRect().Size.X / px;
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
+        // 뒤에 어두운 띠 — 수풀·꽃밭 위에서도 읽히게
+        float bandW = Mathf.Max(_font.GetStringSize(_announce, HorizontalAlignment.Left, -1, FontPx).X,
+                                string.IsNullOrEmpty(_announceSub) ? 0f : _font.GetStringSize(_announceSub, HorizontalAlignment.Left, -1, SubFontPx).X) + 32f;
+        var band = new Rect2(Mathf.Round(lowW * 0.5f - bandW * 0.5f), 50 - drop, Mathf.Round(bandW), string.IsNullOrEmpty(_announceSub) ? 20 : 36);
+        DrawRect(band, new Color(0.05f, 0.04f, 0.08f, 0.55f * alpha));
+        DrawRect(new Rect2(band.Position, new Vector2(band.Size.X, 1)), new Color(_announceColor, 0.7f * alpha));
+        DrawRect(new Rect2(band.Position + new Vector2(0, band.Size.Y - 1), new Vector2(band.Size.X, 1)), new Color(_announceColor, 0.7f * alpha));
+        Text(_announce, new Vector2(lowW * 0.5f, 64 - drop), FontPx, _announceColor, alpha);
+        if (!string.IsNullOrEmpty(_announceSub))
+            Text(_announceSub, new Vector2(lowW * 0.5f, 80 - drop), SubFontPx, Colors.White, alpha * 0.85f);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+    }
+
+    /// <summary>가운데 정렬 글자 + 사방 1픽셀 테두리 (저해상도 좌표)</summary>
+    private void Text(string s, Vector2 center, int size, Color c, float alpha)
+    {
+        float w = _font.GetStringSize(s, HorizontalAlignment.Left, -1, size).X;
+        var p = new Vector2(Mathf.Round(center.X - w * 0.5f), center.Y);
+        var edge = new Color(Outline, alpha);
+        foreach (var d in new[] { Vector2.Left, Vector2.Right, Vector2.Up, Vector2.Down })
+            DrawString(_font, p + d, s, HorizontalAlignment.Left, -1, size, edge);
+        DrawString(_font, p, s, HorizontalAlignment.Left, -1, size, new Color(c, alpha));
     }
 
     private void Glyph(string g, Vector2 topLeft, float px, Color c)

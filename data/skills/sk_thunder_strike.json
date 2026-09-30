@@ -7,6 +7,7 @@
   "anim": "attack3",
   "anim_hit_frame": 7,
   "anim_hit_at": 0.42,
+  "mastery": { "damage_bonus_per100": 0.3, "evolution": { "at": 40, "into": "sk_thunder_wrath", "announce": "하늘이 응답했다." } },
   "palette": "thunder",
   // 예비: 칼끝에 전기가 모인다(반짝이 둘, 치직 소리) → 충돌: 내려찍는 순간 하늘에서 번개 두 줄기, 큰 고리,
   // 짧은 슬로우와 화면 섬광 → 흩어짐: 두 번째 고리, 사방으로 튀는 불꽃

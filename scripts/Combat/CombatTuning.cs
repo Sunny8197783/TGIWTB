@@ -106,6 +106,19 @@ public static class CombatTuning
     /// <summary>맞은 뒤 무적 (48f) — 연속으로 두들겨 맞는 억울함 방지.</summary>
     public const float HurtIFrames = 0.8f;
 
+    // ── 숙련 (규칙 3: 산 적에게 맞은 시전만 센다 — Combat/Mastery) ──
+    /// <summary>유효한 시전 1회의 숙련.</summary>
+    public const float MasteryGain = 1f;
+    /// <summary>스킬 JSON 에 min_interval 이 없을 때 (12f).</summary>
+    public const float MasteryMinInterval = 0.2f;
+    /// <summary>같은 적을 이 횟수까지는 온전히 센다. 넘으면 반감 주기마다 절반.</summary>
+    public const int MasterySameTargetFree = 5;
+    public const float MasterySameTargetHalfLife = 2f;
+    /// <summary>다른 적을 치거나 이 시간(초)이 지나면 같은 적 연타 횟수가 풀린다.</summary>
+    public const float MasteryStreakReset = 20f;
+    /// <summary>감쇠 뒤 이보다 작으면 0 — 한 마리만 두들기는 무한 파밍 차단.</summary>
+    public const float MasteryMinGain = 0.02f;
+
     // ── 타격감 (히트스톱 초 / 킥 m/s / 흔들림 충격량) ─────────
     public static readonly Impact HitNormal = new(0.05f, 1.6f, 0.18f);   // 3f
     public static readonly Impact HitHeavy = new(0.095f, 3.2f, 0.42f);   // 6f

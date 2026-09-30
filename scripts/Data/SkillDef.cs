@@ -25,6 +25,44 @@ public sealed class SkillDef
     /// <summary>색 램프 이름 — SkillRunner.Palettes</summary>
     public string Palette { get; set; }
     public List<SkillEvent> Events { get; set; } = new();
+    public MasteryDef Mastery { get; set; }
+    /// <summary>히든 스킬: 칸에 넣지 않는 패시브. 조건(Learn)은 화면 어디에도 보이지 않는다 (규칙 4).</summary>
+    public bool Hidden { get; set; }
+    public LearnDef Learn { get; set; }
+    public PassiveDef Passive { get; set; }
+
+    public sealed class MasteryDef
+    {
+        /// <summary>이보다 빠른 연속 시전은 세지 않는다 (초). 0 이면 CombatTuning 기본값.</summary>
+        public float MinInterval { get; set; }
+        /// <summary>숙련 100 당 피해 증가율 (0.3 = +30%)</summary>
+        public float DamageBonusPer100 { get; set; }
+        public EvolutionDef Evolution { get; set; }
+    }
+
+    public sealed class EvolutionDef
+    {
+        public float At { get; set; }
+        public string Into { get; set; }
+        /// <summary>진화 순간 화면에 뜨는 한 줄. 조건은 말하지 않는다.</summary>
+        public string Announce { get; set; }
+    }
+
+    public sealed class LearnDef
+    {
+        /// <summary>세는 사건: perfect_dodge | parry</summary>
+        public string Counter { get; set; }
+        public float HpRatioAtMost { get; set; } = 1f;
+        public int Required { get; set; } = 1;
+        public string Announce { get; set; }
+    }
+
+    /// <summary>익히면 바뀌는 판정 창 (초). 0 이면 그대로.</summary>
+    public sealed class PassiveDef
+    {
+        public float ParryWindow { get; set; }
+        public float PerfectDodgeWindow { get; set; }
+    }
 
     public sealed class SkillEvent
     {
@@ -42,6 +80,7 @@ public sealed class SkillDef
         public float Life { get; set; } = 0.3f;
         public float Thickness { get; set; } = 1f;
         public float Forward { get; set; }        // 주인공 앞쪽으로 얼마나 떨어진 자리에서 (m)
+        public float Side { get; set; }           // 오른쪽(+)·왼쪽(-)으로 (m)
         public int Count { get; set; } = 12;
         public float Damage { get; set; }
         public string Impact { get; set; } = "normal"; // normal | heavy

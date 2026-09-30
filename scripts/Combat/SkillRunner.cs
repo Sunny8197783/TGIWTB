@@ -20,6 +20,7 @@ public sealed class SkillRunner
     private float _t;
     private float _dashLeft;
     private CombatFx.Palette _pal;
+    private bool _credited;    // 이번 시전의 숙련을 이미 셌나 (한 시전 = 한 번)
 
     public SkillRunner(Hero hero) => _hero = hero;
 
@@ -38,6 +39,7 @@ public sealed class SkillRunner
         _next = 0;
         _t = 0f;
         _dashLeft = 0f;
+        _credited = false;
         DashVelocity = Vector3.Zero;
         _pal = CombatFx.PaletteOf(def.Palette);
     }
@@ -62,7 +64,7 @@ public sealed class SkillRunner
         Vector3 f = _hero.Forward;
         Vector3 left = Vector3.Up.Cross(f);
         Vector3 feet = _hero.GlobalPosition;
-        Vector3 at = feet + f * e.Forward;
+        Vector3 at = feet + f * e.Forward - left * e.Side;
         Vector3 chest = at + Vector3.Up * 0.85f;
         switch (e.Fx)
         {
@@ -126,7 +128,7 @@ public sealed class SkillRunner
     private void Hit(SkillDef.SkillEvent e, Vector3 f, Vector3 at)
     {
         bool heavy = e.Impact == "heavy";
-        float damage = e.Damage * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
+        float damage = e.Damage * _hero.SkillDamageScale(_def) * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
         int hits = 0;
         foreach (var enemy in Enemy.All.ToArray())
         {
@@ -140,6 +142,12 @@ public sealed class SkillRunner
             if (!inside)
                 continue;
             hits++;
+            if (!_credited)
+            {
+                // 산 적에게 처음 맞은 순간 — 유효한 시전 (규칙 3). 헛스윙·시체 때리기는 여기까지 오지 않는다
+                _credited = true;
+                _hero.CreditSkill(_def, enemy);
+            }
             Vector3 dir = Flat(enemy.GlobalPosition - _hero.GlobalPosition);
             _hero.Strike(enemy, damage, dir.LengthSquared() > 0.01f ? dir.Normalized() : f, heavy);
         }

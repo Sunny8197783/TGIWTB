@@ -7,6 +7,7 @@
   "anim": "attack1",
   "anim_hit_frame": 6,
   "anim_hit_at": 0.34,
+  "mastery": { "damage_bonus_per100": 0.3, "evolution": { "at": 30, "into": "sk_sakura_storm", "announce": "꽃잎이 폭풍이 되었다." } },
   "palette": "sakura",
   // 앞으로 6m 돌진하며 세 번 베고(꽃잎을 흩뿌리며), 멈춰 서서 X 자로 마무리
   "events": [

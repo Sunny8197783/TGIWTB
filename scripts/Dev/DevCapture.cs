@@ -52,6 +52,21 @@ public partial class DevCapture : Node
         return false;
     }
 
+    /// <summary>--mastery=sk_moon_crescent:29.5 — 진화 직전 상태로 시작해 진화를 확인한다.</summary>
+    public static IEnumerable<(string id, float value)> MasterySeeds()
+    {
+        foreach (string a in OS.GetCmdlineUserArgs())
+        {
+            if (!a.StartsWith("--mastery="))
+                continue;
+            foreach (var part in a.Substring(10).Split(','))
+            {
+                var kv = part.Split(':');
+                yield return (kv[0], float.Parse(kv[1], CultureInfo.InvariantCulture));
+            }
+        }
+    }
+
     // "방금 눌렀다"는 물리 프레임 번호로 판정된다 — 주인공보다 먼저 도는 물리 프레임 안에서 눌러야 한다
     public override void _EnterTree() => ProcessPhysicsPriority = -100;
 
