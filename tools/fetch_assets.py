@@ -217,6 +217,35 @@ def align(ref, img, guess, reach=12):
     return best_off
 
 
+def clear_bg(img, tol=48):
+    """PixelLab v3 가 가끔 칸 전체를 회색·남색 판으로 채워 내보낸다 — 네 귀퉁이가 불투명하면
+    가장자리에서부터 그 색과 비슷한 픽셀을 지운다 (외곽선에서 멈춘다)."""
+    w, h, px = img
+    # 판은 캔버스보다 작은 사각형일 수 있다 — 불투명 영역의 네 귀퉁이를 본다
+    xs = [x for y in range(h) for x in range(w) if px[y * w + x][3] > 127]
+    ys = [y for y in range(h) for x in range(w) if px[y * w + x][3] > 127]
+    if not xs:
+        return img
+    x0, x1, y0, y1 = min(xs), max(xs), min(ys), max(ys)
+    corners = [px[y0 * w + x0], px[y0 * w + x1], px[y1 * w + x0], px[y1 * w + x1]]
+    if any(c[3] < 128 for c in corners):
+        return img
+    seed = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
+    near = lambda c: c[3] > 127 and abs(c[0] - seed[0]) + abs(c[1] - seed[1]) + abs(c[2] - seed[2]) < tol
+    px = list(px)
+    stack = [(x, y) for x in range(x0, x1 + 1) for y in (y0, y1)] + [(x, y) for y in range(y0, y1 + 1) for x in (x0, x1)]
+    while stack:
+        x, y = stack.pop()
+        i = y * w + x
+        if not near(px[i]):
+            continue
+        px[i] = (0, 0, 0, 0)
+        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+            if 0 <= nx < w and 0 <= ny < h:
+                stack.append((nx, ny))
+    return w, h, px
+
+
 def pack(item):
     folder = src_dir(item)
     frames = 1 if item.get("rotations") else frame_count(folder)
@@ -237,7 +266,7 @@ def pack(item):
         if item.get("rotations") or not all(os.path.exists(p) for p in paths):
             imgs, off = [ref] * frames, (0, 0)  # 아직 없는 방향은 서 있는 원화
         else:
-            imgs = [png.read_rgba(p) for p in paths]
+            imgs = [clear_bg(png.read_rgba(p)) for p in paths]
             if d not in cache:
                 w, h, px = imgs[0]
                 guess = ((ref[0] - w) // 2, max(opaque_rows(*ref)) - max(opaque_rows(w, h, px)))

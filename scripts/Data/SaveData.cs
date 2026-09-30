@@ -16,6 +16,9 @@ public sealed class SaveData
     public Dictionary<string, int> Counters { get; set; } = new();
     public List<string> Learned { get; set; } = new();
     public List<string> Loadout { get; set; }
+    /// <summary>모습 (AppearanceDef). null 이면 아직 고르지 않았다 → 처음 켤 때 모습 고르기가 열린다</summary>
+    public string LookBase { get; set; }
+    public int LookAccent { get; set; }
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 

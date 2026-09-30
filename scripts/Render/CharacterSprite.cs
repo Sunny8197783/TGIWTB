@@ -44,7 +44,8 @@ public partial class CharacterSprite : Node3D
     public float Progress => Mathf.Clamp(_time * _fps / _frames, 0f, 1f);
 
     /// <param name="folder">예: res://art/characters/hero — 그 안의 *.png 가 애니메이션 하나씩.</param>
-    public CharacterSprite(string folder)
+    /// <param name="recolor">불러올 때 시트마다 한 번 거치는 색 바꾸기 (Render/Recolor). null 이면 원본.</param>
+    public CharacterSprite(string folder, System.Func<Image, Image> recolor = null)
     {
         Name = "Sprite";
         TopLevel = true;
@@ -53,6 +54,8 @@ public partial class CharacterSprite : Node3D
             if (!file.EndsWith(".png"))
                 continue;
             var tex = GD.Load<Texture2D>($"{folder}/{file}");
+            if (recolor != null)
+                tex = ImageTexture.CreateFromImage(recolor(tex.GetImage()));
             _sheets[file[..^4]] = (tex, Mathf.Max(1, tex.GetWidth() / Cell));
         }
     }

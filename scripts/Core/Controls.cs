@@ -13,6 +13,8 @@ public static class Controls
     public const string Attack = "attack", Guard = "guard", Dodge = "dodge";
     /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 들었는지는 data/player/loadout.json.</summary>
     public static readonly string[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
+    /// <summary>모습 고르기 열기/닫기 (C · 패드 Back)</summary>
+    public const string Look = "appearance";
 
     public static void Register()
     {
@@ -26,6 +28,7 @@ public static class Controls
         Action(SkillSlots[0], Key.Q, Key.U); Pad(SkillSlots[0], JoyButton.Y);
         Action(SkillSlots[1], Key.E, Key.I); Pad(SkillSlots[1], JoyButton.RightShoulder);
         Action(SkillSlots[2], Key.R, Key.O); Axis(SkillSlots[2], JoyAxis.TriggerRight, 1);
+        Action(Look, Key.C); Pad(Look, JoyButton.Back);
     }
 
     private static void Action(string name, params Key[] keys)

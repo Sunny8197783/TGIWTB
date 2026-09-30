@@ -17,4 +17,10 @@ public interface IPlayerContext
     float CooldownRemaining(string skillId);
     /// <summary>진화까지 숙련 진행도 0~1. 진화가 없으면 -1.</summary>
     float MasteryProgress(string skillId);
+    /// <summary>모습: 바탕 원화 id (data/player/appearance.json) 와 옷 색 번호</summary>
+    string LookBase { get; }
+    int LookAccent { get; }
+    void SetLook(string baseId, int accent);
+    /// <summary>지금 상태를 저장한다 (모습 확정 등)</summary>
+    void Save();
 }

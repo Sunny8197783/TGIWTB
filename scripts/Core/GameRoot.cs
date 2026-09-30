@@ -49,6 +49,8 @@ public partial class GameRoot : Node
     }
 
     public bool WorldSlowed => _slowLeft > 0f;
+    /// <summary>메뉴(모습 고르기)가 떠 있다 — 주인공은 입력을 받지 않는다</summary>
+    public bool MenuOpen { get; set; }
 
     private void TickClock(float real)
     {
@@ -186,7 +188,15 @@ public partial class GameRoot : Node
         var hud = new Hud();
         ui.AddChild(hud);
         if (Hero.Instance != null)
+        {
             hud.Bind(Hero.Instance);
+            var creator = new CharacterCreator();
+            ui.AddChild(creator);
+            creator.Bind(Hero.Instance);
+            // 처음 켰으면 모습부터 (--creator: 캡처에서 화면 확인용)
+            if (Hero.Instance.FirstLaunch || System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--creator") >= 0)
+                creator.Open(first: true);
+        }
 
         if (Dev.DevCapture.Requested())
             AddChild(new Dev.DevCapture());

@@ -51,6 +51,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private float _skillBufferTime;
     private Mastery _mastery;
     private bool _persist;                  // 캡처(검증) 실행은 진짜 세이브를 읽지도 쓰지도 않는다
+    private string _lookBase;
+    private int _lookAccent;
 
     public float Hp => _hp;
     public float MaxHp => T.HeroMaxHp;
@@ -60,6 +62,10 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
     public float MasteryProgress(string skillId) => skillId != null && SkillDef.All.TryGetValue(skillId, out var def) ? _mastery.Progress(def) : -1f;
     public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def);
+    public string LookBase => _lookBase;
+    public int LookAccent => _lookAccent;
+    /// <summary>세이브에 모습이 없었다 (처음 켬) — GameRoot 가 모습 고르기를 연다</summary>
+    public bool FirstLaunch { get; private set; }
     /// <summary>바라보는 쪽 (8방향 중 하나)</summary>
     public Vector3 Forward => FacingVector();
 
@@ -77,9 +83,6 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             Shape = new CapsuleShape3D { Radius = 0.3f, Height = 1.5f },
             Position = new Vector3(0f, 0.75f, 0f),
         });
-        _sprite = new CharacterSprite("res://art/characters/hero");
-        AddChild(_sprite);
-        _sprite.ExemptFromSlow();
         _skill = new SkillRunner(this);
         var equipped = Json.ParseString(FileAccess.GetFileAsString("res://data/player/loadout.json")).AsGodotDictionary()["skills"].AsStringArray();
         for (int i = 0; i < _loadout.Length && i < equipped.Length; i++)
@@ -87,9 +90,14 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
         _mastery = new Mastery(SkillDef.All.Values);
         _persist = !Dev.DevCapture.Requested();
+        string lookBase = null;
+        int lookAccent = 0;
         if (_persist)
         {
             var save = SaveData.Load();
+            lookBase = save.LookBase;
+            lookAccent = save.LookAccent;
+            FirstLaunch = lookBase == null;
             _mastery.Load(save);
             // 진화한 칸은 세이브 쪽을 따른다 (없는 스킬 id 는 버린다)
             for (int i = 0; save.Loadout != null && i < _loadout.Length && i < save.Loadout.Count; i++)
@@ -98,15 +106,39 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         }
         foreach (var (id, value) in Dev.DevCapture.MasterySeeds())
             _mastery.Seed(id, value);
+        Dev.DevCapture.LookOverride(ref lookBase, ref lookAccent);
+        SetLook(lookBase, lookAccent);
+    }
+
+    /// <summary>모습을 바꾼다: 바탕 원화가 다르면 스프라이트를 새로 만들고, 옷 색은 불러올 때 칠한다 (Render/Recolor).</summary>
+    public void SetLook(string baseId, int accent)
+    {
+        var look = AppearanceDef.Instance;
+        var b = look.Find(baseId);
+        accent = Mathf.Clamp(accent, 0, look.Accents.Count - 1);
+        if (_sprite != null && b.Id == _lookBase && accent == _lookAccent)
+            return;
+        int dir = _sprite?.Dir ?? 0;
+        if (_sprite != null)
+        {
+            RemoveChild(_sprite);
+            _sprite.QueueFree();
+        }
+        _sprite = new CharacterSprite(b.Art, Recolor.For(b, look.Accents[accent]));
+        AddChild(_sprite);
+        _sprite.ExemptFromSlow();
+        _sprite.Dir = dir;
+        _lookBase = b.Id;
+        _lookAccent = accent;
     }
 
     public override void _ExitTree() => Save();
 
-    private void Save()
+    public void Save()
     {
         if (!_persist)
             return;
-        var save = new SaveData { Loadout = new List<string>(_loadout) };
+        var save = new SaveData { Loadout = new List<string>(_loadout), LookBase = _lookBase, LookAccent = _lookAccent };
         _mastery.Save(save);
         save.Write();
     }
@@ -142,13 +174,13 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (id != null && _cooldowns.ContainsKey(id))
                 _cooldowns[id] -= dt;
 
-        Vector2 stick = Input.GetVector(Controls.Left, Controls.Right, Controls.Up, Controls.Down);
+        Vector2 stick = GameRoot.Instance.MenuOpen ? Vector2.Zero : Input.GetVector(Controls.Left, Controls.Right, Controls.Up, Controls.Down);
         var wish = new Vector3(stick.X, 0f, stick.Y); // 화면 위 = 북(-Z)
-        if (Input.IsActionJustPressed(Controls.Dodge))
+        if (Pressed(Controls.Dodge))
             _dodgeBuffer = T.InputBuffer;
-        if (Input.IsActionJustPressed(Controls.Attack))
+        if (Pressed(Controls.Attack))
             _attackBuffer = T.InputBuffer;
-        if (Input.IsActionJustPressed(Controls.Guard))
+        if (Pressed(Controls.Guard))
         {
             _guardAge = 0f;
             // 막기를 누르면 가장 가까운 적 쪽으로 몸을 돌린다 (8방향이라 정확히 겨누기 어렵다 — 록온 대신)
@@ -157,10 +189,10 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (threat != null && _state is State.Move or State.Guard)
                 Face(Flat(threat.GlobalPosition - GlobalPosition), snap: true);
         }
-        bool guardHeld = Input.IsActionPressed(Controls.Guard);
+        bool guardHeld = !GameRoot.Instance.MenuOpen && Input.IsActionPressed(Controls.Guard);
         for (int i = 0; i < Controls.SkillSlots.Length; i++)
         {
-            if (Input.IsActionJustPressed(Controls.SkillSlots[i]))
+            if (Pressed(Controls.SkillSlots[i]))
             {
                 _skillBuffer = i;
                 _skillBufferTime = T.InputBuffer;
@@ -293,6 +325,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
                 _lastStepFrame = -1;
             }
         }
+        if (GameRoot.Instance.MenuOpen)
+            _sprite.Dir = (int)(Time.GetTicksMsec() / 700 % 8); // 모습 고르기: 천천히 제자리에서 돈다
         if (_spinLeft > 0f)
         {
             _spinLeft -= dt;
@@ -492,6 +526,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _skill.Start(def);
         return true;
     }
+
+    /// <summary>메뉴가 떠 있으면 전투 입력은 없는 것으로 친다.</summary>
+    private static bool Pressed(string action) => !GameRoot.Instance.MenuOpen && Input.IsActionJustPressed(action);
 
     // ── 숙련·진화·히든 ──────────────────────────────────
 

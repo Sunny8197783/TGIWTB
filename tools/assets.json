@@ -244,5 +244,140 @@
   "sheet": "art/characters/forest_goblin/hurt.png",
   "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
   "anim": "goblin_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/rot.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/idle.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_idle"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/run.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_run"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/dash.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_dash"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/guard.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_guard"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack1.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack2.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack3.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/hurt.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/rot.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_ranger/rot.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_warrior/idle.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_idle"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/run.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_run"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/dash.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_dash"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/guard.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_guard"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack1.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack2.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack3.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/hurt.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/idle.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_idle"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/run.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_run"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/dash.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_dash"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/guard.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_guard"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack1.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack2.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack3.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/hurt.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_hurt"
  }
 ]

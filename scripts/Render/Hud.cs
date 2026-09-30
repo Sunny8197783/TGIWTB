@@ -17,15 +17,10 @@ public partial class Hud : Control
     private string _announce, _announceSub;
     private Color _announceColor;
     private float _announceAge = 99f;
-    private Font _font;
 
     private const float EnemyBarShow = 3f;   // 맞은 뒤 체력바를 띄워 두는 시간 (초)
     private const float NumberLife = 0.7f;
     private const float AnnounceLife = 3.5f;
-    // 한글은 3x5 로 못 찍는다 — 윈도우 굴림의 12px 비트맵 글자를 안티앨리어싱 없이 픽셀 그대로 키운다
-    // ponytail: 시스템 글꼴 의존. 다른 OS 로 가면 OFL 픽셀 한글 글꼴(갈무리 등)을 넣는다
-    private static readonly string[] FontNames = { "Gulim", "Dotum", "Malgun Gothic" };
-    private const int FontPx = 12, SubFontPx = 12;
 
     private static readonly Color Outline = new(0.08f, 0.06f, 0.1f);
     private static readonly Color Back = new(0.22f, 0.16f, 0.2f);
@@ -72,13 +67,7 @@ public partial class Hud : Control
         Name = "Hud";
         MouseFilter = MouseFilterEnum.Ignore;
         SetAnchorsPreset(LayoutPreset.FullRect);
-        TextureFilter = TextureFilterEnum.Nearest;
-        _font = new SystemFont
-        {
-            FontNames = FontNames,
-            Antialiasing = TextServer.FontAntialiasing.None,
-            SubpixelPositioning = TextServer.SubpixelPositioning.Disabled,
-        };
+        TextureFilter = TextureFilterEnum.Nearest; // 한글 글자(PixelText)를 픽셀 그대로 키운다
     }
 
     public void Bind(IPlayerContext player) => _player = player;
@@ -194,27 +183,15 @@ public partial class Hud : Control
         float lowW = GetViewportRect().Size.X / px;
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
         // 뒤에 어두운 띠 — 수풀·꽃밭 위에서도 읽히게
-        float bandW = Mathf.Max(_font.GetStringSize(_announce, HorizontalAlignment.Left, -1, FontPx).X,
-                                string.IsNullOrEmpty(_announceSub) ? 0f : _font.GetStringSize(_announceSub, HorizontalAlignment.Left, -1, SubFontPx).X) + 32f;
+        float bandW = Mathf.Max(PixelText.Width(_announce), string.IsNullOrEmpty(_announceSub) ? 0f : PixelText.Width(_announceSub)) + 32f;
         var band = new Rect2(Mathf.Round(lowW * 0.5f - bandW * 0.5f), 50 - drop, Mathf.Round(bandW), string.IsNullOrEmpty(_announceSub) ? 20 : 36);
         DrawRect(band, new Color(0.05f, 0.04f, 0.08f, 0.55f * alpha));
         DrawRect(new Rect2(band.Position, new Vector2(band.Size.X, 1)), new Color(_announceColor, 0.7f * alpha));
         DrawRect(new Rect2(band.Position + new Vector2(0, band.Size.Y - 1), new Vector2(band.Size.X, 1)), new Color(_announceColor, 0.7f * alpha));
-        Text(_announce, new Vector2(lowW * 0.5f, 64 - drop), FontPx, _announceColor, alpha);
+        PixelText.DrawCentered(this, _announce, new Vector2(lowW * 0.5f, 64 - drop), _announceColor, alpha);
         if (!string.IsNullOrEmpty(_announceSub))
-            Text(_announceSub, new Vector2(lowW * 0.5f, 80 - drop), SubFontPx, Colors.White, alpha * 0.85f);
+            PixelText.DrawCentered(this, _announceSub, new Vector2(lowW * 0.5f, 80 - drop), Colors.White, alpha * 0.85f);
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
-    }
-
-    /// <summary>가운데 정렬 글자 + 사방 1픽셀 테두리 (저해상도 좌표)</summary>
-    private void Text(string s, Vector2 center, int size, Color c, float alpha)
-    {
-        float w = _font.GetStringSize(s, HorizontalAlignment.Left, -1, size).X;
-        var p = new Vector2(Mathf.Round(center.X - w * 0.5f), center.Y);
-        var edge = new Color(Outline, alpha);
-        foreach (var d in new[] { Vector2.Left, Vector2.Right, Vector2.Up, Vector2.Down })
-            DrawString(_font, p + d, s, HorizontalAlignment.Left, -1, size, edge);
-        DrawString(_font, p, s, HorizontalAlignment.Left, -1, size, new Color(c, alpha));
     }
 
     private void Glyph(string g, Vector2 topLeft, float px, Color c)

@@ -33,6 +33,9 @@ public partial class DevCapture : Node
 
     private readonly List<float> _frameMs = new();
     private readonly List<float> _physMs = new();
+    // 튀는 프레임이 C# GC 와 겹치는지 (전투 중 3초에 한 번쯤 25~40ms)
+    private const float SpikeMs = 22f;
+    private int _spikes, _gcSpikes, _gcCount, _lastGc;
     private ulong _last;
 
     public static HashSet<string> Disabled()
@@ -64,6 +67,19 @@ public partial class DevCapture : Node
                 var kv = part.Split(':');
                 yield return (kv[0], float.Parse(kv[1], CultureInfo.InvariantCulture));
             }
+        }
+    }
+
+    /// <summary>--look=warrior:2 — 모습을 정해 찍는다.</summary>
+    public static void LookOverride(ref string baseId, ref int accent)
+    {
+        foreach (string a in OS.GetCmdlineUserArgs())
+        {
+            if (!a.StartsWith("--look="))
+                continue;
+            var kv = a.Substring(7).Split(':');
+            baseId = kv[0];
+            accent = kv.Length > 1 ? int.Parse(kv[1]) : 0;
         }
     }
 
@@ -125,6 +141,8 @@ public partial class DevCapture : Node
         _wait = _settle + (int)(_hold * 60f);
         _frameMs.Clear();
         _physMs.Clear();
+        _spikes = _gcSpikes = _gcCount = 0;
+        _lastGc = System.GC.CollectionCount(0);
         _pressPending = _press.Count > 0;
         _reacted = false;
     }
@@ -161,8 +179,19 @@ public partial class DevCapture : Node
         ulong now = Time.GetTicksUsec();
         if (_last > 0 && _wait < _settle + (int)(_hold * 60f) - 20)
         {
-            _frameMs.Add((now - _last) / 1000f);
+            float ms = (now - _last) / 1000f;
+            _frameMs.Add(ms);
             _physMs.Add((float)Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000f);
+            int gc = System.GC.CollectionCount(0);
+            if (gc != _lastGc)
+                _gcCount++;
+            if (ms > SpikeMs)
+            {
+                _spikes++;
+                if (gc != _lastGc)
+                    _gcSpikes++;
+            }
+            _lastGc = gc;
         }
         _last = now;
 
@@ -196,6 +225,7 @@ public partial class DevCapture : Node
         foreach (float v in _physMs) phys += v;
         _frameMs.Sort();
         GD.Print($"[Perf] shot{_index:D2} 중앙 {_frameMs[_frameMs.Count / 2]:0.0}ms  p90 {_frameMs[(int)(_frameMs.Count * 0.9f)]:0.0}ms  최악 {_frameMs[^1]:0.0}ms"
-            + $"  | 물리 평균 {phys / _physMs.Count:0.0}ms 드로우 {Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame)}");
+            + $"  | 물리 평균 {phys / _physMs.Count:0.0}ms 드로우 {Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame)}"
+            + $"  | {SpikeMs:0}ms 넘게 튐 {_spikes}번 (GC 와 겹침 {_gcSpikes}) · GC {_gcCount}번");
     }
 }

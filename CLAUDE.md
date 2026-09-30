@@ -33,5 +33,8 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - 스킬: `data/skills/*.json` (이벤트 목록, `Combat/SkillRunner` 가 해석), 칸 구성 `data/player/loadout.json`. 확인은 `--press=skill_1 --settle=10`
 - 숙련·진화: 스킬 JSON 의 `mastery.evolution`. 진화 확인은 `--mastery=sk_moon_crescent:29.5 --press=skill_1 --settle=40`. 판정 규칙 검사는 `tools/godot.sh --headless -- --selftest`
 - 세이브는 `user://save.json`. 캡처(`--capture`) 실행은 세이브를 읽지도 쓰지도 않는다
+- 모습(M6): `data/player/appearance.json` — 바탕 원화 4종 + 옷 색. 확인은 `--look=warrior:1` (모습 고르기 화면은 `--creator`).
+  옷 색 범위는 `python tools/palette.py <시트> --mark out.png 70,150,0.25[,명도]` 로 옷만 칠해지는지 보고 정한다
+- 새 주인공 바탕을 만들 때: hero 와 같은 설정(v3, 64px, high top-down, selective outline, high detail)과 같은 동작 프롬프트·칸 수를 쓴다 (전투 판정 칸이 전역이라)
 - 작은 소품: 한 장에 격자로 뽑아 `tools/assets.json` 의 `{"object": id, "cols", "rows", "cells": [...]}` 로 잘라 쓴다 (생성 1회 = 소품 6~16개)
 - 주의: PowerShell 은 스크립트 인자의 맨 `--` 를 삼킨다. Godot 실행은 Bash 의 `tools/godot.sh` 로.
