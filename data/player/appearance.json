@@ -5,9 +5,9 @@
   //   python tools/palette.py <시트> --mark out.png 170,205,0.25[,0.2] 로 옷만 걸리는지 눈으로 확인하고 적는다.
   "bases": [
     { "id": "swordsman",   "name": "검사",   "art": "res://art/characters/hero",             "accent_hue": [170, 205], "accent_sat": 0.25 },
-    { "id": "swordswoman", "name": "여검사", "art": "res://art/characters/hero_swordswoman", "accent_hue": [212, 246], "accent_sat": 0.2, "accent_val": 0.2 }
+    { "id": "swordswoman", "name": "여검사", "art": "res://art/characters/hero_swordswoman", "accent_hue": [212, 246], "accent_sat": 0.2, "accent_val": 0.2 },
+    { "id": "warrior",     "name": "전사",   "art": "res://art/characters/hero_warrior",     "accent_hue": [70, 150],  "accent_sat": 0.25 }
     // 생성 중 (그림이 다 모이면 켠다):
-    // { "id": "warrior", "name": "전사",   "art": "res://art/characters/hero_warrior", "accent_hue": [70, 150], "accent_sat": 0.25 },
     // { "id": "ranger",  "name": "나그네", "art": "res://art/characters/hero_ranger",  "accent_hue": [60, 150], "accent_sat": 0.2 }
   ],
   // 0번은 원래 색. hue 가 없으면 색상은 그대로 두고 채도·명도만 바꾼다. min_sat: 채도 하한 (칙칙한 옷도 또렷하게)
