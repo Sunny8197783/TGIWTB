@@ -343,7 +343,8 @@
  {
   "sheet": "art/characters/hero_ranger/idle.png",
   "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
-  "anim": "rg_idle"
+  "anim": "rg_idle",
+  "note": "북쪽은 skeleton-v3 가 앞모습으로 뽑아 회전 원화 북쪽으로 4칸을 덮어씀 (art_src/hero_ranger/idle/north) — --force 로 다시 받으면 되살아난다"
  },
  {
   "sheet": "art/characters/hero_ranger/run.png",
