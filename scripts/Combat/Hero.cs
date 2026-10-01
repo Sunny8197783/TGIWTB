@@ -339,6 +339,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _sprite.SetFlash(Mathf.Max(_flash, blink ? 0.45f : 0f), _flash > 0f ? _flashColor : Colors.White);
         _sprite.Advance(dt);
         _sprite.PlaceAt(feet, world.WalkHeightAt(feet.X, feet.Z));
+        // 앞을 가린 나무·지붕을 바둑판으로 비울 자리 (sprite.gdshader)
+        RenderingServer.GlobalShaderParameterSet("hero_screen", GameRoot.Instance.View.Camera.UnprojectPosition(_sprite.GlobalPosition + Vector3.Up * SeeThroughHeight));
+        RenderingServer.GlobalShaderParameterSet("hero_z", feet.Z);
 
         // 카메라: 달리는 쪽을 조금 앞서 본다
         Vector3 lookTarget = _state == State.Move ? _vel / T.RunSpeed * T.LookAhead : _look;
@@ -567,6 +570,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         Hud.Announce(learned.Learn.Announce, learned.Name, new Color(0.85f, 0.8f, 1f));
         Save();
     }
+
+    /// <summary>투시 타원의 가운데 높이 (m) — 가슴께</summary>
+    private const float SeeThroughHeight = 0.9f;
 
     private string _spinAnim;
     private int _spinFrame, _spinDir0;

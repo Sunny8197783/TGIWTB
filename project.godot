@@ -95,6 +95,14 @@ time_slow={
 "type": "float",
 "value": 0.0
 }
+hero_screen={
+"type": "vec2",
+"value": Vector2(-1000, -1000)
+}
+hero_z={
+"type": "float",
+"value": 0.0
+}
 
 [importer_defaults]
 

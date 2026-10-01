@@ -9,6 +9,10 @@ render_mode diffuse_lambert, specular_disabled, cull_disabled, depth_draw_opaque
 global uniform float world_time;
 global uniform float night;
 global uniform vec2 wind;
+// 주인공 가슴의 화면 위치(640x360 픽셀)와 발 z — 앞을 가린 소품을 바둑판으로 비워 주인공을 보여 준다 (Combat/Hero)
+global uniform vec2 hero_screen;
+global uniform float hero_z;
+const vec2 SEE_THROUGH = vec2(15.0, 27.0); // 비우는 타원 반지름 (픽셀). 주인공 그림이 약 30x56
 
 uniform sampler2D albedo_tex : source_color, filter_nearest, repeat_disable;
 uniform float sway = 0.0;         // 바람 흔들림 (m). 나무 0.04, 풀 0.03
@@ -56,6 +60,15 @@ void fragment() {
 	}
 	vec4 tex = texture(albedo_tex, uv) * tint * itint;
 	if (tex.a < 0.5) discard;
+	// 소품(캐릭터·풀포기 아님)이 주인공보다 앞(남쪽)에 서서 겹치면 한 칸 걸러 비운다 — 픽셀 게임식 투시
+	if (depth_pull == 0.0 && !instance_tint && wpos.z > hero_z + 0.3) {
+		vec2 d = (FRAGCOORD.xy - hero_screen) / SEE_THROUGH;
+		float r = dot(d, d);
+		vec2 px = mod(floor(FRAGCOORD.xy), 2.0);
+		// 가운데는 네 칸에 한 칸만 남기고, 가장자리는 바둑판 — 경계가 딱 잘리지 않게
+		bool keep = r < 0.55 ? (px.x + px.y == 0.0) : (px.x == px.y);
+		if (r < 1.0 && !keep) discard;
+	}
 
 	vec3 col = mix(tex.rgb, flash_color.rgb, flash);
 	ALBEDO = slow_exempt ? col : slow_tint(col);
