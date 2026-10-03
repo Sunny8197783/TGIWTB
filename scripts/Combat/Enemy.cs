@@ -282,9 +282,15 @@ public partial class Enemy : CharacterBody3D
         Sfx.Play(Def.Sounds.Death, -2f, 0.7f);
         Dust.Puff(GlobalPosition, 10, Vector3.Zero);
         CollisionLayer = 0;
-        _sprite.PlayOnce(_sprite.Has("death") ? "death" : "hurt", 0.6f);
+        _sprite.PlayOnce(_sprite.Has("death") ? "death" : "hurt", T.DeathAnimTime);
+        // 쓰러진 채 잠깐 남았다가 깜빡이며 사라진다 (옛 액션 게임식)
         var tw = CreateTween();
-        tw.TweenInterval(0.9f);
+        tw.TweenInterval(T.DeathAnimTime + T.CorpseTime);
+        for (int i = 0; i < Mathf.RoundToInt(T.CorpseBlinkTime / T.CorpseBlinkStep); i++)
+        {
+            tw.TweenCallback(Callable.From(() => _sprite.Visible = !_sprite.Visible));
+            tw.TweenInterval(T.CorpseBlinkStep);
+        }
         tw.TweenCallback(Callable.From(QueueFree));
         EmitSignal(SignalName.Died);
     }

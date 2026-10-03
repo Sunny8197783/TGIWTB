@@ -106,6 +106,15 @@ public static class CombatTuning
     /// <summary>맞은 뒤 무적 (48f) — 연속으로 두들겨 맞는 억울함 방지.</summary>
     public const float HurtIFrames = 0.8f;
 
+    // ── 적 죽음 ─────────────────────────────────────────
+    /// <summary>쓰러지는 동작 (36f). 없으면 피격 동작을 이만큼 늘여 쓴다.</summary>
+    public const float DeathAnimTime = 0.6f;
+    /// <summary>쓰러진 채 남는 시간 (60f) — 마지막 칸에 멈춰 있다.</summary>
+    public const float CorpseTime = 1.0f;
+    /// <summary>사라지기 전 깜빡임: 모두 (24f), 한 번 (4f).</summary>
+    public const float CorpseBlinkTime = 0.4f;
+    public const float CorpseBlinkStep = 0.067f;
+
     // ── 숙련 (규칙 3: 산 적에게 맞은 시전만 센다 — Combat/Mastery) ──
     /// <summary>유효한 시전 1회의 숙련.</summary>
     public const float MasteryGain = 1f;

@@ -25,7 +25,7 @@ public static class TerrainBuilder
                     Name = $"Chunk_{cx}_{cz}",
                     Mesh = mesh,
                     MaterialOverride = material,
-                    CastShadow = GeometryInstance3D.ShadowCastingSetting.On,
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
                 };
                 root.AddChild(mi);
             }
