@@ -380,5 +380,20 @@
   "sheet": "art/characters/hero_ranger/hurt.png",
   "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
   "anim": "rg_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/hurt.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/death.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_death"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/death.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_death"
  }
 ]

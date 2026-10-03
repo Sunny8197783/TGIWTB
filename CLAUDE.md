@@ -27,7 +27,11 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - 지도: `python tools/mapgen/mapgen.py` → `data/world/*` + `docs/design/map_preview.png`
 - 에셋: `tools/assets.json` 에 PixelLab id 를 적고 `python tools/fetch_assets.py`
 - 화면 확인: `tools/godot.sh -- --capture --shot=x,z,시각[,피치,거리] --out=user://shots`
-- 성능: `... --capture --novsync --hold=3 --shot=...` (장면마다 프레임 시간), `--no=grass,props,hero,monsters,...` 로 A/B
+- 성능: `... --capture --novsync --hold=3 --shot=...` (장면마다 프레임 시간), `--no=grass,props,hero,monsters,shadows,...` 로 A/B
+  - 노트북이 달아올라 같은 장면도 14→23ms 로 흔들린다. A/B 는 기준·변경을 **번갈아** 여러 번 잰다 (한 번씩 차례로 재면 순서가 결과를 만든다)
+  - `[Spike]` 줄: 튄 프레임 앞뒤의 그리기 CPU/GPU·물리 걸음 수·GC. Performance 모니터(스크립트·물리)는 1초에 한 번만 바뀌어 프레임 단위로는 못 쓴다
+  - 매 프레임 넘기는 셰이더 변수·조작 이름은 `Render/Uniform`·`Core/Controls` 의 StringName 을 쓴다 (문자열은 GC 끊김을 부른다)
+  - 처음 그리는 셰이더는 파이프라인을 만드느라 멈칫한다 → 새 이펙트 셰이더는 `CombatFx.Prewarm` 에 넣는다
 - 동작 확인: `--press=attack --settle=12` (누르고 12프레임 뒤), `--react=guard --after=7` (적 공격 예고 끝에 막기 → 패링)
 - 캐릭터 그림: `tools/assets.json` 에 `{"sheet": ..., "char": id, "anim": "PixelLab 애니 이름"}` → 원본은 `art_src/`, 시트는 `art/characters/<캐릭터>/<동작>.png`
 - 스킬: `data/skills/*.json` (이벤트 목록, `Combat/SkillRunner` 가 해석), 칸 구성 `data/player/loadout.json`. 확인은 `--press=skill_1 --settle=10`
