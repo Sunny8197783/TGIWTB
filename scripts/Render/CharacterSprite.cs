@@ -68,7 +68,7 @@ public partial class CharacterSprite : Node3D
     {
         float size = Cell / Px.PerMeter;
         _mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/sprite.gdshader") };
-        _mat.SetShaderParameter("depth_pull", DepthPull);
+        _mat.SetShaderParameter(Uniform.DepthPull, DepthPull);
         _quad = new MeshInstance3D
         {
             Name = "Quad",
@@ -121,8 +121,8 @@ public partial class CharacterSprite : Node3D
         _anim = anim;
         _time = 0f;
         _frames = sheet.frames;
-        _mat.SetShaderParameter("albedo_tex", sheet.tex);
-        _mat.SetShaderParameter("frame_count", new Vector2(_frames, Dirs.Length));
+        _mat.SetShaderParameter(Uniform.AlbedoTex, sheet.tex);
+        _mat.SetShaderParameter(Uniform.FrameCount, new Vector2(_frames, Dirs.Length));
         Apply();
     }
 
@@ -181,21 +181,21 @@ public partial class CharacterSprite : Node3D
 
     public void SetFlash(float amount, Color? color = null)
     {
-        _mat.SetShaderParameter("flash", amount);
-        _mat.SetShaderParameter("flash_color", color ?? Colors.White);
+        _mat.SetShaderParameter(Uniform.Flash, amount);
+        _mat.SetShaderParameter(Uniform.FlashColor, color ?? Colors.White);
     }
 
     /// <summary>슬로우 중에도 제 색 (주인공).</summary>
-    public void ExemptFromSlow() => _mat.SetShaderParameter("slow_exempt", true);
+    public void ExemptFromSlow() => _mat.SetShaderParameter(Uniform.SlowExempt, true);
 
     /// <summary>지금 그림 그대로 잔상을 하나 남긴다.</summary>
     public void SpawnGhost(Color color, float life)
     {
         var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/ghost.gdshader") };
-        mat.SetShaderParameter("albedo_tex", _mat.GetShaderParameter("albedo_tex"));
-        mat.SetShaderParameter("frame_count", new Vector2(_frames, Dirs.Length));
-        mat.SetShaderParameter("frame", (float)(Dir * _frames + Frame));
-        mat.SetShaderParameter("color", color);
+        mat.SetShaderParameter(Uniform.AlbedoTex, _mat.GetShaderParameter(Uniform.AlbedoTex));
+        mat.SetShaderParameter(Uniform.FrameCount, new Vector2(_frames, Dirs.Length));
+        mat.SetShaderParameter(Uniform.Frame, (float)(Dir * _frames + Frame));
+        mat.SetShaderParameter(Uniform.Color, color);
         var ghost = new MeshInstance3D
         {
             Mesh = _quad.Mesh,
@@ -206,7 +206,7 @@ public partial class CharacterSprite : Node3D
         GetParent().AddChild(ghost);
         ghost.GlobalPosition = GlobalPosition;
         var tw = ghost.CreateTween();
-        tw.TweenMethod(Callable.From<float>(f => mat.SetShaderParameter("fade", f)), 0.8f, 0f, life);
+        tw.TweenMethod(Callable.From<float>(f => mat.SetShaderParameter(Uniform.Fade, f)), 0.8f, 0f, life);
         tw.TweenCallback(Callable.From(ghost.QueueFree));
     }
 
@@ -222,7 +222,7 @@ public partial class CharacterSprite : Node3D
         if (_holdFrame >= 0)
             f = _holdFrame;
         Frame = _loop ? f % _frames : Mathf.Min(f, _frames - 1);
-        _mat.SetShaderParameter("frame", (float)(Dir * _frames + Frame));
+        _mat.SetShaderParameter(Uniform.Frame, (float)(Dir * _frames + Frame));
     }
 
     /// <summary>발밑 타원 그림자. 화면에서 20x8 픽셀이 되도록 땅 위 판을 세로로 늘린다(내려다보면 세로가 줄어서).</summary>

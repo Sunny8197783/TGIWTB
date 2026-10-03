@@ -9,12 +9,12 @@ namespace PixelMmo.Core;
 /// </summary>
 public static class Controls
 {
-    public const string Left = "move_left", Right = "move_right", Up = "move_up", Down = "move_down";
-    public const string Attack = "attack", Guard = "guard", Dodge = "dodge";
+    public static readonly StringName Left = "move_left", Right = "move_right", Up = "move_up", Down = "move_down";
+    public static readonly StringName Attack = "attack", Guard = "guard", Dodge = "dodge";
     /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 들었는지는 data/player/loadout.json.</summary>
-    public static readonly string[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
+    public static readonly StringName[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
     /// <summary>모습 고르기 열기/닫기 (C · 패드 Back)</summary>
-    public const string Look = "appearance";
+    public static readonly StringName Look = "appearance";
 
     public static void Register()
     {
@@ -31,7 +31,7 @@ public static class Controls
         Action(Look, Key.C); Pad(Look, JoyButton.Back);
     }
 
-    private static void Action(string name, params Key[] keys)
+    private static void Action(StringName name, params Key[] keys)
     {
         if (!InputMap.HasAction(name))
             InputMap.AddAction(name, 0.25f);
@@ -39,12 +39,12 @@ public static class Controls
             InputMap.ActionAddEvent(name, new InputEventKey { PhysicalKeycode = k });
     }
 
-    private static void Axis(string name, JoyAxis axis, float sign) =>
+    private static void Axis(StringName name, JoyAxis axis, float sign) =>
         InputMap.ActionAddEvent(name, new InputEventJoypadMotion { Axis = axis, AxisValue = sign });
 
-    private static void Mouse(string name, MouseButton b) =>
+    private static void Mouse(StringName name, MouseButton b) =>
         InputMap.ActionAddEvent(name, new InputEventMouseButton { ButtonIndex = b });
 
-    private static void Pad(string name, JoyButton b) =>
+    private static void Pad(StringName name, JoyButton b) =>
         InputMap.ActionAddEvent(name, new InputEventJoypadButton { ButtonIndex = b });
 }

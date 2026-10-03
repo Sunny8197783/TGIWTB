@@ -64,7 +64,7 @@ public partial class GameRoot : Node
         float amount = Mathf.MoveToward(SlowAmount, tinted ? 1f : 0f, real * (tinted ? 8f : 2.5f));
         // 바뀔 때만 넣는다: 하늘 셰이더가 이 값을 읽어서, 넣을 때마다 하늘 광원 맵을 다시 굽는다
         if (amount != SlowAmount)
-            RenderingServer.GlobalShaderParameterSet("time_slow", amount);
+            RenderingServer.GlobalShaderParameterSet(Uniform.TimeSlow, amount);
         SlowAmount = amount;
         if (tinted != _wasSlow)
             Sfx.SetMuffled(tinted);
@@ -211,7 +211,7 @@ public partial class GameRoot : Node
         TickClock((float)delta);
         float dt = (float)delta * WorldScale;
         WorldTime += dt;
-        RenderingServer.GlobalShaderParameterSet("world_time", WorldTime);
+        RenderingServer.GlobalShaderParameterSet(Uniform.WorldTime, WorldTime);
         DayCycle.Advance(dt);
     }
 }

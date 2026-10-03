@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using PixelMmo.Render;
 
 namespace PixelMmo.World;
 
@@ -167,22 +168,22 @@ public partial class DayNight : Node
         if (_skyTimer <= 0f)
         {
             _skyTimer = SkyRefresh;
-            _sky.SetShaderParameter("moon_dir", shownMoon);
-            _sky.SetShaderParameter("sunset", sunset);
-            _sky.SetShaderParameter("night", night);
-            _sky.SetShaderParameter("sun_dir", sunUp ? sun : shownMoon);
-            _sky.SetShaderParameter("sun_color", sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
-            _sky.SetShaderParameter("sky_horizon", horizon);
-            _sky.SetShaderParameter("sky_zenith", zenith);
-            _sky.SetShaderParameter("world_time", Hour * 150f);
+            _sky.SetShaderParameter(Uniform.MoonDir, shownMoon);
+            _sky.SetShaderParameter(Uniform.Sunset, sunset);
+            _sky.SetShaderParameter(Uniform.Night, night);
+            _sky.SetShaderParameter(Uniform.SunDir, sunUp ? sun : shownMoon);
+            _sky.SetShaderParameter(Uniform.SunColor, sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
+            _sky.SetShaderParameter(Uniform.SkyHorizon, horizon);
+            _sky.SetShaderParameter(Uniform.SkyZenith, zenith);
+            _sky.SetShaderParameter(Uniform.WorldTime, Hour * 150f);
         }
 
-        RenderingServer.GlobalShaderParameterSet("sky_horizon", horizon);
-        RenderingServer.GlobalShaderParameterSet("sky_zenith", zenith);
+        RenderingServer.GlobalShaderParameterSet(Uniform.SkyHorizon, horizon);
+        RenderingServer.GlobalShaderParameterSet(Uniform.SkyZenith, zenith);
         // 밤에는 '해' 자리에 달을 넣는다 — 물 위 반사 길(윤슬)이 달빛 쪽으로 생긴다
-        RenderingServer.GlobalShaderParameterSet("sun_dir", sunUp ? sun : shownMoon);
-        RenderingServer.GlobalShaderParameterSet("sun_color", sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
-        RenderingServer.GlobalShaderParameterSet("night", night);
+        RenderingServer.GlobalShaderParameterSet(Uniform.SunDir, sunUp ? sun : shownMoon);
+        RenderingServer.GlobalShaderParameterSet(Uniform.SunColor, sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
+        RenderingServer.GlobalShaderParameterSet(Uniform.Night, night);
     }
 
     private static (Key a, Key b, float t) Bracket(float hour)

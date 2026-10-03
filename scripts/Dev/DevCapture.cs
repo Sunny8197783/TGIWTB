@@ -36,6 +36,10 @@ public partial class DevCapture : Node
     // 튀는 프레임이 C# GC 와 겹치는지 (전투 중 3초에 한 번쯤 25~40ms)
     private const float SpikeMs = 22f;
     private int _spikes, _gcSpikes, _gcCount, _lastGc;
+    // 프레임마다 어디에 시간을 썼나 — 튄 프레임 앞뒤를 찍어 원인 칸을 가린다
+    private readonly record struct FrameStat(float Ms, float Proc, float Phys, int Steps, float RenderCpu, float RenderGpu, int Gc);
+    private readonly List<FrameStat> _stats = new();
+    private int _steps;
     private ulong _last;
 
     public static HashSet<string> Disabled()
@@ -88,6 +92,7 @@ public partial class DevCapture : Node
 
     public override void _Ready()
     {
+        RenderingServer.ViewportSetMeasureRenderTime(GameRoot.Instance.View.Viewport.GetViewportRid(), true);
         foreach (string a in OS.GetCmdlineUserArgs())
         {
             if (a.StartsWith("--shot="))
@@ -141,6 +146,7 @@ public partial class DevCapture : Node
         _wait = _settle + (int)(_hold * 60f);
         _frameMs.Clear();
         _physMs.Clear();
+        _stats.Clear();
         _spikes = _gcSpikes = _gcCount = 0;
         _lastGc = System.GC.CollectionCount(0);
         _pressPending = _press.Count > 0;
@@ -149,6 +155,7 @@ public partial class DevCapture : Node
 
     public override void _PhysicsProcess(double delta)
     {
+        _steps++;
         if (_index < 0 || _index >= _shots.Count)
             return;
         if (_react != null && !_reacted)
@@ -191,8 +198,17 @@ public partial class DevCapture : Node
                 if (gc != _lastGc)
                     _gcSpikes++;
             }
+            var vp = GameRoot.Instance.View.Viewport.GetViewportRid();
+            _stats.Add(new FrameStat(ms,
+                (float)Performance.GetMonitor(Performance.Monitor.TimeProcess) * 1000f,
+                (float)Performance.GetMonitor(Performance.Monitor.TimePhysicsProcess) * 1000f,
+                _steps,
+                (float)RenderingServer.ViewportGetMeasuredRenderTimeCpu(vp) + (float)RenderingServer.GetFrameSetupTimeCpu(),
+                (float)RenderingServer.ViewportGetMeasuredRenderTimeGpu(vp),
+                gc - _lastGc));
             _lastGc = gc;
         }
+        _steps = 0;
         _last = now;
 
         if (_index < 0 || _index >= _shots.Count)
@@ -227,5 +243,21 @@ public partial class DevCapture : Node
         GD.Print($"[Perf] shot{_index:D2} 중앙 {_frameMs[_frameMs.Count / 2]:0.0}ms  p90 {_frameMs[(int)(_frameMs.Count * 0.9f)]:0.0}ms  최악 {_frameMs[^1]:0.0}ms"
             + $"  | 물리 평균 {phys / _physMs.Count:0.0}ms 드로우 {Performance.GetMonitor(Performance.Monitor.RenderTotalDrawCallsInFrame)}"
             + $"  | {SpikeMs:0}ms 넘게 튐 {_spikes}번 (GC 와 겹침 {_gcSpikes}) · GC {_gcCount}번");
+        // 가장 크게 튄 프레임 다섯과 그 앞뒤: 전체 / 스크립트 / 물리(걸음 수) / 그리기 CPU / GPU
+        var worst = new List<int>();
+        for (int i = 0; i < _stats.Count; i++)
+            if (_stats[i].Ms > SpikeMs)
+                worst.Add(i);
+        worst.Sort((a, b) => _stats[b].Ms.CompareTo(_stats[a].Ms));
+        foreach (int i in worst.GetRange(0, Mathf.Min(5, worst.Count)))
+        {
+            var line = new System.Text.StringBuilder($"[Spike] #{i}");
+            for (int j = Mathf.Max(0, i - 1); j <= Mathf.Min(_stats.Count - 1, i + 1); j++)
+            {
+                var f = _stats[j];
+                line.Append($" | {(j == i ? "*" : "")}{f.Ms:0.0}ms 스크립트 {f.Proc:0.0} 물리 {f.Phys:0.0}x{f.Steps} 그리기 {f.RenderCpu:0.0}/{f.RenderGpu:0.0}{(f.Gc > 0 ? " GC" : "")}");
+            }
+            GD.Print(line.ToString());
+        }
     }
 }

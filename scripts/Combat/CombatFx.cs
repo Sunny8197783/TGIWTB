@@ -168,7 +168,7 @@ public partial class CombatFx : Node
     public static void Flash(Color c, float amount)
     {
         _i._flash = Mathf.Max(_i._flash, amount);
-        _i._screen.SetShaderParameter("flash_color", c);
+        _i._screen.SetShaderParameter(Uniform.FlashColor, c);
     }
 
     /// <summary>가장자리 색을 hold 초 동안 띄웠다가 걷는다.</summary>
@@ -256,14 +256,14 @@ public partial class CombatFx : Node
         forward = forward.Normalized();
         bend = bend.Normalized();
         sl.Mesh.GlobalTransform = new Transform3D(new Basis(forward, bend.Cross(forward).Normalized(), bend), center);
-        sl.Slash.SetShaderParameter("progress", 0f);
-        sl.Slash.SetShaderParameter("dissolve", 0f);
-        sl.Slash.SetShaderParameter("thickness", thickness);
-        sl.Slash.SetShaderParameter("seed", GD.Randf() * 100f);
-        sl.Slash.SetShaderParameter("core", pal.Core);
-        sl.Slash.SetShaderParameter("bright", pal.Bright);
-        sl.Slash.SetShaderParameter("mid", pal.Mid);
-        sl.Slash.SetShaderParameter("deep", pal.Deep);
+        sl.Slash.SetShaderParameter(Uniform.Progress, 0f);
+        sl.Slash.SetShaderParameter(Uniform.Dissolve, 0f);
+        sl.Slash.SetShaderParameter(Uniform.Thickness, thickness);
+        sl.Slash.SetShaderParameter(Uniform.Seed, GD.Randf() * 100f);
+        sl.Slash.SetShaderParameter(Uniform.Core, pal.Core);
+        sl.Slash.SetShaderParameter(Uniform.Bright, pal.Bright);
+        sl.Slash.SetShaderParameter(Uniform.Mid, pal.Mid);
+        sl.Slash.SetShaderParameter(Uniform.Deep, pal.Deep);
         sl.Mesh.Visible = true;
         sl.Age = 0f;
         sl.Life = duration;
@@ -279,12 +279,12 @@ public partial class CombatFx : Node
         float sinPitch = Mathf.Sin(Mathf.DegToRad(Px.PitchDeg));
         r.Mesh.Scale = new Vector3(d, 1f, d / sinPitch); // 화면에서 동그랗게
         r.Mesh.GlobalPosition = new Vector3(center.X, GameRoot.Instance.World.WalkHeightAt(center.X, center.Z) + 0.08f, center.Z);
-        r.Slash.SetShaderParameter("px", d * Px.PerMeter);
-        r.Slash.SetShaderParameter("core", pal.Core);
-        r.Slash.SetShaderParameter("bright", pal.Bright);
-        r.Slash.SetShaderParameter("mid", pal.Mid);
-        r.Slash.SetShaderParameter("deep", pal.Deep);
-        r.Slash.SetShaderParameter("progress", 0f);
+        r.Slash.SetShaderParameter(Uniform.Px, d * Px.PerMeter);
+        r.Slash.SetShaderParameter(Uniform.Core, pal.Core);
+        r.Slash.SetShaderParameter(Uniform.Bright, pal.Bright);
+        r.Slash.SetShaderParameter(Uniform.Mid, pal.Mid);
+        r.Slash.SetShaderParameter(Uniform.Deep, pal.Deep);
+        r.Slash.SetShaderParameter(Uniform.Progress, 0f);
         r.Mesh.Visible = true;
         r.Age = 0f;
         r.Life = life;
@@ -297,9 +297,9 @@ public partial class CombatFx : Node
         var b = _i._bolts[_i._nextBolt];
         _i._nextBolt = (_i._nextBolt + 1) % _i._bolts.Count;
         b.Mesh.GlobalPosition = ground;
-        b.Slash.SetShaderParameter("core", pal.Core);
-        b.Slash.SetShaderParameter("glow", pal.Bright);
-        b.Slash.SetShaderParameter("fade", 1f);
+        b.Slash.SetShaderParameter(Uniform.Core, pal.Core);
+        b.Slash.SetShaderParameter(Uniform.Glow, pal.Bright);
+        b.Slash.SetShaderParameter(Uniform.Fade, 1f);
         b.Mesh.Visible = true;
         b.Age = 0f;
         b.Life = life;
@@ -359,17 +359,17 @@ public partial class CombatFx : Node
         if (_vignetteHold <= 0f)
             _vignette = Mathf.MoveToward(_vignette, 0f, real * 2.5f);
         float slow = GameRoot.Instance.SlowAmount;
-        _screen.SetShaderParameter("flash", _flash);
-        _screen.SetShaderParameter("vignette", Mathf.Max(_vignette, slow * 0.9f));
-        _screen.SetShaderParameter("vignette_color", _vignette > slow ? _vignetteColor : new Color(0.3f, 0.12f, 0.55f));
+        _screen.SetShaderParameter(Uniform.Flash, _flash);
+        _screen.SetShaderParameter(Uniform.Vignette, Mathf.Max(_vignette, slow * 0.9f));
+        _screen.SetShaderParameter(Uniform.VignetteColor, _vignette > slow ? _vignetteColor : new Color(0.3f, 0.12f, 0.55f));
         if (_ringAge >= 0f)
         {
             _ringAge += real;
             var view = GameRoot.Instance.View;
             Vector2 sp = view.Camera.UnprojectPosition(_ringAt) / (Vector2)view.Viewport.Size;
-            _screen.SetShaderParameter("ring_center", sp);
-            _screen.SetShaderParameter("ring_radius", _ringAge < RingLife ? Mathf.Sqrt(_ringAge / RingLife) * 1.1f : -1f);
-            _screen.SetShaderParameter("ring_width", Mathf.Lerp(0.012f, 0.004f, _ringAge / RingLife));
+            _screen.SetShaderParameter(Uniform.RingCenter, sp);
+            _screen.SetShaderParameter(Uniform.RingRadius, _ringAge < RingLife ? Mathf.Sqrt(_ringAge / RingLife) * 1.1f : -1f);
+            _screen.SetShaderParameter(Uniform.RingWidth, Mathf.Lerp(0.012f, 0.004f, _ringAge / RingLife));
             if (_ringAge >= RingLife)
                 _ringAge = -1f;
         }
@@ -384,8 +384,8 @@ public partial class CombatFx : Node
             float u = sl.Age / sl.Life;
             const float Sweep = 0.45f;
             float p = u < Sweep ? u / Sweep : 1f + (u - Sweep) / (1f - Sweep) * SlashTail * 0.5f;
-            sl.Slash.SetShaderParameter("progress", p);
-            sl.Slash.SetShaderParameter("dissolve", Mathf.Clamp((u - Sweep) / (1f - Sweep), 0f, 1f));
+            sl.Slash.SetShaderParameter(Uniform.Progress, p);
+            sl.Slash.SetShaderParameter(Uniform.Dissolve, Mathf.Clamp((u - Sweep) / (1f - Sweep), 0f, 1f));
             if (u >= 1f)
                 sl.Live = sl.Mesh.Visible = false;
         }
@@ -410,7 +410,7 @@ public partial class CombatFx : Node
             if (!r.Live)
                 continue;
             r.Age += worldDt;
-            r.Slash.SetShaderParameter("progress", Mathf.Min(r.Age / r.Life, 1f));
+            r.Slash.SetShaderParameter(Uniform.Progress, Mathf.Min(r.Age / r.Life, 1f));
             if (r.Age >= r.Life)
                 r.Live = r.Mesh.Visible = false;
         }
@@ -420,9 +420,9 @@ public partial class CombatFx : Node
                 continue;
             b.Age += real;
             // 3프레임마다 새 모양, 끝으로 갈수록 깜빡이며 사라진다
-            b.Slash.SetShaderParameter("seed", Mathf.Floor(b.Age * 20f));
+            b.Slash.SetShaderParameter(Uniform.Seed, Mathf.Floor(b.Age * 20f));
             float k = b.Age / b.Life;
-            b.Slash.SetShaderParameter("fade", k < 0.7f ? 1f : (Mathf.PosMod(b.Age, 0.06f) < 0.03f ? 1f - k : 0f));
+            b.Slash.SetShaderParameter(Uniform.Fade, k < 0.7f ? 1f : (Mathf.PosMod(b.Age, 0.06f) < 0.03f ? 1f - k : 0f));
             if (b.Age >= b.Life)
                 b.Live = b.Mesh.Visible = false;
         }
@@ -522,9 +522,9 @@ public partial class CombatFx : Node
             pm.ColorInitialRamp = new GradientTexture1D { Gradient = tint };
         }
         var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/particle_soft.gdshader") };
-        mat.SetShaderParameter("px_size", sparkle ? 4f : 3f);
-        mat.SetShaderParameter("softness", 0f);
-        mat.SetShaderParameter("intensity", sparkle ? 2.6f : 1.1f);
+        mat.SetShaderParameter(Uniform.PxSize, sparkle ? 4f : 3f);
+        mat.SetShaderParameter(Uniform.Softness, 0f);
+        mat.SetShaderParameter(Uniform.Intensity, sparkle ? 2.6f : 1.1f);
         var e = new GpuParticles3D
         {
             OneShot = true,

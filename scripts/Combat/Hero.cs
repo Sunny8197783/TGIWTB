@@ -340,8 +340,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _sprite.Advance(dt);
         _sprite.PlaceAt(feet, world.WalkHeightAt(feet.X, feet.Z));
         // 앞을 가린 나무·지붕을 바둑판으로 비울 자리 (sprite.gdshader)
-        RenderingServer.GlobalShaderParameterSet("hero_screen", GameRoot.Instance.View.Camera.UnprojectPosition(_sprite.GlobalPosition + Vector3.Up * SeeThroughHeight));
-        RenderingServer.GlobalShaderParameterSet("hero_z", feet.Z);
+        RenderingServer.GlobalShaderParameterSet(Uniform.HeroScreen, GameRoot.Instance.View.Camera.UnprojectPosition(_sprite.GlobalPosition + Vector3.Up * SeeThroughHeight));
+        RenderingServer.GlobalShaderParameterSet(Uniform.HeroZ, feet.Z);
 
         // 카메라: 달리는 쪽을 조금 앞서 본다
         Vector3 lookTarget = _state == State.Move ? _vel / T.RunSpeed * T.LookAhead : _look;
@@ -531,7 +531,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     }
 
     /// <summary>메뉴가 떠 있으면 전투 입력은 없는 것으로 친다.</summary>
-    private static bool Pressed(string action) => !GameRoot.Instance.MenuOpen && Input.IsActionJustPressed(action);
+    private static bool Pressed(StringName action) => !GameRoot.Instance.MenuOpen && Input.IsActionJustPressed(action);
 
     // ── 숙련·진화·히든 ──────────────────────────────────
 

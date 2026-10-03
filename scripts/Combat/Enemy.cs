@@ -134,7 +134,7 @@ public partial class Enemy : CharacterBody3D
                 if (_warn != null)
                 {
                     _warn.GlobalPosition = WarnCenter();
-                    _warnMat.SetShaderParameter("fill", Mathf.Clamp(k, 0f, 1f));
+                    _warnMat.SetShaderParameter(Uniform.Fill, Mathf.Clamp(k, 0f, 1f));
                 }
                 if (_stateTime >= a.Windup)
                     Enter(State.Active);
@@ -328,7 +328,7 @@ public partial class Enemy : CharacterBody3D
             float d = Def.Attack.Reach * 1.6f;
             float sinPitch = Mathf.Sin(Mathf.DegToRad(Px.PitchDeg));
             _warnMat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/ground_warn.gdshader") };
-            _warnMat.SetShaderParameter("px", d * Px.PerMeter);
+            _warnMat.SetShaderParameter(Uniform.Px, d * Px.PerMeter);
             _warn = new MeshInstance3D
             {
                 // 내려다보면 세로가 sin(피치)만큼 줄어든다 — 화면에서 동그랗게 보이도록 늘린다
@@ -343,7 +343,7 @@ public partial class Enemy : CharacterBody3D
         if (on)
         {
             _warn.GlobalPosition = WarnCenter();
-            _warnMat.SetShaderParameter("fill", 0f);
+            _warnMat.SetShaderParameter(Uniform.Fill, 0f);
         }
     }
 
