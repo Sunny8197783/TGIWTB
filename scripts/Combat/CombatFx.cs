@@ -134,6 +134,16 @@ public partial class CombatFx : Node
         Lightning(at + Vector3.Down * 12f, 0.05f, Palettes["thunder"]);
         SparkleBurst(at + Vector3.Down * 3f, 4, 0.5f, Palettes["teal"]);
         Petals(at + Vector3.Down * 3f, Vector3.Forward, 4, 0.5f);
+        // 적 공격 예고 원 (Enemy.ShowWarning) — 첫 고블린 내려찍기에서 멈칫했다
+        var warn = new MeshInstance3D
+        {
+            Mesh = new PlaneMesh { Size = Vector2.One },
+            MaterialOverride = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/ground_warn.gdshader") },
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        GameRoot.Instance.Stage.AddChild(warn);
+        warn.GlobalPosition = at + Vector3.Down * 3f;
+        GetTree().CreateTimer(0.2).Timeout += warn.QueueFree;
         // 궤적 메시도 처음 쓰는 순간 만들면 그 프레임이 끊긴다 — 기본 공격·스킬에 나오는 모양을 전부 미리
         foreach (var step in CombatTuning.Combo)
         {
