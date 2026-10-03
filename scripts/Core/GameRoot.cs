@@ -196,7 +196,9 @@ public partial class GameRoot : Node
             // 처음 켰으면 모습부터 (--creator: 캡처에서 화면 확인용)
             if (Hero.Instance.FirstLaunch || System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--creator") >= 0)
                 creator.Open(first: true);
-            AddChild(new Scenery(World));
+            var scenery = new Scenery(World);
+            AddChild(scenery);
+            AddChild(new Ambience(World, scenery));
         }
 
         if (Dev.DevCapture.Requested())

@@ -23,7 +23,7 @@ public partial class Sfx : Node
     private int _next;
     private static readonly RandomNumberGenerator Rng = new();
     /// <summary>--no=sfx : 성능 A/B 용</summary>
-    private static readonly bool Muted = Dev.DevCapture.Disabled().Contains("sfx");
+    public static readonly bool Muted = Dev.DevCapture.Disabled().Contains("sfx");
 
     /// <summary>슬로우모션 때 켜는 먹먹함 (SFX 버스의 저역통과).</summary>
     public static AudioEffectLowPassFilter Muffle { get; private set; }

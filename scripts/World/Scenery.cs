@@ -31,6 +31,9 @@ public partial class Scenery : Node
     private string _zone;
     private readonly Dictionary<string, double> _zoneShownAt = new();
 
+    /// <summary>주인공이 서 있는 지역 이름 (지역 밖이면 null) — 환경음이 쓴다</summary>
+    public string CurrentZone => _zone;
+
     public Scenery(WorldData world)
     {
         Name = "Scenery";

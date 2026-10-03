@@ -36,6 +36,7 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - 캐릭터 그림: `tools/assets.json` 에 `{"sheet": ..., "char": id, "anim": "PixelLab 애니 이름"}` → 원본은 `art_src/`, 시트는 `art/characters/<캐릭터>/<동작>.png`
 - 스킬: `data/skills/*.json` (이벤트 목록, `Combat/SkillRunner` 가 해석), 칸 구성 `data/player/loadout.json`. 확인은 `--press=skill_1 --settle=10`
 - 숙련·진화: 스킬 JSON 의 `mastery.evolution`. 진화 확인은 `--mastery=sk_moon_crescent:29.5 --press=skill_1 --settle=40`. 판정 규칙 검사는 `tools/godot.sh --headless -- --selftest`
+- 전망 지점은 지도 meta `viewpoints` (pitch·distance·look_ahead·look_up), 환경음은 `data/world/ambience.json` + `python tools/synth_ambience.py` (자연 소리는 Kenney 에 없어 합성). 끄기 `--no=ambience`
 - 세이브는 `user://save.json`. 캡처(`--capture`) 실행은 세이브를 읽지도 쓰지도 않는다
 - 모습(M6): `data/player/appearance.json` — 바탕 원화 4종 + 옷 색. 확인은 `--look=warrior:1` (모습 고르기 화면은 `--creator`).
   옷 색 범위는 `python tools/palette.py <시트> --mark out.png 70,150,0.25[,명도]` 로 옷만 칠해지는지 보고 정한다
