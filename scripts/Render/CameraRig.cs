@@ -13,6 +13,8 @@ public partial class CameraRig : Node
     public Vector3 Target;
     public float Pitch = Px.PitchDeg;
     public float Distance = Px.FocusDistance;
+    /// <summary>바라보는 점을 주인공에서 옮긴다 (m). 전망 지점에서 북쪽·위로 — 주인공은 화면 아래로, 풍경이 가운데로.</summary>
+    public Vector3 Offset;
 
     /// <summary>화면 흔들림·킥 오프셋(월드 m). CombatFeedback 가 채운다.</summary>
     public Vector3 Shake;
@@ -20,6 +22,7 @@ public partial class CameraRig : Node
     private Vector3 _smoothed;
     private float _pitchNow = Px.PitchDeg;
     private float _distNow = Px.FocusDistance;
+    private Vector3 _offsetNow;
     private bool _snapNext = true;
 
     /// <summary>따라가는 부드러움. 클수록 빠르게 붙는다.</summary>
@@ -41,6 +44,7 @@ public partial class CameraRig : Node
             _smoothed = Target;
             _pitchNow = Pitch;
             _distNow = Distance;
+            _offsetNow = Offset;
             _snapNext = false;
         }
         else
@@ -49,11 +53,12 @@ public partial class CameraRig : Node
             float kv = 1f - Mathf.Exp(-2.2f * dt);
             _pitchNow = Mathf.Lerp(_pitchNow, Pitch, kv);
             _distNow = Mathf.Lerp(_distNow, Distance, kv);
+            _offsetNow = _offsetNow.Lerp(Offset, kv);
         }
 
         float pitch = Mathf.DegToRad(_pitchNow);
         Vector3 back = new(0f, Mathf.Sin(pitch), Mathf.Cos(pitch));
-        Vector3 eye = _smoothed + back * _distNow + Shake;
+        Vector3 eye = _smoothed + _offsetNow + back * _distNow + Shake;
         var basis = Basis.LookingAt(-back, Vector3.Up);
         _view?.PlaceCamera(new Transform3D(basis, eye));
     }

@@ -150,8 +150,14 @@ def plateau_edge(x):
     return base + bulge
 
 
+# 등대 곶: 섬 중심에서 본 등대(-58°, 120m)·전망 벤치(-67°, 113m)가 바다에 빠지지 않게 북동으로 내민 땅
+CAPE_ANG, CAPE_WIDTH, CAPE_LEN = math.radians(-62.0), math.radians(11.0), 26.0
+
+
 def island_radius(ang):
-    return 100.0 + 9.0 * fbm(math.cos(ang) * 2.0 + 5, math.sin(ang) * 2.0 + 5, 3, 3)
+    off = math.atan2(math.sin(ang - CAPE_ANG), math.cos(ang - CAPE_ANG))
+    cape = CAPE_LEN * math.exp(-(off / CAPE_WIDTH) ** 2)
+    return 100.0 + 9.0 * fbm(math.cos(ang) * 2.0 + 5, math.sin(ang) * 2.0 + 5, 3, 3) + cape
 
 
 # --- 높이 --------------------------------------------------------------
@@ -567,10 +573,12 @@ def main():
             {"id": "sakura_slime", "x": 66, "z": 44, "radius": 6, "count": 4, "respawn": 10},
             {"id": "forest_goblin", "x": 52, "z": 120, "radius": 6, "count": 3, "respawn": 14},
         ],
+        # 전망 지점: 반지름 안에 서면 카메라가 고개를 든다 (pitch°, distance m — 평소 38°, 21m).
+        # look_ahead·look_up: 바라보는 점을 북쪽·위로 옮긴다 (m) — 키 큰 풍차가 잘리지 않게, 바다가 넓게
+        # 카메라가 늘 북쪽을 보므로 북쪽이 트인 곳만 된다 (폭포 위는 절벽 면만 보여서 뺐다)
         "viewpoints": [
-            {"name": "등대 전망대", "x": 156, "z": 12, "radius": 7},
-            {"name": "폭포 위", "x": 106, "z": 66, "radius": 6},
-            {"name": "풍차 언덕", "x": 184, "z": 118, "radius": 7},
+            {"name": "등대 전망대", "x": 156, "z": 12, "radius": 7, "pitch": 18, "distance": 22, "look_ahead": 6, "look_up": 0},
+            {"name": "풍차 언덕", "x": 184, "z": 120, "radius": 7, "pitch": 18, "distance": 24, "look_ahead": 4, "look_up": 4},
         ],
         "zones": [
             {"name": "하루미 마을", "x0": 74, "z0": 126, "x1": 152, "z1": 174},

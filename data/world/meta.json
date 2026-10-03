@@ -47,19 +47,21 @@
       "name": "등대 전망대",
       "x": 156,
       "z": 12,
-      "radius": 7
-    },
-    {
-      "name": "폭포 위",
-      "x": 106,
-      "z": 66,
-      "radius": 6
+      "radius": 7,
+      "pitch": 18,
+      "distance": 22,
+      "look_ahead": 6,
+      "look_up": 0
     },
     {
       "name": "풍차 언덕",
       "x": 184,
-      "z": 118,
-      "radius": 7
+      "z": 120,
+      "radius": 7,
+      "pitch": 18,
+      "distance": 24,
+      "look_ahead": 4,
+      "look_up": 4
     }
   ],
   "zones": [
