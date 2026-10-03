@@ -1,0 +1,8 @@
+{
+  "id": "sk_hidden_still_water",
+  "name": "명경지수",
+  // 히든 (규칙 4). 칸에 넣지 않는 패시브
+  "hidden": true,
+  "learn": { "counter": "parry", "required": 40, "announce": "칼끝이 먼저 보였다." },
+  "passive": { "parry_window": 0.24 }
+}

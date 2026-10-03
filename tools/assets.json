@@ -1,0 +1,399 @@
+[
+ {
+  "object": "3d9d769e-c5b0-4e58-8e24-fd157c48f0ce",
+  "grid": 3,
+  "cells": [
+   "bush_0",
+   "bush_pink_0",
+   "bush_orange_0",
+   "flowers_mix_0",
+   "fern_0",
+   "",
+   "rock_0",
+   "reeds_0",
+   "bush_1"
+  ],
+  "note": "자연 소품 A"
+ },
+ {
+  "object": "5ccf20d9-5033-4ada-9786-53b53b644e70",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "stone_lantern_0",
+   "signpost_0",
+   "well_0",
+   "crates_0",
+   "bench_0",
+   "planter_0"
+  ],
+  "note": "마을 소품 A (가로등·통은 안 나옴)"
+ },
+ {
+  "object": "4c17aee1-97dc-444e-a69e-2488dbdaf0bc",
+  "grid": 4,
+  "cells": [
+   "flowers_yellow_0",
+   "flowers_white_0",
+   "flowers_blue_0",
+   "flowers_pink_0",
+   "mushrooms_0",
+   "mushrooms_1",
+   "pebbles_0",
+   "stone_0",
+   "fern_small_0",
+   "grass_tuft_0",
+   "petals_0",
+   "lily_pad_0",
+   "lily_pad_1",
+   "sapling_0",
+   "lavender_0",
+   "dandelion_0"
+  ],
+  "note": "작은 땅 장식 A"
+ },
+ {
+  "object": "e210931e-430d-4df9-b128-6c969d0e8018",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "street_lamp_0",
+   "barrel_0",
+   "market_stall_0",
+   "fence_0",
+   "hay_bale_0",
+   "cart_0"
+  ],
+  "note": "마을 소품 B"
+ },
+ {
+  "object": "9d79fc9e-05fd-4850-8689-a7e57312def1",
+  "grid": 2,
+  "cells": [
+   "boat_0",
+   "dock_0",
+   "buoy_0",
+   "fish_crates_0"
+  ],
+  "note": "물가 소품"
+ },
+ {
+  "dest": "art/env/tavern_0.png",
+  "object": "98fd96fd-1b26-4863-b249-cb03c86ad20a"
+ },
+ {
+  "dest": "art/env/fountain_0.png",
+  "object": "e1c2165f-225a-4a74-adab-2c7ecffa4b8f"
+ },
+ {
+  "dest": "art/env/torii_0.png",
+  "object": "29554efe-1aed-439a-a003-4f36b452bca6"
+ },
+ {
+  "dest": "art/env/shrine_0.png",
+  "object": "61770296-d9f6-44ab-a9b9-94183c1df69d"
+ },
+ {
+  "dest": "art/env/pavilion_0.png",
+  "object": "0c28ddc0-a382-4d17-aa5b-70d629161289"
+ },
+ {
+  "dest": "art/env/windmill_0.png",
+  "object": "e62a1e82-28dd-4bb8-a64c-e94dfd915fe9"
+ },
+ {
+  "dest": "art/env/inn_0.png",
+  "object": "169e2ad6-289f-43b7-b12d-2680351d9417"
+ },
+ {
+  "dest": "art/env/lighthouse_0.png",
+  "object": "c0d40ba8-3b2b-4176-b492-006e13dabdbf"
+ },
+ {
+  "dest": "art/env/general_store_0.png",
+  "object": "f41717ea-e4af-43a2-98be-ed2fd13445e8"
+ },
+ {
+  "dest": "art/env/blacksmith_0.png",
+  "object": "112edc22-3a78-47a1-bc36-aadfae09c269"
+ },
+ {
+  "dest": "art/env/flower_shop_0.png",
+  "object": "29a218ac-72b9-4368-bd55-4dbf2b01fae6"
+ },
+ {
+  "dest": "art/env/bakery_0.png",
+  "object": "8e03d102-634d-439c-90a4-4977a502c23d"
+ },
+ {
+  "dest": "art/env/house_yellow_0.png",
+  "object": "94abb3be-3ca5-4ed6-a7ab-ba55bae65e42"
+ },
+ {
+  "dest": "art/env/house_green_0.png",
+  "object": "2aeba236-7999-439f-a3ec-c8467d29e42c"
+ },
+ {
+  "dest": "art/env/house_blue_0.png",
+  "object": "c684c9e8-0b81-430d-a4a7-0a394c1f29fc"
+ },
+ {
+  "dest": "art/env/tree_sakura_0.png",
+  "object": "1450c6f8-7eb5-4fd0-9b5d-a0c347181ee9",
+  "note": "스타일 기준 에셋"
+ },
+ {
+  "dest": "art/env/tree_oak_0.png",
+  "object": "df55d379-383c-498b-a43e-2ad18b59acc9"
+ },
+ {
+  "dest": "art/env/house_red_0.png",
+  "object": "bb54adbd-3188-4e0f-8ff5-9d076df2338c"
+ },
+ {
+  "dest": "art/env/tree_maple_0.png",
+  "object": "711b041c-f6ea-461d-af8f-b33d22250718"
+ },
+ {
+  "dest": "art/env/tree_pine_0.png",
+  "object": "4b464b0d-10a9-4a74-a86e-4fc504e5089b"
+ },
+ {
+  "sheet": "art/characters/hero/rot.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "rotations": true,
+  "note": "다른 시트의 빈 방향을 채우는 기준이라 맨 앞"
+ },
+ {
+  "sheet": "art/characters/hero/idle.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_idle",
+  "note": "북쪽 1·2 프레임은 칼이 사라져 0·3 프레임으로 덮어씀 (art_src/hero/idle/north) — --force 로 다시 받으면 되살아난다"
+ },
+ {
+  "sheet": "art/characters/hero/run.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_run_v3b"
+ },
+ {
+  "sheet": "art/characters/hero/dash.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_dash_b"
+ },
+ {
+  "sheet": "art/characters/hero/guard.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_guard_b"
+ },
+ {
+  "sheet": "art/characters/hero/attack1.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack1"
+ },
+ {
+  "sheet": "art/characters/hero/attack2.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack2"
+ },
+ {
+  "sheet": "art/characters/hero/attack3.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack3"
+ },
+ {
+  "sheet": "art/characters/hero/hurt.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/rot.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/sakura_slime/attack.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_attack"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/idle.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_idle"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/move.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_move"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/rot.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/forest_goblin/attack.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_attack"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/move.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_walk"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/hurt.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/rot.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/idle.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_idle"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/run.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_run"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/dash.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_dash"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/guard.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_guard"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack1.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack2.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack3.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/hurt.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/rot.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_ranger/rot.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_warrior/idle.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_idle"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/run.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_run"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/dash.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_dash"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/guard.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_guard"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack1.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack2.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack3.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/hurt.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/idle.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_idle",
+  "note": "북쪽은 skeleton-v3 가 앞모습으로 뽑아 회전 원화 북쪽으로 4칸을 덮어씀 (art_src/hero_ranger/idle/north) — --force 로 다시 받으면 되살아난다"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/run.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_run"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/dash.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_dash"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/guard.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_guard"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack1.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack2.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack3.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/hurt.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/hurt.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/death.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_death"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/death.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_death"
+ }
+]

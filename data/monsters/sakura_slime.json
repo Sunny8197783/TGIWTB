@@ -1,0 +1,25 @@
+{
+  "id": "sakura_slime",
+  "name": "벚꽃 슬라임",
+  "art": "res://art/characters/sakura_slime",
+  "hp": 55,
+  "poise": 8,
+  "speed": 2.4,
+  "sight": 8,
+  "radius": 0.45,
+  "knockback": 1.3,
+  "attack": {
+    "damage": 12,
+    "reach": 1.5,
+    "windup": 0.6,
+    "active": 0.22,
+    "recover": 0.7,
+    "lunge": 6.5,
+    "cooldown": 1.1
+  },
+  "sounds": {
+    "hit": "impactSoft_heavy",
+    "windup": "impactSoft_medium",
+    "death": "impactSoft_heavy"
+  }
+}

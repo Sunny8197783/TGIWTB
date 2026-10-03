@@ -1,0 +1,28 @@
+{
+  // 환경음 (M4, Core/Ambience). 소리는 tools/synth_ambience.py 가 만든다.
+  // layers: 층마다 고리 소리와 최대 음량(dB). time 이 day 면 밤에 줄고, night 면 밤에만 난다.
+  "layers": {
+    "wind":      { "file": "res://audio/ambience/wind.wav",      "db": -16 },
+    "birds":     { "file": "res://audio/ambience/birds.wav",     "db": -18, "time": "day" },
+    "crickets":  { "file": "res://audio/ambience/crickets.wav",  "db": -26, "time": "night" },
+    "waves":     { "file": "res://audio/ambience/waves.wav",     "db": -13 },
+    "lake":      { "file": "res://audio/ambience/lake.wav",      "db": -17 },
+    "waterfall": { "file": "res://audio/ambience/waterfall.wav", "db": -11 }
+  },
+  // 지역마다 층 세기 0~1 (지역 밖은 default). 이름은 지도 meta 의 zones 와 같아야 한다
+  "default": { "wind": 0.5, "birds": 0.5, "crickets": 0.6 },
+  "zones": {
+    "하루미 마을": { "wind": 0.3, "birds": 0.6, "crickets": 0.5 },
+    "거울 호수":   { "wind": 0.3, "birds": 0.7, "crickets": 0.8, "lake": 0.9 },
+    "벚꽃 고원":   { "wind": 0.6, "birds": 0.8, "crickets": 0.5 },
+    "단풍 언덕":   { "wind": 0.6, "birds": 0.6, "crickets": 0.5 },
+    "등대 곶":     { "wind": 1.0, "birds": 0.1, "crickets": 0.2, "waves": 0.9 },
+    "풍차 들판":   { "wind": 0.8, "birds": 0.6, "crickets": 0.8 },
+    "속삭이는 숲": { "wind": 0.5, "birds": 1.0, "crickets": 0.6 },
+    "남쪽 해변":   { "wind": 0.5, "birds": 0.2, "crickets": 0.2, "waves": 1.0 }
+  },
+  // 폭포는 지역이 아니라 거리로: 이 거리(m) 안에서 가까울수록 크게
+  "waterfall_range": 34,
+  // 지역이 바뀔 때 층이 옮겨 가는 시간 (초)
+  "fade": 2.5
+}

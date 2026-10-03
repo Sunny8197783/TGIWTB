@@ -1,0 +1,27 @@
+{
+  "id": "sk_moon_crescent",
+  "name": "월광참",
+  "cooldown": 5.0,
+  "duration": 0.6,
+  "cancel_at": 0.4,
+  "anim": "attack2",
+  "anim_hit_frame": 5,
+  "anim_hit_at": 0.12,
+  // 산 적에게 맞은 시전만 센다 (규칙 3). 30번이면 만월참으로
+  "mastery": { "damage_bonus_per100": 0.3, "evolution": { "at": 30, "into": "sk_full_moon", "announce": "달이 가득 찼다." } },
+  "palette": "moon",
+  // 예비: 칼을 당기는 바람 소리 → 충돌: 한 바퀴 회전 베기 + 둘레 판정 + 달빛 고리 → 흩어짐: 옅은 두 번째 고리, 반짝이
+  "events": [
+    { "t": 0.0,  "fx": "spin", "anim": "attack1", "frame": 6, "time": 0.3 },
+    { "t": 0.0,  "fx": "sfx", "sound": "swing_heavy", "pitch": 0.8, "db": -2 },
+    { "t": 0.0,  "fx": "sfx", "sound": "cloth", "db": -8 },
+    { "t": 0.02, "fx": "slash", "shape": "spin", "radius": 2.8, "life": 0.32, "thickness": 1.5 },
+    { "t": 0.1,  "fx": "hit", "shape": "circle", "radius": 3.0, "damage": 26, "impact": "heavy" },
+    { "t": 0.1,  "fx": "ring", "radius": 3.8, "life": 0.45 },
+    { "t": 0.1,  "fx": "sparkle", "count": 24, "radius": 1.6 },
+    { "t": 0.1,  "fx": "sfx", "sound": "impactBell_heavy", "pitch": 1.6, "db": -8 },
+    { "t": 0.1,  "fx": "shake", "amount": 0.25 },
+    { "t": 0.24, "fx": "slash", "shape": "spin", "radius": 3.3, "life": 0.3, "thickness": 0.7 },
+    { "t": 0.26, "fx": "ring", "radius": 2.6, "life": 0.35 }
+  ]
+}
