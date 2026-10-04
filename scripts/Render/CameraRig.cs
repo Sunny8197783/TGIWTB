@@ -23,7 +23,7 @@ public partial class CameraRig : Node
     /// <summary>전망 중 (V 를 누르고 있다)</summary>
     public bool VistaOn { get; private set; }
     // 전망: 해가 수평선 위 몇 도에 있어도 화면에 들어오도록 거의 수평 (위 끝 = 피치 - 15°)
-    private const float VistaPitch = 7f;
+    private const float VistaPitch = 5f;
     private const float VistaDistance = 34f;
     private static readonly Vector3 VistaLook = new(0f, 3f, -14f);
     private const float PanSpeed = 22f;   // 둘러보기 (m/s)

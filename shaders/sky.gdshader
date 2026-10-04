@@ -67,8 +67,9 @@ void sky() {
 	if (aurora > 0.01 && d.z < 0.0) {
 		float el = d.y;
 		vec2 ap = vec2(atan(d.x, -d.z) * 3.0, 0.0);
-		float wave = vnoise(vec2(ap.x * 1.4 + world_time * 0.006, 2.0)) * 0.12;
-		float base = 0.10 + wave;
+		// 전망(V)의 화면 위 끝이 수평선 위 10° 남짓이라 수평선 바로 위에 건다
+		float wave = vnoise(vec2(ap.x * 1.4 + world_time * 0.006, 2.0)) * 0.06;
+		float base = 0.04 + wave;
 		float curtain = smoothstep(base, base + 0.03, el) * (1.0 - smoothstep(base + 0.08, base + 0.32, el));
 		float rays = vnoise(vec2(ap.x * 9.0 + world_time * 0.01, el * 3.0));
 		float a = curtain * (0.4 + 0.8 * rays) * smoothstep(0.0, 0.6, -d.z);

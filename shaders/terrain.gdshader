@@ -269,12 +269,15 @@ vec3 rock_color(vec3 p, vec3 n) {
 
 void fragment() {
 	vec2 tp = ground_texel(wpos.xz);
-	float big = fbm3(wpos.xz * 0.06);
 	int t = ground_at(wpos.xz, tp);
-	vec3 col = ground_color(t, tp, big);
-	// 멀어서 한 텍셀이 한 픽셀보다 작아지면 무늬 대신 평균색 (지글거림 방지)
+	// 멀어서 한 텍셀이 한 픽셀보다 작아지면 무늬 대신 평균색 (지글거림 방지). 아주 멀면 무늬 계산을 아예 건너뛴다 (전망 화면 절반이 먼 땅)
 	float fp = length(fwidth(wpos.xz)) * PPM;
-	col = mix(col, ground_mean(t, wpos.xz), smoothstep(1.4, 3.0, fp));
+	bool far = fp > 3.0;
+	vec3 col = ground_mean(t, wpos.xz);
+	if (!far) {
+		float big = fbm3(wpos.xz * 0.06);
+		col = mix(ground_color(t, tp, big), col, smoothstep(1.4, 3.0, fp));
+	}
 
 	// 가파른 면은 암벽
 	float slope = 1.0 - wnorm.y;
@@ -286,14 +289,19 @@ void fragment() {
 	// 절벽 위 가장자리: 풀이 처마처럼 넘어온다 (오르막 쪽 0.7m 가 지금 높이와 비슷하면 꼭대기 근처).
 	// 오르막 = 법선의 수평 성분 반대쪽 — '북쪽'으로만 보면 동서로 누운 강둑에 톱니가 생겼다
 	vec2 huv = (wpos.xz + vec2(0.5)) / (map_size + 1.0);
-	vec2 uphill = -normalize(wnorm.xz + vec2(1e-4));
-	float h_up = texture(height_map, huv + uphill * 0.7 / (map_size + 1.0)).r;
-	float lip = step(h_up - wpos.y, 0.22 + 0.25 * hash21(vec2(tp.x, 5.0)));
+	float lip = 0.0;
+	if (!far && rock > 0.0) {
+		vec2 uphill = -normalize(wnorm.xz + vec2(1e-4));
+		float h_up = texture(height_map, huv + uphill * 0.7 / (map_size + 1.0)).r;
+		lip = step(h_up - wpos.y, 0.22 + 0.25 * hash21(vec2(tp.x, 5.0)));
+	}
 	col = mix(col, rc, rock * (1.0 - lip * 0.85));
 	// 절벽 밑동 그늘: 바로 북쪽이 훌쩍 높으면 땅을 어둡게 (3단)
-	float h_back = texture(height_map, huv - vec2(0.0, 1.6) / (map_size + 1.0)).r;
-	float cliff_ao = floor(clamp((h_back - wpos.y - 1.0) / 3.0, 0.0, 1.0) * 3.0) / 3.0;
-	col *= 1.0 - 0.28 * cliff_ao * (1.0 - rock);
+	if (!far) {
+		float h_back = texture(height_map, huv - vec2(0.0, 1.6) / (map_size + 1.0)).r;
+		float cliff_ao = floor(clamp((h_back - wpos.y - 1.0) / 3.0, 0.0, 1.0) * 3.0) / 3.0;
+		col *= 1.0 - 0.28 * cliff_ao * (1.0 - rock);
+	}
 
 	// 물가는 젖어서 짙다
 	float w = texture(water_map, (wpos.xz + 0.5) / (map_size + 1.0)).r;
@@ -302,9 +310,11 @@ void fragment() {
 		col *= mix(1.0, 0.72, wet);
 	}
 
-	// 땅 그늘: 4단으로 끊고 경계는 바둑판으로 섞는다 (픽셀아트식 그라데이션)
-	float ao = texture(ao_map, wpos.xz / map_size).r;
-	float ao_q = floor(ao * 4.0 + (mod(tp.x + tp.y, 2.0) - 0.5) * 0.5 + 0.5) / 4.0;
+	// 땅 그늘: 4단으로 끊고 단 경계의 좁은 띠만 바둑판으로 섞는다 (넓게 섞으면 격자 무늬가 보였다)
+	float ao = texture(ao_map, wpos.xz / map_size).r * 4.0;
+	float ao_band = floor(ao);
+	if (ao - ao_band > 0.82 && mod(tp.x + tp.y, 2.0) < 1.0) ao_band += 1.0;
+	float ao_q = ao_band / 4.0;
 	col *= 1.0 - clamp(ao_q, 0.0, 0.6) * (1.0 - rock);
 
 	cloud = cloud_shade(wpos.xz, world_time, wind);

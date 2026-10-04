@@ -54,6 +54,7 @@ public static class PropCatalog
         Tree("tree_birch", 128, 176, new Color(0.5f, 0.7f, 0.35f), 0.3f);
         Tree("tree_birch_gold", 128, 176, new Color(0.95f, 0.75f, 0.25f), 0.3f);
         Tree("tree_apple", 128, 160, new Color(0.35f, 0.6f, 0.28f));
+        Add(new PropKind { Id = "tree_cedar", Size = new(160, 208), Color = new Color(0.2f, 0.4f, 0.3f), Placeholder = PropKind.Shape.Pine, Sway = 0.02f, Trunk = 0.8f, Sink = 4, ShadowCaster = PropKind.Caster.Cone });
         Add(new PropKind { Id = "tree_snowfir", Size = new(112, 176), Color = new Color(0.85f, 0.9f, 0.95f), Placeholder = PropKind.Shape.Pine, Sway = 0.02f, Trunk = 0.35f, Sink = 4, ShadowCaster = PropKind.Caster.Cone });
         // 랜드마크 나무: 멀리서 보이는 길잡이
         Tree("tree_lone", 192, 224, new Color(0.3f, 0.58f, 0.24f), 0.8f);
@@ -173,6 +174,14 @@ public static class PropCatalog
         House("house_fisher", new Color(0.35f, 0.5f, 0.7f));
         House("warehouse", new Color(0.55f, 0.4f, 0.28f), 224, 192, 7f);
         House("chapel", new Color(0.8f, 0.3f, 0.25f), 192, 224, 6f);
+        House("shepherd_hut", new Color(0.6f, 0.55f, 0.45f));
+        House("stump_house", new Color(0.5f, 0.35f, 0.22f), 192, 224, 5f);
+        House("ice_hut", new Color(0.75f, 0.25f, 0.2f), 192, 192, 4f);
+        House("boathouse", new Color(0.4f, 0.55f, 0.8f), 224, 192, 7f);
+        House("house_tower", new Color(0.3f, 0.6f, 0.4f));
+        Add(new PropKind { Id = "moon_deck", Size = new(224, 208), Color = new Color(0.7f, 0.2f, 0.15f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(6f, 4f), Glow = 0.8f, ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "pass_gate", Size = new(224, 224), Color = new Color(0.6f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Box, Flip = false });
+        Add(new PropKind { Id = "fairy_ring", Size = new(160, 160), Color = new Color(0.8f, 0.3f, 0.3f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
         Add(new PropKind { Id = "goddess", Size = new(192, 208), Color = new Color(0.9f, 0.9f, 0.88f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(2.6f, 2.2f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "gazebo", Size = new(192, 192), Color = new Color(0.9f, 0.9f, 0.92f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(4.5f, 4f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "rose_arch", Size = new(192, 192), Color = new Color(0.9f, 0.4f, 0.5f), Placeholder = PropKind.Shape.Box, Flip = false, Sway = 0.01f });

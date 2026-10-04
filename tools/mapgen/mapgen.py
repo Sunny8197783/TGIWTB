@@ -671,10 +671,26 @@ def add_landmarks(sc, rng, hcell):
     for x, z in ((576, 664), (252, 616), (858, 628), (276, 364), (496, 352), (720, 362), (548, 132), (980, 438)):
         sc.add("goddess", x, z, 2.2, front_z=z + 1)
     sc.add("gazebo", 648, 338, 3.0, front_z=341)   # 안개 호수 남쪽 물가
+    sc.add("shepherd_hut", 372, 690, 3.5, front_z=693)   # 초원 양치기 오두막 + 울타리·건초
+    for k in range(6):
+        sc.add("fence", 366 + k * 1.5, 697, 0.6)
+    for x, z in ((380, 694), (383, 697)):
+        sc.add("hay_bale", x, z, 1.0)
+    sc.add("stump_house", 520, 316, 3.0, front_z=319)    # 고목의 숲 그루터기 집
+    sc.add("fairy_ring", 452, 362, 2.5)                  # 고목의 숲 버섯 요정 고리
+    sc.add("fairy_ring", 610, 368, 2.5)
+    sc.add("ice_hut", 802, 132, 2.5, front_z=134)       # 얼어붙은 호수 얼음낚시
+    sc.add("moon_deck", 150, 350, 3.5, front_z=353)      # 노을 길 달맞이 누대
+    sc.add("boathouse", 466, 936, 3.5, front_z=939)      # 항구 서쪽 보트 창고
+    sc.add("pass_gate", 542, 186, 2.0)                   # 서리 고원으로 오르는 고개 돌문
+    sc.add("pass_gate", 324, 178, 2.0)
     sc.add("gazebo", 676, 470, 3.0, front_z=473)   # 거울 호수 동쪽 물가
     for x, z in ((815, 664), (816, 640), (506, 900)):
         sc.add("rose_arch", x, z, 1.5)
     sc.add("shrine", 110, 480, 3.5)
+    # 신목: 금줄을 두른 큰 삼나무 — 신사·산사 곁
+    for x, z in ((96, 474), (126, 470), (246, 276), (202, 270)):
+        sc.add("tree_cedar", x, z, 3.0)
     for i, (x, z) in enumerate(((127, 556), (122, 540), (118, 524), (115, 508))):
         sc.add("torii", x, z, 2.2)
     sc.add("pavilion", ISLET_C[0], ISLET_C[1], 3.5)
@@ -757,7 +773,7 @@ def add_landmarks(sc, rng, hcell):
 VILLAGES = {
     "harumi": dict(streets=["s_harumi_n", "s_harumi_e", "s_harumi_w", "s_harumi_back"],
                    kinds=["house_red", "house_blue", "house_green", "house_yellow", "bakery", "flower_shop", "inn",
-                          "blacksmith", "general_store", "tavern", "house_stone", "house_fisher", "house_stone"],
+                          "blacksmith", "general_store", "tavern", "house_stone", "house_fisher", "house_tower"],
                    center=PLAZA, radius=74),
     "hanami": dict(streets=["west", "s_hanami_s", "s_hanami_n"], kinds=["jhouse", "jhouse", "jhouse", "teahouse", "hokora"],
                    center=(222, 602), radius=44),

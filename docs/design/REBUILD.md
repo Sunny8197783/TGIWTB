@@ -76,6 +76,9 @@
       옷 색은 불러올 때 색상 범위 픽셀의 색상만 옮긴다(`Render/Recolor`, 명도 유지). 머리 색은 원화 안에서 가죽과 같은 색을 써서 못 뗀다.
       모습 고르기: 처음 켤 때·C 키. 미리보기는 월드의 주인공이 제자리에서 돈다. 세이브에 남는다.
 
+- [x] M7 큰 지도 (2026-10-04, `docs/design/WORLD.md`): 224m 섬 → 1024m 대륙. 초원 가운데 + 벚꽃·꽃·단풍·고목·안개 호수·서리 고원,
+      3단 바위턱 절벽·강 넷·폭포·마을 넷·랜드마크, '종이 같음' 해결(법선 지도·역광 테두리·땅 그늘), 해넘이 전망, V 둘러보기
+
 ## 출처
 1. A Short Hike 픽셀 카메라 — https://www.youtube.com/watch?v=L-tNbbov6Bo , https://en.wikipedia.org/wiki/A_Short_Hike
 2. 3D Pixel Art Rendering (Godot) — https://www.davidhol.land/articles/3d-pixel-art-rendering/

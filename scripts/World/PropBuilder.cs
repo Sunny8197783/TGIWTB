@@ -18,7 +18,7 @@ public static class PropBuilder
     private const int Chunk = 128;
     private const int AtlasPad = 4;
     /// <summary>작은 장식·덤불은 이 거리(덩어리 가운데까지, m) 밖에서 안 그린다. 덩어리 반 대각선(90m) + 볼 거리.</summary>
-    private const float SmallRange = 150f, BushRange = 220f;
+    private const float SmallRange = 150f, BushRange = 220f, TreeRange = 450f;
     /// <summary>그림자 입체: 그림자 거리(55m) 밖은 필요 없다.</summary>
     private const float CasterRange = 110f;
     /// <summary>그림 아래쪽(땅에 닿은 곳)을 이만큼 어둡게 — 판이 땅에 붙어 보이게</summary>
@@ -84,14 +84,8 @@ public static class PropBuilder
                 mat.SetShaderParameter("glow_at_night", kind.Glow);
             }
 
-            var mm = new MultiMesh
-            {
-                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
-                UseColors = true,
-                UseCustomData = true,
-                Mesh = kind.Flat ? flatQuad : quad,
-                InstanceCount = items.Count,
-            };
+            // 인스턴스 하나 = 변환 12 + 색 4 + 사용자 4. 한 번에 통째로 넘긴다 (하나씩 넘기면 3만 개에 1초가 넘었다)
+            var buf = new float[items.Count * 20];
             var casters = new List<Transform3D>();
             for (int i = 0; i < items.Count; i++)
             {
@@ -119,14 +113,33 @@ public static class PropBuilder
                         AddCasters(casters, kind, new Vector2(wM, size.Y / Px.PerMeter * 0.8f), new Vector3(p.X, world.HeightAt(p.X, z), z));
                 }
                 var cell = atlas.Cells[v];
-                mm.SetInstanceTransform(i, xf);
+                int o = i * 20;
+                var b = xf.Basis;
+                buf[o] = b.X.X; buf[o + 1] = b.Y.X; buf[o + 2] = b.Z.X; buf[o + 3] = xf.Origin.X;
+                buf[o + 4] = b.X.Y; buf[o + 5] = b.Y.Y; buf[o + 6] = b.Z.Y; buf[o + 7] = xf.Origin.Y;
+                buf[o + 8] = b.X.Z; buf[o + 9] = b.Y.Z; buf[o + 10] = b.Z.Z; buf[o + 11] = xf.Origin.Z;
                 // 색 = 아틀라스 칸 (u0, u1, 위 v, 0)
-                mm.SetInstanceColor(i, new Color(cell.Position.X / atlas.Width, cell.End.X / atlas.Width,
-                    (atlas.Height - size.Y) / atlas.Height, 0f));
-                mm.SetInstanceCustomData(i, new Color(rng.Randf(), 0.7f + rng.Randf() * 0.6f, 0f, 0f));
+                buf[o + 12] = cell.Position.X / atlas.Width;
+                buf[o + 13] = cell.End.X / atlas.Width;
+                buf[o + 14] = (atlas.Height - size.Y) / atlas.Height;
+                buf[o + 15] = 0f;
+                // 사용자 = (흔들림 위상, 흔들림 배율, 0, 0)
+                buf[o + 16] = rng.Randf();
+                buf[o + 17] = 0.7f + rng.Randf() * 0.6f;
+                buf[o + 18] = 0f;
+                buf[o + 19] = 0f;
                 AddCollision(bodies, root, kind, p, world);
             }
 
+            var mm = new MultiMesh
+            {
+                TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
+                UseColors = true,
+                UseCustomData = true,
+                Mesh = kind.Flat ? flatQuad : quad,
+                InstanceCount = items.Count,
+                Buffer = buf,
+            };
             bool small = !kind.Shadow && kind.Footprint == Vector2.Zero && kind.Trunk == 0f;
             bool bush = kind.Placeholder == PropKind.Shape.Bush || kind.Placeholder == PropKind.Shape.Rock;
             root.AddChild(new MultiMeshInstance3D
@@ -136,7 +149,8 @@ public static class PropBuilder
                 MaterialOverride = mat,
                 // 판은 그림자를 드리우지 않는다 — 아래 입체가 대신한다
                 CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-                VisibilityRangeEnd = small ? SmallRange : bush ? BushRange : 0f,
+                // 건물·랜드마크(바닥 있음)는 끝까지, 나무는 450m 까지 (전망에서 그리기 호출과 겹쳐 그리기를 줄인다)
+                VisibilityRangeEnd = small ? SmallRange : bush ? BushRange : kind.Footprint != Vector2.Zero ? 0f : TreeRange,
             });
             if (casters.Count > 0)
                 root.AddChild(CasterInstance(kind, casters, $"{type}_shadow_{cx}_{cz}"));

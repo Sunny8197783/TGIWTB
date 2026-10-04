@@ -21,7 +21,7 @@ HARD = ("house", "inn", "tavern", "bakery", "blacksmith", "shop", "store", "temp
         "chalet", "lodge", "cottage", "greenhouse", "stable", "lighthouse", "windmill", "fountain", "well", "castle",
         "watchtower", "shrine", "torii", "pavilion", "dock", "boat", "bench", "fence", "stall", "cart", "crates",
         "barrel", "signpost", "lamp", "lantern", "planter", "buoy", "tent", "onsen", "log_seat", "campfire")
-FLAT = ("petals", "lily_pad")
+FLAT = ("petals", "lily_pad", "fairy_ring")
 
 
 def box_blur(a, r):
