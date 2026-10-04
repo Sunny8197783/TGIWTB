@@ -5,8 +5,8 @@ using PixelMmo.Render;
 namespace PixelMmo.World;
 
 /// <summary>
-/// 하루의 빛. 해는 동북동에서 떠서 정오에 남쪽(카메라 쪽) — 그래서 낮에는 카메라를 향한 면이 밝다 —
-/// 서북서 바다 위로 진다. 카메라가 북쪽을 보므로 노을은 화면 위쪽 수평선에 걸린다.
+/// 하루의 빛. 해는 북북동에서 떠서 정오에 남쪽(카메라 쪽) — 그래서 낮에는 카메라를 향한 면이 밝다 —
+/// 북북서 수평선으로 진다. 카메라가 북쪽을 보므로 지는 해가 화면 위쪽에 보인다 (V 전망).
 /// 밤에는 같은 방향광이 달빛으로 바뀐다.
 /// </summary>
 public partial class DayNight : Node
@@ -81,14 +81,30 @@ public partial class DayNight : Node
     /// <summary>캡처처럼 시간을 순간 이동시켰을 때 하늘도 바로 따라오게.</summary>
     public void RefreshSkyNow() => _skyTimer = 0f;
 
-    /// <summary>해가 떠 있는 동안의 방향(해 쪽을 가리킴). 뜨기 전/진 뒤에는 지평선 아래.</summary>
+    // 해의 길 (시각, 방위°, 고도°). 방위는 북=0 시계방향. 카메라가 북쪽(±25°)만 보므로
+    // 해는 북북동(14°)에서 떠서 남쪽 하늘을 돌아 북북서(348°) 수평선으로 진다 — 저녁 한 시간은
+    // 화면 왼쪽 위에서 수평선으로 내려가는 해가 보인다 (현실의 해 길이 아니라 그림을 위한 판타지 하늘).
+    private static readonly (float hour, float az, float el)[] SunPath =
+    {
+        (4.8f, 8f, -6f), (5.6f, 14f, 0f), (6.4f, 30f, 7f), (8.0f, 90f, 30f), (12.0f, 180f, 60f),
+        (16.0f, 268f, 32f), (17.3f, 322f, 14f), (18.0f, 340f, 7f), (18.8f, 348f, 0f), (19.4f, 352f, -5f),
+    };
+
+    /// <summary>해 쪽을 가리키는 방향. 뜨기 전/진 뒤에는 지평선 아래.</summary>
     public static Vector3 SunDirection(float hour)
     {
-        // 5.6시 일출(방위 70°) → 12시 남중(180°, 고도 58°) → 18.8시 일몰(290°)
-        float t = (hour - 5.6f) / (18.8f - 5.6f);
-        float az = Mathf.DegToRad(Mathf.Lerp(70f, 290f, t));
-        float el = Mathf.DegToRad(58f * Mathf.Sin(Mathf.Pi * t));
-        return Dir(az, el);
+        if (hour <= SunPath[0].hour || hour >= SunPath[^1].hour)
+        {
+            var e = hour <= SunPath[0].hour ? SunPath[0] : SunPath[^1];
+            return Dir(Mathf.DegToRad(e.az), Mathf.DegToRad(-8f));
+        }
+        int i = 0;
+        while (hour > SunPath[i + 1].hour)
+            i++;
+        var (h0, az0, el0) = SunPath[i];
+        var (h1, az1, el1) = SunPath[i + 1];
+        float t = Mathf.SmoothStep(0f, 1f, (hour - h0) / (h1 - h0));
+        return Dir(Mathf.DegToRad(Mathf.Lerp(az0, az1, t)), Mathf.DegToRad(Mathf.Lerp(el0, el1, t)));
     }
 
     public static Vector3 MoonDirection(float hour)
@@ -158,6 +174,7 @@ public partial class DayNight : Node
         _light.LightEnergy = energy * swap;
         _light.LightColor = lightCol;
         _light.LookAtFromPosition(Vector3.Zero, -lightDir, Mathf.Abs(lightDir.Y) > 0.99f ? Vector3.Forward : Vector3.Up);
+        RenderingServer.GlobalShaderParameterSet(Uniform.LightDir, lightDir);
 
         _env.AmbientLightColor = ambient;
         _env.AmbientLightEnergy = ambientEnergy;
@@ -176,6 +193,7 @@ public partial class DayNight : Node
             _sky.SetShaderParameter(Uniform.SkyHorizon, horizon);
             _sky.SetShaderParameter(Uniform.SkyZenith, zenith);
             _sky.SetShaderParameter(Uniform.WorldTime, Hour * 150f);
+            _sky.SetShaderParameter(Uniform.Aurora, night * AuroraHere());
         }
 
         RenderingServer.GlobalShaderParameterSet(Uniform.SkyHorizon, horizon);
@@ -184,6 +202,16 @@ public partial class DayNight : Node
         RenderingServer.GlobalShaderParameterSet(Uniform.SunDir, sunUp ? sun : shownMoon);
         RenderingServer.GlobalShaderParameterSet(Uniform.SunColor, sunUp ? lightCol : new Color(0.75f, 0.85f, 1f));
         RenderingServer.GlobalShaderParameterSet(Uniform.Night, night);
+    }
+
+    /// <summary>오로라 세기: 서리 고원에선 짙게, 다른 데선 북쪽 하늘에 옅게.</summary>
+    private static float AuroraHere()
+    {
+        var root = Core.GameRoot.Instance;
+        if (root?.Rig == null || root.World == null)
+            return 0.3f;
+        string zone = root.World.ZoneAt(root.Rig.Target.X, root.Rig.Target.Z);
+        return zone == "서리 고원" || zone == "눈꽃 마을" ? 1f : 0.3f;
     }
 
     private static (Key a, Key b, float t) Bracket(float hour)

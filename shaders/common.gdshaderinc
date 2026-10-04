@@ -11,10 +11,14 @@ vec2 ground_texel(vec2 xz) {
 	return floor(xz * vec2(PPM, PPM_Z));
 }
 
+// 정수 비트 해시. fract(sin) 류는 좌표가 수만(1km 지도 = 텍셀 3만)이 되면 정밀도를 잃어 점이 줄지어 섰다.
 float hash21(vec2 p) {
-	p = fract(p * vec2(123.34, 456.21));
-	p += dot(p, p + 45.32);
-	return fract(p.x * p.y);
+	uvec2 q = floatBitsToUint(p) * uvec2(1597334673u, 3812015801u);
+	uint n = (q.x ^ (q.y >> 3u) ^ (q.y << 5u)) * 1597334673u;
+	n ^= n >> 16u;
+	n *= 2246822519u;
+	n ^= n >> 13u;
+	return float(n) * (1.0 / 4294967295.0);
 }
 
 vec2 hash22(vec2 p) {

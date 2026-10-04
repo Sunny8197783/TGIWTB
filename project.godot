@@ -77,7 +77,19 @@ wind={
 }
 map_size={
 "type": "vec2",
-"value": Vector2(224, 224)
+"value": Vector2(1024, 1024)
+}
+upright_fix={
+"type": "float",
+"value": 1.0
+}
+ao_map={
+"type": "sampler2D",
+"value": ""
+}
+light_dir={
+"type": "vec3",
+"value": Vector3(0.3, 0.8, 0.5)
 }
 height_map={
 "type": "sampler2D",

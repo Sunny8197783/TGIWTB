@@ -63,7 +63,10 @@ public partial class NightLights : Node3D
         float night = root.DayCycle.Night;
         Vector3 center = root.Rig.Target;
         _fireflies.GlobalPosition = center + Vector3.Up * 0.8f;
-        _fireflies.AmountRatio = Mathf.Clamp((night - 0.4f) * 2f, 0f, 1f);
+        // 눈밭엔 반딧불이가 없다
+        string zone = root.World.ZoneAt(center.X, center.Z);
+        bool cold = zone == "서리 고원" || zone == "눈꽃 마을";
+        _fireflies.AmountRatio = cold ? 0f : Mathf.Clamp((night - 0.4f) * 2f, 0f, 1f);
 
         _timer -= (float)delta;
         if (_timer > 0f)

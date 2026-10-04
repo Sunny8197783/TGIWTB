@@ -1,7 +1,7 @@
 # PixelMMO
 
 Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프라이트** (A Short Hike / HD-2D 계열).
-2026-09-28 전면 재시작. 설계·조사 근거는 `docs/design/REBUILD.md`. 이전 버전은 `archive/astra-3d` 브랜치.
+2026-09-28 전면 재시작. 설계·조사 근거는 `docs/design/REBUILD.md`, 큰 지도(1024m)는 `docs/design/WORLD.md`. 이전 버전은 `archive/astra-3d` 브랜치.
 
 ## 절대 규칙
 1. 직업·스킬·기연 데이터는 코드에 하드코딩하지 않는다. 전부 `data/**.json` + C# 로더.
@@ -24,9 +24,13 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 
 ## 빌드 / 실행 / 검증
 - `dotnet build` → `tools/godot.sh --headless --import` (새 그림을 넣었을 때) → `tools/godot.sh`
-- 지도: `python tools/mapgen/mapgen.py` → `data/world/*` + `docs/design/map_preview.png`
+- 지도(1024m): `$PY tools/mapgen/mapgen.py` → `data/world/*` + `docs/design/map_preview.png` (약 2분)
+  - `$PY` = `/c/Users/gram/AppData/Local/Programs/Python/Python313/python.exe` (numpy·Pillow 가 여기 깔려 있다. Bash 의 `python` 은 msys 라 없다)
+  - 지역·절벽선·강·길·마을·폭포는 mapgen.py 위쪽 상수. 절벽선을 옮기면 폭포·호수 자리는 `pinned` 로 붙든다
+- 스프라이트 법선 지도: 새 그림을 받으면 `$PY tools/normals.py` (→ `*_n.png`, 그림의 부피·역광 테두리 빛) 뒤 `--headless --import`
 - 에셋: `tools/assets.json` 에 PixelLab id 를 적고 `python tools/fetch_assets.py`
 - 화면 확인: `tools/godot.sh -- --capture --shot=x,z,시각[,피치,거리] --out=user://shots`
+  - 전망(V) 모습은 피치 7·거리 34: `--shot=100,374,18.45,7,34` (노을 절벽의 해넘이). 전망 지점은 카메라가 천천히 옮겨 가니 캡처엔 피치를 직접 준다
 - 성능: `... --capture --novsync --hold=3 --shot=...` (장면마다 프레임 시간), `--no=grass,props,hero,monsters,shadows,...` 로 A/B
   - 노트북이 달아올라 같은 장면도 14→23ms 로 흔들린다. A/B 는 기준·변경을 **번갈아** 여러 번 잰다 (한 번씩 차례로 재면 순서가 결과를 만든다)
   - `[Spike]` 줄: 튄 프레임 앞뒤의 그리기 CPU/GPU·물리 걸음 수·GC. Performance 모니터(스크립트·물리)는 1초에 한 번만 바뀌어 프레임 단위로는 못 쓴다
@@ -42,4 +46,7 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
   옷 색 범위는 `python tools/palette.py <시트> --mark out.png 70,150,0.25[,명도]` 로 옷만 칠해지는지 보고 정한다
 - 새 주인공 바탕을 만들 때: hero 와 같은 설정(v3, 64px, high top-down, selective outline, high detail)과 같은 동작 프롬프트·칸 수를 쓴다 (전투 판정 칸이 전역이라)
 - 작은 소품: 한 장에 격자로 뽑아 `tools/assets.json` 의 `{"object": id, "cols", "rows", "cells": [...]}` 로 잘라 쓴다 (생성 1회 = 소품 6~16개)
+  - 격자는 `create_map_object`(1회)로. Pro Flash 는 격자 지시를 무시하고 하나만 그린다. 배경판을 칠해 오면 `"clear_bg": true`
+- 나무·건물: `create_object_pro_flash` + 기존 그림을 `style_image` 로 (한 장 6회, 긴 변 208px 넘으면 9회). 참고 그림이 캔버스보다 크면 거절된다
+  - 같은 종류의 그림 여러 장은 `<종류>_<번호>.png` — 불러올 때 아틀라스로 이어 붙이고 인스턴스마다 무작위로 고른다 (`World/PropBuilder`)
 - 주의: PowerShell 은 스크립트 인자의 맨 `--` 를 삼킨다. Godot 실행은 Bash 의 `tools/godot.sh` 로.

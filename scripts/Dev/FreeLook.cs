@@ -4,7 +4,7 @@ using PixelMmo.Core;
 namespace PixelMmo.Dev;
 
 /// <summary>
-/// 개발용 키: [ ] 시간, V 전망 모드. 주인공이 없으면(--no=hero) 방향키로 카메라를 옮긴다(Shift 빠르게).
+/// 개발용 키: [ ] 시간. 주인공이 없으면(--no=hero) 방향키로 카메라를 옮긴다(Shift 빠르게). (V 전망은 CameraRig)
 /// </summary>
 public partial class FreeLook : Node
 {
@@ -16,9 +16,6 @@ public partial class FreeLook : Node
 
         if (Input.IsKeyPressed(Key.Bracketright)) root.DayCycle.Hour = (root.DayCycle.Hour + (float)delta * 2f) % 24f;
         if (Input.IsKeyPressed(Key.Bracketleft)) root.DayCycle.Hour = (root.DayCycle.Hour + 24f - (float)delta * 2f) % 24f;
-        bool vista = Input.IsKeyPressed(Key.V);
-        root.Rig.Pitch = vista ? 14f : Px.PitchDeg;
-        root.Rig.Distance = vista ? 30f : Px.FocusDistance;
     }
 
     private static void MoveRig(GameRoot root, float delta)

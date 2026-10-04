@@ -27,6 +27,20 @@ const int SAKURA = 6;
 const int AUTUMN = 7;
 const int GRAVEL = 8;
 const int PEBBLE = 9;
+const int SNOW = 10;
+const int TULIP = 11;
+const int LAVENDER = 12;
+const int MOSS = 13;
+const int ROCKY = 14;
+const int STONE = 15;
+const int GINKGO = 16;
+const int WHEAT = 17;
+const int ICE = 18;
+const float ROW_W = 1.6; // 꽃밭·밀밭 한 줄 (m) — World/GrassBuilder.RowWidth 와 같다
+
+global uniform sampler2D height_map : filter_linear;
+// 소품 밑동·숲 바닥 그늘 (World/PropBuilder.BakeAo)
+global uniform sampler2D ao_map : filter_linear;
 
 varying float dapple;
 
@@ -52,6 +66,41 @@ vec3 grass_color(vec2 tp, float big, vec3 base) {
 	else if (blade < 0.08) c *= 0.84;
 	if (h > 0.985) c = mix(c, vec3(0.95, 0.95, 0.55), 0.5);
 	return c;
+}
+
+// 튤립 줄 색 — GrassBuilder 의 꽃송이와 같은 계산이라 풀이 끝나는 거리에서 색이 바뀌지 않는다
+vec3 tulip_color(vec2 xz) {
+	int row = int(floor(xz.y / ROW_W));
+	int block = int(floor(xz.x / 48.0)) * 31 + int(floor(xz.y / 40.0)) * 17;
+	uint idx = (uint(row) * 2654435761u + uint(block) * 40503u) % 6u;
+	if (idx == 0u) return vec3(0.95, 0.25, 0.3);
+	if (idx == 1u) return vec3(0.98, 0.85, 0.25);
+	if (idx == 2u) return vec3(0.98, 0.96, 0.9);
+	if (idx == 3u) return vec3(0.95, 0.5, 0.7);
+	if (idx == 4u) return vec3(0.65, 0.35, 0.85);
+	return vec3(0.98, 0.55, 0.2);
+}
+
+// 멀리서 픽셀 무늬가 지글거리지 않도록 바꿔 칠 평균색
+vec3 ground_mean(int t, vec2 xz) {
+	if (t == GRASS) return vec3(0.34, 0.64, 0.22);
+	if (t == FOREST) return vec3(0.22, 0.42, 0.2);
+	if (t == MEADOW) return vec3(0.46, 0.7, 0.26);
+	if (t == DIRT) return vec3(0.68, 0.53, 0.35);
+	if (t == COBBLE) return vec3(0.58, 0.56, 0.53);
+	if (t == SAND) return vec3(0.92, 0.85, 0.64);
+	if (t == SAKURA) return vec3(0.62, 0.62, 0.42);
+	if (t == AUTUMN) return vec3(0.72, 0.42, 0.18);
+	if (t == SNOW) return vec3(0.9, 0.93, 0.98);
+	if (t == TULIP) return mix(vec3(0.26, 0.5, 0.22), tulip_color(xz), 0.6);
+	if (t == LAVENDER) return vec3(0.5, 0.42, 0.72);
+	if (t == MOSS) return vec3(0.2, 0.4, 0.2);
+	if (t == ROCKY) return vec3(0.5, 0.5, 0.52);
+	if (t == STONE) return vec3(0.66, 0.64, 0.6);
+	if (t == GINKGO) return vec3(0.82, 0.7, 0.26);
+	if (t == WHEAT) return vec3(0.84, 0.7, 0.34);
+	if (t == ICE) return vec3(0.7, 0.84, 0.92);
+	return vec3(0.58, 0.55, 0.5);
 }
 
 vec3 ground_color(int t, vec2 tp, float big) {
@@ -124,6 +173,71 @@ vec3 ground_color(int t, vec2 tp, float big) {
 		}
 		return c;
 	}
+	vec2 xz = tp / vec2(PPM, PPM_Z);
+	if (t == SNOW) {
+		// 눈: 바람이 빚은 물결 무늬(밝은 등성이·푸른 골)를 3단으로, 드문드문 반짝이
+		float ripple = vnoise(tp * vec2(0.035, 0.16) + vec2(0.0, vnoise(tp * 0.02) * 6.0));
+		float k = floor(clamp(ripple * 1.4 - 0.2 + (big - 0.5) * 0.6, 0.0, 0.99) * 3.0) / 2.0;
+		vec3 c = mix(vec3(0.74, 0.8, 0.92), vec3(0.97, 0.98, 1.0), k);
+		if (h > 0.993) c = vec3(1.0);
+		else if (h < 0.03) c *= 0.93;
+		return c;
+	}
+	if (t == ICE) {
+		// 얼음: 맑은 하늘색, 흰 금이 몇 줄
+		vec3 c = mix(vec3(0.62, 0.8, 0.9), vec3(0.78, 0.9, 0.96), vnoise(tp * 0.03));
+		float crack = abs(vnoise(tp * 0.02 + 7.0) - 0.5);
+		if (crack < 0.012) c = vec3(0.95, 0.98, 1.0);
+		return c;
+	}
+	if (t == TULIP || t == LAVENDER || t == WHEAT) {
+		// 밭: 줄마다 작물, 줄 사이 고랑은 흙
+		float row = fract(xz.y / ROW_W);
+		if (row > 0.75) return vec3(0.5, 0.36, 0.24) * (0.9 + 0.2 * h);
+		if (t == WHEAT) {
+			vec3 c = vec3(0.86, 0.72, 0.36) * (0.9 + 0.2 * big);
+			float stalk = hash21(vec2(tp.x, floor(tp.y * 0.34)));
+			if (stalk > 0.8) c *= 1.12; else if (stalk < 0.15) c *= 0.82;
+			return c;
+		}
+		vec3 leaf = grass_color(tp, big, vec3(0.24, 0.48, 0.22));
+		vec3 bloom = t == TULIP ? tulip_color(xz) : mix(vec3(0.55, 0.4, 0.82), vec3(0.68, 0.52, 0.9), h);
+		return hash21(floor(tp * 0.5) + 3.0) > 0.45 ? bloom : leaf;
+	}
+	if (t == MOSS) {
+		// 고목의 숲 이끼: 짙은 초록에 볕 든 연두 얼룩, 검은 흙 점
+		float moss = floor(clamp((fbm3(tp / PPM * 0.3) - 0.25) * 2.4, 0.0, 0.99) * 3.0) / 2.0;
+		vec3 c = mix(vec3(0.14, 0.32, 0.18), vec3(0.32, 0.52, 0.22), moss);
+		if (h > 0.97) c = vec3(0.12, 0.16, 0.1);
+		else if (h < 0.03) c *= 1.2;
+		return c;
+	}
+	if (t == ROCKY) {
+		// 자갈 비탈: 크기가 들쭉날쭉한 돌, 줄눈 없이 돌마다 밝기만 다르다
+		vec2 q = tp + floor(vec2(vnoise(tp * 0.2), vnoise(tp * 0.2 + 5.0)) * 3.0);
+		vec2 blk = floor(q / vec2(4.0, 3.0));
+		vec3 c = vec3(0.5, 0.5, 0.54) * (0.78 + 0.34 * hash21(blk));
+		if (hash21(blk + 3.0) > 0.7) c = mix(c, vec3(0.92, 0.94, 0.98), 0.7); // 돌 틈에 남은 눈
+		return c;
+	}
+	if (t == STONE) {
+		// 돌계단·판석: 큰 돌판, 줄눈은 어둡게, 윗변은 밝게
+		vec2 p = tp;
+		float row = floor(p.y / 9.0);
+		p.x += hash21(vec2(row, 3.0)) * 14.0;
+		vec2 f = vec2(mod(p.x, 14.0), mod(p.y, 9.0));
+		vec3 c = vec3(0.68, 0.66, 0.62) * (0.86 + 0.2 * hash21(vec2(floor(p.x / 14.0), row)));
+		if (f.x < 1.0 || f.y < 1.0) c = vec3(0.36, 0.34, 0.32);
+		else if (f.y < 2.0) c *= 1.12;
+		return c;
+	}
+	if (t == GINKGO) {
+		vec3 c = grass_color(tp, big, vec3(0.48, 0.56, 0.24));
+		float drift = vnoise(tp * 0.05 + 11.0);
+		if (hash21(floor(tp * 0.5) + 9.0) > mix(0.9, 0.3, smoothstep(0.3, 0.75, drift)))
+			c = mix(vec3(0.98, 0.84, 0.28), vec3(0.9, 0.66, 0.16), step(0.6, hash21(tp + 2.0)));
+		return c;
+	}
 	// 자갈 바닥과 물가 조약돌: 3x3 픽셀 덩어리마다 다른 회색
 	vec2 blk = floor(tp / 3.0);
 	float k = hash21(blk);
@@ -135,14 +249,21 @@ vec3 rock_color(vec3 p, vec3 n) {
 	// 절벽은 세로면이라 xz 로 무늬를 그리면 늘어난다. 수평 방향 + 높이로 그린다.
 	float horiz = abs(n.x) > abs(n.z) ? p.z : p.x;
 	vec2 tp = floor(vec2(horiz, -p.y) * PPM);
-	float band = floor(p.y * 2.2 + vnoise(vec2(horiz * 0.4, 3.0)) * 1.4);
-	// 차가운 회청색 바위, 층마다 밝기가 다르다. 따뜻한 베이지는 모래로 읽혔다.
-	vec3 c = mix(vec3(0.42, 0.44, 0.5), vec3(0.58, 0.56, 0.58), hash21(vec2(band, 7.0)));
-	float crack = hash21(vec2(floor(tp.x / 3.0), tp.y));
-	if (crack > 0.93) c *= 0.72;
-	if (hash21(tp) > 0.96) c *= 1.15;
-	// 층 사이 이끼 줄
-	if (fract(p.y * 2.2 + vnoise(vec2(horiz * 0.4, 3.0)) * 1.4) < 0.08) c = mix(c, vec3(0.3, 0.46, 0.24), 0.6);
+	// 지층: 층마다 색(차갑고 따뜻하게 번갈아), 윗변은 볕 받는 턱, 아랫변은 그늘
+	float layer = p.y * 0.7 + vnoise(vec2(horiz * 0.35, 3.0)) * 1.2;
+	float band = floor(layer);
+	float f = fract(layer);
+	vec3 c = mix(vec3(0.36, 0.36, 0.42), vec3(0.52, 0.5, 0.52), hash21(vec2(band, 7.0)));
+	c *= mix(vec3(1.0), vec3(1.07, 1.0, 0.9), hash21(vec2(band, 9.0)));
+	if (f > 0.9) c *= 1.2;
+	else if (f < 0.12) c *= 0.68;
+	// 세로 틈 (3픽셀 칸마다 드문드문)
+	if (hash21(vec2(floor(tp.x / 3.0), band)) > 0.8 && mod(tp.x, 3.0) < 1.0) c *= 0.64;
+	float h = hash21(tp);
+	if (h > 0.97) c *= 1.12;
+	else if (h < 0.04) c *= 0.85;
+	// 턱 위 이끼·풀 덩어리
+	if (f > 0.84 && vnoise(tp * 0.08) > 0.55) c = mix(c, vec3(0.26, 0.44, 0.2), 0.85);
 	return c;
 }
 
@@ -151,12 +272,28 @@ void fragment() {
 	float big = fbm3(wpos.xz * 0.06);
 	int t = ground_at(wpos.xz, tp);
 	vec3 col = ground_color(t, tp, big);
+	// 멀어서 한 텍셀이 한 픽셀보다 작아지면 무늬 대신 평균색 (지글거림 방지)
+	float fp = length(fwidth(wpos.xz)) * PPM;
+	col = mix(col, ground_mean(t, wpos.xz), smoothstep(1.4, 3.0, fp));
 
 	// 가파른 면은 암벽
 	float slope = 1.0 - wnorm.y;
 	float jitter = (hash21(tp + 71.0) - 0.5) * 0.06;
 	float rock = smoothstep(0.40, 0.46, slope + jitter);
-	col = mix(col, rock_color(wpos, wnorm), rock);
+	vec3 rc = rock_color(wpos, wnorm);
+	// 높은 산 바위의 덜 가파른 곳엔 눈이 쌓인다
+	if (wpos.y > 52.0 + 8.0 * vnoise(tp * 0.01)) rc = mix(rc, vec3(0.9, 0.93, 0.98), step(slope, 0.62 + 0.1 * hash21(tp)));
+	// 절벽 위 가장자리: 풀이 처마처럼 넘어온다 (오르막 쪽 0.7m 가 지금 높이와 비슷하면 꼭대기 근처).
+	// 오르막 = 법선의 수평 성분 반대쪽 — '북쪽'으로만 보면 동서로 누운 강둑에 톱니가 생겼다
+	vec2 huv = (wpos.xz + vec2(0.5)) / (map_size + 1.0);
+	vec2 uphill = -normalize(wnorm.xz + vec2(1e-4));
+	float h_up = texture(height_map, huv + uphill * 0.7 / (map_size + 1.0)).r;
+	float lip = step(h_up - wpos.y, 0.22 + 0.25 * hash21(vec2(tp.x, 5.0)));
+	col = mix(col, rc, rock * (1.0 - lip * 0.85));
+	// 절벽 밑동 그늘: 바로 북쪽이 훌쩍 높으면 땅을 어둡게 (3단)
+	float h_back = texture(height_map, huv - vec2(0.0, 1.6) / (map_size + 1.0)).r;
+	float cliff_ao = floor(clamp((h_back - wpos.y - 1.0) / 3.0, 0.0, 1.0) * 3.0) / 3.0;
+	col *= 1.0 - 0.28 * cliff_ao * (1.0 - rock);
 
 	// 물가는 젖어서 짙다
 	float w = texture(water_map, (wpos.xz + 0.5) / (map_size + 1.0)).r;
@@ -165,9 +302,14 @@ void fragment() {
 		col *= mix(1.0, 0.72, wet);
 	}
 
+	// 땅 그늘: 4단으로 끊고 경계는 바둑판으로 섞는다 (픽셀아트식 그라데이션)
+	float ao = texture(ao_map, wpos.xz / map_size).r;
+	float ao_q = floor(ao * 4.0 + (mod(tp.x + tp.y, 2.0) - 0.5) * 0.5 + 0.5) / 4.0;
+	col *= 1.0 - clamp(ao_q, 0.0, 0.6) * (1.0 - rock);
+
 	cloud = cloud_shade(wpos.xz, world_time, wind);
 	// 숲 그늘에 나뭇잎 사이로 드는 햇빛 조각 (바람에 천천히 흔들린다). 그늘 안에서만 보인다 — light() 참고
-	bool woods = t == FOREST || t == SAKURA || t == AUTUMN;
+	bool woods = t == FOREST || t == SAKURA || t == AUTUMN || t == MOSS || t == GINKGO;
 	dapple = woods ? step(0.68, vnoise(tp * 0.05 + wind * world_time * 1.5)) : 0.0;
 	ALBEDO = slow_tint(col);
 	ROUGHNESS = 1.0;

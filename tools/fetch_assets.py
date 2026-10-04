@@ -44,6 +44,42 @@ def download(url, dest):
     subprocess.run(["curl", "-sfL", "--max-time", "60", "-o", dest, url], check=True)
 
 
+def despeckle(path, keep=0.04):
+    """본체에서 떨어져 떠 있는 작은 조각(흩날리는 꽃잎 등)을 지운다 — 판이 흔들릴 때 허공에 붙은 점처럼 보인다.
+    가장 큰 덩어리의 keep 배보다 작은 연결 덩어리만 지운다."""
+    w, h, px = png.read_rgba(path)
+    seen = [False] * (w * h)
+    comps = []
+    for start in range(w * h):
+        if seen[start] or px[start][3] <= 8:
+            continue
+        stack, comp = [start], []
+        seen[start] = True
+        while stack:
+            i = stack.pop()
+            comp.append(i)
+            x, y = i % w, i // w
+            for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1), (x + 1, y + 1), (x - 1, y - 1), (x + 1, y - 1), (x - 1, y + 1)):
+                if 0 <= nx < w and 0 <= ny < h:
+                    j = ny * w + nx
+                    if not seen[j] and px[j][3] > 8:
+                        seen[j] = True
+                        stack.append(j)
+        comps.append(comp)
+    if len(comps) < 2:
+        return
+    biggest = max(len(c) for c in comps)
+    px = list(px)
+    removed = 0
+    for c in comps:
+        if len(c) < biggest * keep:
+            for i in c:
+                px[i] = (0, 0, 0, 0)
+            removed += 1
+    if removed:
+        png.write_rgba(path, w, h, px)
+
+
 def trim(path, pad=1):
     w, h, px = png.read_rgba(path)
     rows = [y for y in range(h) if any(px[y * w + x][3] > 8 for x in range(w))]
@@ -73,6 +109,8 @@ def main():
             except subprocess.CalledProcessError:
                 print("pending", item["dest"])  # 아직 생성 중
                 continue
+            if item.get("despeckle", True):
+                despeckle(dest)
             size = trim(dest) if item.get("trim", True) else None
             print("object", item["dest"], size)
         elif "sheet" in item:
@@ -96,6 +134,9 @@ def fetch_packed(item, force):
         print("pending", item["object"])
         return
     w, h, px = png.read_rgba(sheet)
+    if item.get("clear_bg"):
+        # 가끔 시트 전체를 눈밭 같은 판으로 칠해 내보낸다 — 가장자리에서부터 지운다 (외곽선에서 멈춘다)
+        w, h, px = clear_bg((w, h, px), item.get("bg_tol", 48))
     cols = item.get("cols", item.get("grid"))
     rows = item.get("rows", item.get("grid"))
     cw, ch = w // cols, h // rows
@@ -162,6 +203,9 @@ def character_zip(char, force):
 
 
 def fetch_character(item, force):
+    # 이미 묶은 시트는 건너뛴다 (프레임을 고쳤으면 --force 또는 시트를 지우고) — 매번 zip 30개를 받고 다시 묶으면 느리다
+    if os.path.exists(os.path.join(ROOT, item["sheet"])) and not force:
+        return
     folder = src_dir(item)
     z = character_zip(item["char"], force)
     if z is None:

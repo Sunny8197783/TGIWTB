@@ -12,14 +12,20 @@
   // 지역마다 층 세기 0~1 (지역 밖은 default). 이름은 지도 meta 의 zones 와 같아야 한다
   "default": { "wind": 0.5, "birds": 0.5, "crickets": 0.6 },
   "zones": {
-    "하루미 마을": { "wind": 0.3, "birds": 0.6, "crickets": 0.5 },
-    "거울 호수":   { "wind": 0.3, "birds": 0.7, "crickets": 0.8, "lake": 0.9 },
-    "벚꽃 고원":   { "wind": 0.6, "birds": 0.8, "crickets": 0.5 },
-    "단풍 언덕":   { "wind": 0.6, "birds": 0.6, "crickets": 0.5 },
+    "바람의 초원": { "wind": 0.9, "birds": 0.6, "crickets": 0.7 },
+    "하루미 마을": { "wind": 0.3, "birds": 0.5, "crickets": 0.4, "waves": 0.35 },
+    "남쪽 해변":   { "wind": 0.5, "birds": 0.2, "crickets": 0.2, "waves": 1.0 },
+    "벚꽃 골짜기": { "wind": 0.5, "birds": 0.8, "crickets": 0.5, "lake": 0.3 },
+    "하나미 마을": { "wind": 0.3, "birds": 0.6, "crickets": 0.5, "lake": 0.4 },
+    "꽃 들판":     { "wind": 0.8, "birds": 0.7, "crickets": 0.8 },
+    "꽃 마을":     { "wind": 0.5, "birds": 0.6, "crickets": 0.6 },
     "등대 곶":     { "wind": 1.0, "birds": 0.1, "crickets": 0.2, "waves": 0.9 },
-    "풍차 들판":   { "wind": 0.8, "birds": 0.6, "crickets": 0.8 },
-    "속삭이는 숲": { "wind": 0.5, "birds": 1.0, "crickets": 0.6 },
-    "남쪽 해변":   { "wind": 0.5, "birds": 0.2, "crickets": 0.2, "waves": 1.0 }
+    "거울 호수":   { "wind": 0.3, "birds": 0.7, "crickets": 0.8, "lake": 0.9 },
+    "단풍 협곡":   { "wind": 0.7, "birds": 0.5, "crickets": 0.5, "lake": 0.3 },
+    "고목의 숲":   { "wind": 0.4, "birds": 1.0, "crickets": 0.7 },
+    "안개 호수":   { "wind": 0.3, "birds": 0.5, "crickets": 1.0, "lake": 1.0 },
+    "서리 고원":   { "wind": 1.0, "birds": 0.0, "crickets": 0.0 },
+    "눈꽃 마을":   { "wind": 0.6, "birds": 0.1, "crickets": 0.0 }
   },
   // 폭포는 지역이 아니라 거리로: 이 거리(m) 안에서 가까울수록 크게
   "waterfall_range": 34,

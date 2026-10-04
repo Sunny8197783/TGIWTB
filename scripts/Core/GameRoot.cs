@@ -51,6 +51,8 @@ public partial class GameRoot : Node
     public bool WorldSlowed => _slowLeft > 0f;
     /// <summary>메뉴(모습 고르기)가 떠 있다 — 주인공은 입력을 받지 않는다</summary>
     public bool MenuOpen { get; set; }
+    /// <summary>주인공이 조작을 받지 않는다: 메뉴가 떠 있거나 전망으로 둘러보는 중</summary>
+    public bool InputLocked => MenuOpen || (Rig != null && Rig.VistaOn);
 
     private void TickClock(float real)
     {
@@ -159,8 +161,9 @@ public partial class GameRoot : Node
         if (!off.Contains("water")) Stage.AddChild(WaterBuilder.Build(World));
         if (!off.Contains("props")) Stage.AddChild(PropBuilder.Build(World));
         Stage.AddChild(BridgeBuilder.Build(World));
+        if (!off.Contains("backdrop")) Stage.AddChild(BackdropBuilder.Build(World));
         if (!off.Contains("falls")) Stage.AddChild(WaterfallBuilder.Build(World));
-        if (!off.Contains("grass")) Stage.AddChild(GrassBuilder.Build(World));
+        if (!off.Contains("grass")) Stage.AddChild(new GrassField(World));
         if (off.Contains("shadows")) sun.ShadowEnabled = false;
         if (off.Contains("sky")) { env.BackgroundMode = Godot.Environment.BGMode.Color; env.BackgroundColor = new Color(0.5f, 0.7f, 1f); }
         if (off.Contains("glow")) env.GlowEnabled = false;
@@ -171,6 +174,7 @@ public partial class GameRoot : Node
         AddChild(Rig);
         Rig.Bind(View);
         Stage.AddChild(new Dust());
+        if (!off.Contains("weather")) Stage.AddChild(new Weather(World));
         if (!off.Contains("nightlights")) Stage.AddChild(new NightLights(World));
         AddChild(new CombatFx());
 

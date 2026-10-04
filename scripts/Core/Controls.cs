@@ -15,6 +15,8 @@ public static class Controls
     public static readonly StringName[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
     /// <summary>모습 고르기 열기/닫기 (C · 패드 Back)</summary>
     public static readonly StringName Look = "appearance";
+    /// <summary>전망: 누르고 있는 동안 고개를 들어 멀리 본다, 이동 키로 둘러보기 (V · 패드 왼스틱 누르기)</summary>
+    public static readonly StringName Vista = "vista";
 
     public static void Register()
     {
@@ -29,6 +31,7 @@ public static class Controls
         Action(SkillSlots[1], Key.E, Key.I); Pad(SkillSlots[1], JoyButton.RightShoulder);
         Action(SkillSlots[2], Key.R, Key.O); Axis(SkillSlots[2], JoyAxis.TriggerRight, 1);
         Action(Look, Key.C); Pad(Look, JoyButton.Back);
+        Action(Vista, Key.V); Pad(Vista, JoyButton.LeftStick);
     }
 
     private static void Action(StringName name, params Key[] keys)

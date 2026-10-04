@@ -44,6 +44,17 @@ public static class PropCatalog
         Tree("tree_oak", 128, 160, new Color(0.34f, 0.62f, 0.26f));
         Tree("tree_maple", 128, 160, new Color(0.9f, 0.42f, 0.16f));
         Add(new PropKind { Id = "tree_pine", Size = new(96, 160), Color = new Color(0.16f, 0.42f, 0.3f), Placeholder = PropKind.Shape.Pine, Sway = 0.03f, Trunk = 0.35f, Sink = 4, ShadowCaster = PropKind.Caster.Cone });
+        // 큰 지도 (WORLD.md): 지역마다 대표 수종
+        Tree("tree_ginkgo", 112, 176, new Color(0.95f, 0.78f, 0.25f));
+        Tree("tree_willow", 144, 176, new Color(0.45f, 0.65f, 0.3f));
+        Tree("tree_poplar", 96, 192, new Color(0.4f, 0.62f, 0.28f));
+        Tree("tree_bare", 128, 160, new Color(0.45f, 0.32f, 0.24f));
+        Tree("tree_seapine", 160, 160, new Color(0.18f, 0.38f, 0.3f));
+        Add(new PropKind { Id = "tree_snowfir", Size = new(112, 176), Color = new Color(0.85f, 0.9f, 0.95f), Placeholder = PropKind.Shape.Pine, Sway = 0.02f, Trunk = 0.35f, Sink = 4, ShadowCaster = PropKind.Caster.Cone });
+        // 랜드마크 나무: 멀리서 보이는 길잡이
+        Tree("tree_lone", 192, 224, new Color(0.3f, 0.58f, 0.24f), 0.8f);
+        Tree("tree_sakura_giant", 256, 256, new Color(0.97f, 0.7f, 0.82f), 1.0f);
+        Tree("tree_giant", 256, 256, new Color(0.22f, 0.45f, 0.24f), 1.4f);
 
         Bush("bush", new Color(0.3f, 0.56f, 0.24f));
         Bush("bush_pink", new Color(0.94f, 0.62f, 0.74f));
@@ -66,6 +77,46 @@ public static class PropCatalog
         Add(new PropKind { Id = "petals", Size = new(32, 24), Color = new Color(0.98f, 0.75f, 0.85f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
         Add(new PropKind { Id = "reeds", Size = new(32, 48), Color = new Color(0.5f, 0.62f, 0.3f), Placeholder = PropKind.Shape.Flowers, Sway = 0.05f, Shadow = false });
         Add(new PropKind { Id = "lily_pad", Size = new(32, 32), Color = new Color(0.3f, 0.6f, 0.3f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
+        Bush("snow_bush", new Color(0.88f, 0.92f, 0.96f));
+        // 꽃밭·숲·단풍 작은 소품 (map_object 격자)
+        Small("tulip", new Color(0.95f, 0.3f, 0.35f));
+        Small("daisy", new Color(0.97f, 0.97f, 0.92f));
+        Small("hydrangea", new Color(0.65f, 0.45f, 0.85f));
+        Small("sunflower", new Color(0.98f, 0.82f, 0.2f));
+        Small("rose", new Color(0.95f, 0.5f, 0.65f));
+        Small("twig_pot", new Color(0.8f, 0.3f, 0.2f));
+        Small("maple_sapling", new Color(0.85f, 0.3f, 0.15f));
+        Small("fiddlehead", new Color(0.35f, 0.6f, 0.3f));
+        Small("grass_tall", new Color(0.4f, 0.65f, 0.3f));
+        Small("berries", new Color(0.85f, 0.15f, 0.15f));
+        Bush("bush_flower", new Color(0.4f, 0.6f, 0.3f));
+        Add(new PropKind { Id = "pumpkins", Size = new(48, 40), Color = new Color(0.95f, 0.55f, 0.15f), Placeholder = PropKind.Shape.Rock, Shadow = false });
+        Add(new PropKind { Id = "persimmon_basket", Size = new(46, 48), Color = new Color(0.9f, 0.45f, 0.15f), Placeholder = PropKind.Shape.Box, Shadow = false, Flip = false });
+        Add(new PropKind { Id = "watering_can", Size = new(50, 42), Color = new Color(0.7f, 0.72f, 0.75f), Placeholder = PropKind.Shape.Box, Shadow = false });
+        Add(new PropKind { Id = "wheelbarrow", Size = new(51, 46), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Box, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "scarecrow", Size = new(35, 50), Color = new Color(0.8f, 0.6f, 0.3f), Placeholder = PropKind.Shape.Lamp, Trunk = 0.25f, Sway = 0.01f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "birdhouse", Size = new(42, 53), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Lamp, Flip = false, Trunk = 0.2f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "jlantern", Size = new(26, 38), Color = new Color(0.6f, 0.6f, 0.58f), Placeholder = PropKind.Shape.Lamp, Glow = 1f, Flip = false, Trunk = 0.2f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "paper_lantern", Size = new(15, 47), Color = new Color(0.9f, 0.2f, 0.15f), Placeholder = PropKind.Shape.Lamp, Glow = 1f, Flip = false, Trunk = 0.12f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "log", Size = new(53, 44), Color = new Color(0.5f, 0.35f, 0.22f), Placeholder = PropKind.Shape.Box, Trunk = 0.6f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "stump", Size = new(52, 48), Color = new Color(0.5f, 0.35f, 0.22f), Placeholder = PropKind.Shape.Box, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "mushroom_big", Size = new(50, 50), Color = new Color(0.85f, 0.3f, 0.25f), Placeholder = PropKind.Shape.Bush, Trunk = 0.4f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "mushroom_glow", Size = new(46, 47), Color = new Color(0.4f, 0.7f, 0.95f), Placeholder = PropKind.Shape.Flowers, Shadow = false, Glow = 0.8f });
+        // 겨울 소품 (작은 것들) — 눈꽃 마을 마당·서리 고원
+        Add(new PropKind { Id = "snowman", Size = new(45, 53), Color = new Color(0.95f, 0.95f, 1f), Placeholder = PropKind.Shape.Bush, Trunk = 0.4f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "ice", Size = new(47, 46), Color = new Color(0.7f, 0.85f, 0.95f), Placeholder = PropKind.Shape.Rock, Glow = 0f });
+        Add(new PropKind { Id = "sled", Size = new(53, 47), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Box });
+        Add(new PropKind { Id = "snow_fence", Size = new(48, 52), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Box, Footprint = new(1.4f, 0.3f) });
+        Add(new PropKind { Id = "snow_stump", Size = new(50, 51), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Box, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "snow_sapling", Size = new(42, 55), Color = new Color(0.3f, 0.5f, 0.35f), Placeholder = PropKind.Shape.Pine, Sway = 0.02f, Trunk = 0.25f, ShadowCaster = PropKind.Caster.Cone });
+        Add(new PropKind { Id = "snow_sign", Size = new(29, 53), Color = new Color(0.55f, 0.38f, 0.25f), Placeholder = PropKind.Shape.Lamp, Flip = false, Trunk = 0.2f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "snow_rock", Size = new(48, 40), Color = new Color(0.8f, 0.84f, 0.9f), Placeholder = PropKind.Shape.Rock, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
+        Add(new PropKind { Id = "standing_stone", Size = new(40, 80), Color = new Color(0.55f, 0.56f, 0.6f), Placeholder = PropKind.Shape.Tower, Flip = true, Trunk = 0.45f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "ruin_pillar", Size = new(40, 100), Color = new Color(0.6f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Tower, Flip = true, Trunk = 0.4f, ShadowCaster = PropKind.Caster.Column });
+        Add(new PropKind { Id = "ruin_arch", Size = new(110, 100), Color = new Color(0.55f, 0.52f, 0.6f), Placeholder = PropKind.Shape.Box, Flip = true, Footprint = new(3.2f, 0.8f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "ruin_wall", Size = new(100, 60), Color = new Color(0.55f, 0.55f, 0.58f), Placeholder = PropKind.Shape.Box, Flip = true, Footprint = new(2.8f, 0.8f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "campfire", Size = new(48, 48), Color = new Color(0.95f, 0.55f, 0.2f), Placeholder = PropKind.Shape.Bush, Glow = 1f, Shadow = false, Flip = false });
+        Add(new PropKind { Id = "log_seat", Size = new(64, 32), Color = new Color(0.5f, 0.35f, 0.22f), Placeholder = PropKind.Shape.Box, Flip = true });
         Add(new PropKind { Id = "rock", Size = new(48, 40), Color = new Color(0.55f, 0.53f, 0.5f), Placeholder = PropKind.Shape.Rock, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });
 
         Add(new PropKind { Id = "street_lamp", Size = new(32, 96), Color = new Color(0.25f, 0.25f, 0.3f), Placeholder = PropKind.Shape.Lamp, Glow = 1f, Trunk = 0.15f, Flip = false, ShadowCaster = PropKind.Caster.Column });
@@ -98,6 +149,23 @@ public static class PropCatalog
         House("inn", new Color(0.7f, 0.3f, 0.3f), 256, 224, 8f);
         House("tavern", new Color(0.6f, 0.4f, 0.25f), 256, 224, 8f);
 
+        // 지역 마을 (그림이 오기 전엔 임시 그림)
+        House("jhouse", new Color(0.35f, 0.33f, 0.38f));
+        House("teahouse", new Color(0.45f, 0.3f, 0.25f), 224, 192, 7f);
+        House("chalet", new Color(0.9f, 0.92f, 0.96f));
+        House("lodge", new Color(0.86f, 0.9f, 0.95f), 256, 224, 8f);
+        House("cottage", new Color(0.75f, 0.45f, 0.6f));
+        House("greenhouse", new Color(0.7f, 0.9f, 0.85f), 224, 176, 7f);
+        House("stable", new Color(0.6f, 0.4f, 0.25f), 192, 160, 6f);
+        House("barn", new Color(0.75f, 0.2f, 0.18f), 224, 224, 7f);
+        Add(new PropKind { Id = "hokora", Size = new(128, 128), Color = new Color(0.4f, 0.35f, 0.38f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(3f, 2f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "temple", Size = new(224, 208), Color = new Color(0.6f, 0.25f, 0.2f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(7f, 5f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "pagoda", Size = new(128, 256), Color = new Color(0.65f, 0.25f, 0.2f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(4f, 4f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "castle_ruin", Size = new(256, 224), Color = new Color(0.55f, 0.55f, 0.58f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(8f, 5f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "watchtower_ruin", Size = new(128, 224), Color = new Color(0.6f, 0.58f, 0.55f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(3.5f, 3.5f), ShadowCaster = PropKind.Caster.Box });
+        Add(new PropKind { Id = "onsen", Size = new(192, 128), Color = new Color(0.55f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(5f, 3f) });
+        Add(new PropKind { Id = "tent", Size = new(96, 80), Color = new Color(0.85f, 0.75f, 0.55f), Placeholder = PropKind.Shape.House, Flip = true, Footprint = new(2.6f, 2f), ShadowCaster = PropKind.Caster.Box });
+
         Add(new PropKind { Id = "lighthouse", Size = new(96, 256), Color = new Color(0.95f, 0.95f, 0.92f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(3f, 3f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "windmill", Size = new(192, 256), Color = new Color(0.9f, 0.85f, 0.75f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(4f, 4f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "torii", Size = new(128, 128), Color = new Color(0.86f, 0.22f, 0.16f), Placeholder = PropKind.Shape.Box, Flip = false });
@@ -107,8 +175,8 @@ public static class PropCatalog
 
     private static void Add(PropKind k) => Kinds[k.Id] = k;
 
-    private static void Tree(string id, int w, int h, Color c)
-        => Add(new PropKind { Id = id, Size = new(w, h), Color = c, Placeholder = PropKind.Shape.Tree, Sway = 0.045f, Trunk = 0.45f, Sink = 4, ShadowCaster = PropKind.Caster.Canopy });
+    private static void Tree(string id, int w, int h, Color c, float trunk = 0.45f)
+        => Add(new PropKind { Id = id, Size = new(w, h), Color = c, Placeholder = PropKind.Shape.Tree, Sway = 0.045f, Trunk = trunk, Sink = 4, ShadowCaster = PropKind.Caster.Canopy });
 
     private static void Bush(string id, Color c)
         => Add(new PropKind { Id = id, Size = new(64, 48), Color = c, Placeholder = PropKind.Shape.Bush, Sway = 0.02f, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Blob });

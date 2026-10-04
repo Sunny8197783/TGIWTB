@@ -20,6 +20,10 @@ public sealed class WorldData
     public byte[] Ground { get; private set; }
     public List<PropDef> Props { get; } = new();
     public JsonElement Meta { get; private set; }
+    /// <summary>지역 번호 격자 (ZoneCell m 칸). 이름은 ZoneNames[번호], 0 = 이름 없음.</summary>
+    public byte[] Zones { get; private set; }
+    public int ZoneCell { get; private set; } = 8;
+    public string[] ZoneNames { get; private set; } = System.Array.Empty<string>();
 
     public int VertexWidth => Width + 1;
 
@@ -32,6 +36,15 @@ public sealed class WorldData
         data.Heights = ReadFloats(Dir + "terrain.f32");
         data.Water = ReadFloats(Dir + "water.f32");
         data.Ground = FileAccess.GetFileAsBytes(Dir + "ground.u8");
+        if (data.Meta.TryGetProperty("zone_names", out var names))
+        {
+            data.ZoneCell = data.Meta.GetProperty("zone_cell").GetInt32();
+            data.Zones = FileAccess.GetFileAsBytes(Dir + "zones.u8");
+            var list = new List<string>();
+            foreach (var n in names.EnumerateArray())
+                list.Add(n.GetString());
+            data.ZoneNames = list.ToArray();
+        }
 
         using var doc = JsonDocument.Parse(FileAccess.GetFileAsString(Dir + "props.json"));
         foreach (var e in doc.RootElement.EnumerateArray())
@@ -159,6 +172,18 @@ public sealed class WorldData
         int ix = Math.Clamp((int)x, 0, Width - 1);
         int iz = Math.Clamp((int)z, 0, Height - 1);
         return Ground[iz * Width + ix];
+    }
+
+    /// <summary>이 자리의 지역 이름 (없으면 null).</summary>
+    public string ZoneAt(float x, float z)
+    {
+        if (Zones == null)
+            return null;
+        int n = Width / ZoneCell;
+        int ix = Math.Clamp((int)(x / ZoneCell), 0, n - 1);
+        int iz = Math.Clamp((int)(z / ZoneCell), 0, Height / ZoneCell - 1);
+        byte id = Zones[iz * n + ix];
+        return id > 0 && id < ZoneNames.Length ? ZoneNames[id] : null;
     }
 
     public Vector2 Vec2(string key)

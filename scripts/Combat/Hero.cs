@@ -174,7 +174,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (id != null && _cooldowns.ContainsKey(id))
                 _cooldowns[id] -= dt;
 
-        Vector2 stick = GameRoot.Instance.MenuOpen ? Vector2.Zero : Input.GetVector(Controls.Left, Controls.Right, Controls.Up, Controls.Down);
+        Vector2 stick = GameRoot.Instance.InputLocked ? Vector2.Zero : Input.GetVector(Controls.Left, Controls.Right, Controls.Up, Controls.Down);
         var wish = new Vector3(stick.X, 0f, stick.Y); // 화면 위 = 북(-Z)
         if (Pressed(Controls.Dodge))
             _dodgeBuffer = T.InputBuffer;
@@ -189,7 +189,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             if (threat != null && _state is State.Move or State.Guard)
                 Face(Flat(threat.GlobalPosition - GlobalPosition), snap: true);
         }
-        bool guardHeld = !GameRoot.Instance.MenuOpen && Input.IsActionPressed(Controls.Guard);
+        bool guardHeld = !GameRoot.Instance.InputLocked && Input.IsActionPressed(Controls.Guard);
         for (int i = 0; i < Controls.SkillSlots.Length; i++)
         {
             if (Pressed(Controls.SkillSlots[i]))
@@ -531,7 +531,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     }
 
     /// <summary>메뉴가 떠 있으면 전투 입력은 없는 것으로 친다.</summary>
-    private static bool Pressed(StringName action) => !GameRoot.Instance.MenuOpen && Input.IsActionJustPressed(action);
+    private static bool Pressed(StringName action) => !GameRoot.Instance.InputLocked && Input.IsActionJustPressed(action);
 
     // ── 숙련·진화·히든 ──────────────────────────────────
 

@@ -10,6 +10,7 @@ public static class Uniform
 {
     public static readonly StringName
         AlbedoTex = "albedo_tex",
+        Aurora = "aurora",
         Bright = "bright",
         Color = "color",
         Core = "core",
@@ -26,9 +27,11 @@ public static class Uniform
         HeroScreen = "hero_screen",
         HeroZ = "hero_z",
         Intensity = "intensity",
+        LightDir = "light_dir",
         Mid = "mid",
         MoonDir = "moon_dir",
         Night = "night",
+        NormalTex = "normal_tex",
         Progress = "progress",
         Px = "px",
         PxSize = "px_size",
@@ -45,6 +48,7 @@ public static class Uniform
         Sunset = "sunset",
         Thickness = "thickness",
         TimeSlow = "time_slow",
+        UprightFix = "upright_fix",
         Vignette = "vignette",
         VignetteColor = "vignette_color",
         WorldTime = "world_time";

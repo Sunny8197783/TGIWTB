@@ -64,9 +64,11 @@ void fragment() {
 	float sun_align = max(dot(refl, normalize(sun_dir)), 0.0);
 	float twinkle_cell = hash21(tp + floor(t * 3.0 + hash21(tp) * 7.0) * 13.1);
 	// 반짝임은 해(밤에는 달) 반사 길을 따라서만 촘촘하다. 전면에 뿌리면 화면이 지지직거린다.
-	float path = pow(sun_align, 18.0);
-	float sparkle_rate = mix(0.9992, 0.955, path);
-	float sparkle = step(sparkle_rate, twinkle_cell) * (1.0 - foam) * (0.3 + 0.7 * d01);
+	float path = pow(sun_align, 48.0);
+	float sparkle_rate = mix(0.9995, 0.972, path);
+	// 멀어서 한 텍셀이 한 픽셀보다 작아지면 반짝임을 줄인다 — 수평선 쪽 바다가 온통 지글거렸다
+	float far = smoothstep(1.2, 3.0, length(fwidth(wpos.xz)) * PPM);
+	float sparkle = step(sparkle_rate, twinkle_cell) * (1.0 - foam) * (0.3 + 0.7 * d01) * (1.0 - far * 0.85);
 
 	// 물결 반짝: 짧은 가로 획(2~5픽셀)이 드문드문 켜졌다 꺼진다 — 픽셀아트 물의 기본 무늬.
 	// 긴 곡선은 긁힌 자국처럼 보였다.
@@ -74,7 +76,7 @@ void fragment() {
 	float rh = hash21(rc + vec2(floor(t * 0.7 + hash21(rc) * 5.0) * 3.7, 0.0));
 	float dash_len = 2.0 + floor(hash21(rc + 9.1) * 4.0);
 	float in_cell = step(mod(tp.x, 7.0), dash_len) * step(abs(mod(tp.y, 3.0) - 1.0), 0.0);
-	float ripple = step(0.82, rh) * in_cell;
+	float ripple = step(0.82, rh) * in_cell * (1.0 - far);
 	col = mix(col, col * 1.18 + vec3(0.06, 0.08, 0.09), ripple * (0.5 + 0.5 * d01));
 	// 반사 길 자체도 은은하게 밝힌다
 	col += sun_color.rgb * path * 0.18 * (1.0 - night * 0.5);

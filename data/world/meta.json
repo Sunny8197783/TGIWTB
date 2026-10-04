@@ -1,125 +1,305 @@
 {
-  "width": 224,
-  "height": 224,
+  "width": 1024,
+  "height": 1024,
   "sea_level": 0.0,
   "spawn": [
-    112,
-    160
+    520.0,
+    892.0
   ],
-  "lake_surface": 1.8,
+  "lake_surface": 7.04,
   "waterfalls": [
     {
-      "x": 112.0,
-      "top_z": 71.46831522976818,
-      "top_y": 10.6,
-      "bottom_y": 1.8,
-      "width": 4.5
+      "x": 593.49,
+      "top_z": 38.18,
+      "top_y": 87.41,
+      "bottom_y": 67.95,
+      "width": 4.2
+    },
+    {
+      "x": 596.22,
+      "top_z": 74.25,
+      "top_y": 67.91,
+      "bottom_y": 60.04,
+      "width": 4.2
+    },
+    {
+      "x": 602.36,
+      "top_z": 147.7,
+      "top_y": 56.97,
+      "bottom_y": 47.43,
+      "width": 4.2
+    },
+    {
+      "x": 602.47,
+      "top_z": 199.15,
+      "top_y": 46.72,
+      "bottom_y": 26.57,
+      "width": 4.2
+    },
+    {
+      "x": 602.15,
+      "top_z": 428.03,
+      "top_y": 19.73,
+      "bottom_y": 7.04,
+      "width": 5.0
+    },
+    {
+      "x": 306.49,
+      "top_z": 45.52,
+      "top_y": 72.9,
+      "bottom_y": 63.96,
+      "width": 5.4
+    },
+    {
+      "x": 300.91,
+      "top_z": 67.33,
+      "top_y": 63.89,
+      "bottom_y": 56.01,
+      "width": 5.4
+    },
+    {
+      "x": 291.71,
+      "top_z": 132.99,
+      "top_y": 53.37,
+      "bottom_y": 15.64,
+      "width": 5.4
+    },
+    {
+      "x": 203.27,
+      "top_z": 428.68,
+      "top_y": 12.75,
+      "bottom_y": 4.01,
+      "width": 5.4
     }
   ],
   "monsters": [
     {
       "id": "sakura_slime",
-      "x": 160,
-      "z": 152,
-      "radius": 5,
+      "x": 500,
+      "z": 700,
+      "radius": 6,
       "count": 3,
       "respawn": 8
     },
     {
       "id": "sakura_slime",
-      "x": 66,
-      "z": 44,
+      "x": 620,
+      "z": 744,
       "radius": 6,
+      "count": 3,
+      "respawn": 8
+    },
+    {
+      "id": "sakura_slime",
+      "x": 380,
+      "z": 680,
+      "radius": 6,
+      "count": 3,
+      "respawn": 8
+    },
+    {
+      "id": "sakura_slime",
+      "x": 476,
+      "z": 520,
+      "radius": 6,
+      "count": 3,
+      "respawn": 8
+    },
+    {
+      "id": "sakura_slime",
+      "x": 262,
+      "z": 664,
+      "radius": 7,
       "count": 4,
-      "respawn": 10
+      "respawn": 9
     },
     {
       "id": "forest_goblin",
-      "x": 52,
-      "z": 120,
+      "x": 150,
+      "z": 640,
       "radius": 6,
       "count": 3,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 282,
+      "z": 500,
+      "radius": 6,
+      "count": 3,
+      "respawn": 14
+    },
+    {
+      "id": "sakura_slime",
+      "x": 760,
+      "z": 702,
+      "radius": 7,
+      "count": 4,
+      "respawn": 9
+    },
+    {
+      "id": "sakura_slime",
+      "x": 884,
+      "z": 620,
+      "radius": 6,
+      "count": 3,
+      "respawn": 9
+    },
+    {
+      "id": "forest_goblin",
+      "x": 322,
+      "z": 318,
+      "radius": 7,
+      "count": 4,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 232,
+      "z": 384,
+      "radius": 6,
+      "count": 3,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 452,
+      "z": 382,
+      "radius": 7,
+      "count": 4,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 540,
+      "z": 276,
+      "radius": 7,
+      "count": 4,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 724,
+      "z": 372,
+      "radius": 7,
+      "count": 4,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 452,
+      "z": 140,
+      "radius": 7,
+      "count": 4,
+      "respawn": 14
+    },
+    {
+      "id": "forest_goblin",
+      "x": 700,
+      "z": 176,
+      "radius": 7,
+      "count": 4,
       "respawn": 14
     }
   ],
   "viewpoints": [
     {
-      "name": "등대 전망대",
-      "x": 156,
-      "z": 12,
+      "name": "약속의 언덕",
+      "x": 422,
+      "z": 728,
+      "radius": 8,
+      "pitch": 14,
+      "distance": 26,
+      "look_ahead": 12,
+      "look_up": 4
+    },
+    {
+      "name": "거울 호수 나루",
+      "x": 622,
+      "z": 532,
       "radius": 7,
-      "pitch": 18,
-      "distance": 22,
-      "look_ahead": 6,
-      "look_up": 0
+      "pitch": 12,
+      "distance": 26,
+      "look_ahead": 10,
+      "look_up": 6
+    },
+    {
+      "name": "등대 전망대",
+      "x": 990,
+      "z": 414,
+      "radius": 7,
+      "pitch": 12,
+      "distance": 24,
+      "look_ahead": 8,
+      "look_up": 2
     },
     {
       "name": "풍차 언덕",
-      "x": 184,
-      "z": 120,
+      "x": 880,
+      "z": 566,
       "radius": 7,
-      "pitch": 18,
+      "pitch": 16,
       "distance": 24,
       "look_ahead": 4,
       "look_up": 4
+    },
+    {
+      "name": "신사 언덕",
+      "x": 114,
+      "z": 500,
+      "radius": 7,
+      "pitch": 14,
+      "distance": 24,
+      "look_ahead": 8,
+      "look_up": 3
+    },
+    {
+      "name": "노을 절벽",
+      "x": 100,
+      "z": 372,
+      "radius": 8,
+      "pitch": 8,
+      "distance": 26,
+      "look_ahead": 10,
+      "look_up": 2
+    },
+    {
+      "name": "안개 호숫가",
+      "x": 662,
+      "z": 340,
+      "radius": 7,
+      "pitch": 12,
+      "distance": 26,
+      "look_ahead": 10,
+      "look_up": 8
+    },
+    {
+      "name": "눈꽃 마을 언덕",
+      "x": 560,
+      "z": 154,
+      "radius": 7,
+      "pitch": 10,
+      "distance": 28,
+      "look_ahead": 10,
+      "look_up": 12
     }
   ],
-  "zones": [
-    {
-      "name": "하루미 마을",
-      "x0": 74,
-      "z0": 126,
-      "x1": 152,
-      "z1": 174
-    },
-    {
-      "name": "거울 호수",
-      "x0": 80,
-      "z0": 76,
-      "x1": 144,
-      "z1": 124
-    },
-    {
-      "name": "벚꽃 고원",
-      "x0": 20,
-      "z0": 8,
-      "x1": 104,
-      "z1": 70
-    },
-    {
-      "name": "단풍 언덕",
-      "x0": 106,
-      "z0": 26,
-      "x1": 150,
-      "z1": 66
-    },
-    {
-      "name": "등대 곶",
-      "x0": 150,
-      "z0": 0,
-      "x1": 210,
-      "z1": 40
-    },
-    {
-      "name": "풍차 들판",
-      "x0": 152,
-      "z0": 80,
-      "x1": 214,
-      "z1": 180
-    },
-    {
-      "name": "속삭이는 숲",
-      "x0": 14,
-      "z0": 76,
-      "x1": 72,
-      "z1": 200
-    },
-    {
-      "name": "남쪽 해변",
-      "x0": 90,
-      "z0": 180,
-      "x1": 190,
-      "z1": 224
-    }
+  "zone_cell": 8,
+  "zone_names": [
+    "",
+    "바람의 초원",
+    "하루미 마을",
+    "남쪽 해변",
+    "벚꽃 골짜기",
+    "하나미 마을",
+    "꽃 들판",
+    "꽃 마을",
+    "등대 곶",
+    "거울 호수",
+    "단풍 협곡",
+    "고목의 숲",
+    "안개 호수",
+    "서리 고원",
+    "눈꽃 마을"
   ]
 }

@@ -14,6 +14,7 @@ uniform vec4 sky_zenith : source_color = vec4(0.3, 0.55, 0.95, 1.0);
 
 uniform vec3 moon_dir = vec3(-0.3, 0.6, -0.7);
 uniform float sunset = 0.0; // 0..1, 해가 지평선 가까울수록 1
+uniform float aurora = 0.0; // 0..1, 밤 북쪽 하늘의 오로라 (서리 고원에서 짙다)
 
 void sky() {
 	vec3 d = EYEDIR;
@@ -28,7 +29,18 @@ void sky() {
 	float band = exp(-abs(d.y) * 6.0);
 	col += sun_color.rgb * pow(sd, 6.0) * band * (0.35 + 0.9 * sunset) * (1.0 - night * 0.8);
 	col += sun_color.rgb * pow(sd, 90.0) * 0.8 * (1.0 - night);
-	col += sun_color.rgb * 4.0 * step(0.9994, sd) * (1.0 - night);
+	// 해 원반: 지평선 가까울수록 크고 붉게 (지는 해)
+	float disc = step(mix(0.9994, 0.9987, sunset), sd);
+	vec3 disc_col = mix(sun_color.rgb * 4.0, vec3(4.0, 1.7, 0.8), sunset * 0.75);
+	col = mix(col, disc_col, disc * (1.0 - night));
+	// 빛 내림: 노을 때 해에서 부채꼴로 퍼지는 빛줄기 (각도 잡음을 끊어서)
+	if (sunset > 0.05) {
+		vec3 tx = normalize(cross(s, vec3(0.0, 1.0, 0.0)));
+		vec3 ty = cross(tx, s);
+		float ang = atan(dot(d, ty), dot(d, tx));
+		float rays = step(0.62, vnoise(vec2(ang * 10.0, world_time * 0.01)));
+		col += sun_color.rgb * rays * pow(sd, 4.0) * 0.3 * sunset * (1.0 - night) * step(0.0, d.y);
+	}
 
 	// 픽셀 구름 띠 — 낮에만 또렷하다
 	vec2 cp = d.xz / max(d.y + 0.08, 0.05);
@@ -49,6 +61,20 @@ void sky() {
 		// 은하수 띠
 		float mw = exp(-pow(dot(d, normalize(vec3(0.4, 0.2, -1.0))) * 3.0, 2.0));
 		col += vec3(0.25, 0.22, 0.4) * mw * fbm3(d.xz * 8.0) * night * 0.5;
+	}
+
+	// 오로라: 북쪽 하늘에 일렁이는 커튼. 아래는 청록, 위로 갈수록 보랏빛. 띠를 3단으로 끊는다
+	if (aurora > 0.01 && d.z < 0.0) {
+		float el = d.y;
+		vec2 ap = vec2(atan(d.x, -d.z) * 3.0, 0.0);
+		float wave = vnoise(vec2(ap.x * 1.4 + world_time * 0.006, 2.0)) * 0.12;
+		float base = 0.10 + wave;
+		float curtain = smoothstep(base, base + 0.03, el) * (1.0 - smoothstep(base + 0.08, base + 0.32, el));
+		float rays = vnoise(vec2(ap.x * 9.0 + world_time * 0.01, el * 3.0));
+		float a = curtain * (0.4 + 0.8 * rays) * smoothstep(0.0, 0.6, -d.z);
+		a = floor(a * 3.0) / 3.0;
+		vec3 acol = mix(vec3(0.2, 0.95, 0.6), vec3(0.65, 0.35, 0.95), smoothstep(base + 0.05, base + 0.25, el));
+		col += acol * a * aurora * night * 0.9 * (1.0 - cloud);
 	}
 
 	// 달
