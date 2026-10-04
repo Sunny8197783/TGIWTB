@@ -24,6 +24,7 @@ public static class Uniform
         Frame = "frame",
         FrameCount = "frame_count",
         Glow = "glow",
+        HasNormal = "has_normal",
         HeroScreen = "hero_screen",
         HeroZ = "hero_z",
         Intensity = "intensity",

@@ -18,6 +18,7 @@ public partial class CharacterSprite : Node3D
     private const float DepthPull = 0.6f;
 
     private readonly Dictionary<string, (Texture2D tex, int frames)> _sheets = new();
+    private readonly Dictionary<string, Texture2D> _normals = new();
     private MeshInstance3D _quad;
     private ShaderMaterial _mat;
     private MeshInstance3D _blob;
@@ -51,12 +52,17 @@ public partial class CharacterSprite : Node3D
         TopLevel = true;
         foreach (string file in ResourceLoader.ListDirectory(folder))
         {
-            if (!file.EndsWith(".png"))
+            if (!file.EndsWith(".png") || file.EndsWith("_n.png"))
                 continue;
             var tex = GD.Load<Texture2D>($"{folder}/{file}");
             if (recolor != null)
                 tex = ImageTexture.CreateFromImage(recolor(tex.GetImage()));
-            _sheets[file[..^4]] = (tex, Mathf.Max(1, tex.GetWidth() / Cell));
+            string anim = file[..^4];
+            _sheets[anim] = (tex, Mathf.Max(1, tex.GetWidth() / Cell));
+            // 법선 지도(tools/normals.py): 몸이 해 쪽으로 밝고 역광에 테두리가 빛난다. 색 바꾸기와 상관없다
+            string normal = $"{folder}/{anim}_n.png";
+            if (ResourceLoader.Exists(normal))
+                _normals[anim] = GD.Load<Texture2D>(normal);
         }
     }
 
@@ -122,6 +128,9 @@ public partial class CharacterSprite : Node3D
         _time = 0f;
         _frames = sheet.frames;
         _mat.SetShaderParameter(Uniform.AlbedoTex, sheet.tex);
+        bool hasNormal = _normals.TryGetValue(_sheets.ContainsKey(anim) ? anim : "rot", out var normal);
+        _mat.SetShaderParameter(Uniform.NormalTex, hasNormal ? normal : null);
+        _mat.SetShaderParameter(Uniform.HasNormal, hasNormal);
         _mat.SetShaderParameter(Uniform.FrameCount, new Vector2(_frames, Dirs.Length));
         Apply();
     }

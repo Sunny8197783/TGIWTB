@@ -755,5 +755,240 @@
   "dest": "art/env/ruin_wall_0.png",
   "object": "c8d2156b-00c8-4973-9a60-5568eaf8dd7d",
   "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/tree_ancient_0.png",
+  "object": "82062019-4a4d-40a4-9440-c40478f0eb6f",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_ancient_1.png",
+  "object": "b6d45627-6a8f-446e-909f-d54a7f613116",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_gold_0.png",
+  "object": "6111e3eb-cc65-40f1-8038-8ca5a78d7f99",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_0.png",
+  "object": "7fbd063a-1ec1-4b2a-a9c1-b7d11e62654c",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_oak_4.png",
+  "object": "af35ea43-efdc-4f6a-82f8-a51177d5d3b7",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_maple_3.png",
+  "object": "16eab74d-88dd-4704-8b19-f96c0b5c310d",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_bare_1.png",
+  "object": "060d6c3e-3a21-4773-bc7a-1abcfbb6dd9f",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_apple_0.png",
+  "object": "a7f53bbb-9c96-4148-8514-c74596302627",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "2636bb2b-a662-4484-8f39-f96b0132e054",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "shrub_0",
+   "shrub_1",
+   "",
+   "",
+   "shrub_2",
+   "",
+   "",
+   "",
+   "",
+   "shrub_3",
+   "shrub_4",
+   "",
+   "shrub_5",
+   "",
+   "",
+   ""
+  ],
+  "note": "덤불 (둥근 것만) (map_object, 배경판 지움)"
+ },
+ {
+  "object": "7599590b-00fa-4ab3-957a-7a031e04d4be",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "rock_1",
+   "",
+   "rock_2",
+   "rock_3",
+   "pebbles_1",
+   "pebbles_2",
+   "pebbles_3",
+   "rock_4",
+   "pebbles_4",
+   "pebbles_5",
+   "rock_5",
+   "rock_6",
+   "rock_7",
+   "",
+   "",
+   ""
+  ],
+  "note": "바위·자갈 (map_object, 배경판 지움)"
+ },
+ {
+  "object": "f426da60-8c66-4017-b53b-ba99797d0bdb",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "boat_1",
+   "",
+   "rope_0",
+   "lobster_trap_0",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "seagull_0",
+   "oars_0",
+   "",
+   "seagull_1"
+  ],
+  "note": "항구 소품 (고른 것만) (map_object, 배경판 지움)"
+ },
+ {
+  "object": "b6b5cdcc-2f8d-47b4-b6a6-01801bce90fc",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "wildflower_a_0",
+   "wildflower_a_1",
+   "wildflower_a_2",
+   "wildflower_a_3",
+   "wildflower_a_4",
+   "wildflower_a_5",
+   "wildflower_a_6",
+   "wildflower_a_7",
+   "wildflower_b_0",
+   "wildflower_b_1",
+   "wildflower_b_2",
+   "wildflower_b_3",
+   "wildflower_b_4",
+   "wildflower_b_5",
+   "wildflower_b_6",
+   "wildflower_b_7"
+  ],
+  "note": "들꽃 16종 (map_object, 배경판 지움)"
+ },
+ {
+  "dest": "art/env/clocktower_0.png",
+  "object": "0e4bfd3a-b6f5-4120-8b42-d856ab13e67b",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/house_stone_0.png",
+  "object": "f20c3a2e-e25f-40fa-b382-2a0aebd6360e",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/house_fisher_0.png",
+  "object": "fb527ee4-042a-4b90-bcf1-10436a52d2e8",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/warehouse_0.png",
+  "object": "0e1e7119-9d4f-43c4-a96a-02fa5f600eee",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/windmill_1.png",
+  "object": "075fb16c-e148-426c-a6ee-5ab3890dea63",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/observatory_0.png",
+  "object": "f66d9aa2-ebcc-4c2a-856e-e91611cba980",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/ice_shrine_0.png",
+  "object": "7ca1801e-9471-4a63-a33f-caa6a0c7c847",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/chapel_0.png",
+  "object": "20e5b109-26d7-4068-bbf3-4dc8056860ed",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/bush_2.png",
+  "object": "2a1a1a91-3129-4bcc-9d9e-1ae55b5d8ce1",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/bush_3.png",
+  "object": "fe42c169-91bf-457d-8742-12955bfbaed8",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/goddess_0.png",
+  "object": "c82e09b4-da25-47bd-b52f-dfcde968b3a1",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/gazebo_0.png",
+  "object": "b2414f09-e42f-4613-86bd-9a71d6f4c3b8",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/rose_arch_0.png",
+  "object": "985b2501-fe71-46da-80b9-fa5219a52c7a",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/boulder_0.png",
+  "object": "9519269f-0484-4c4d-a79d-a160d49d489d",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "94236bef-fa9b-418e-896a-b171afb810bd",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "grass_tuft_1",
+   "",
+   "",
+   "grass_tuft_2",
+   "fern_small_1",
+   "grass_tuft_3",
+   "grass_tuft_4",
+   "grass_tuft_5",
+   "",
+   "",
+   "grass_tuft_6",
+   "grass_tuft_7",
+   "fern_small_2",
+   "fern_small_3",
+   "fern_small_4",
+   "fern_small_5"
+  ],
+  "note": "풀포기·작은 고사리 (map_object)"
  }
 ]

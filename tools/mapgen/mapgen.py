@@ -580,32 +580,33 @@ class Scatter:
 #   grove: 숲 덩어리 안에 몰린다 / lone: 트인 곳에 외딴 나무 / edge: 숲 가장자리 / under: 나무 밑
 #   meadow: 꽃밭 얼룩 / water: 물가 / None: 고르게
 FLORA = {
-    "grass": [("tree_oak", 3.0, 0.010, "grove"), ("tree_oak", 3.0, 0.0006, "lone"), ("tree_poplar", 2.2, 0.0010, "lone"),
+    "grass": [("tree_oak", 3.0, 0.010, "grove"), ("tree_birch", 2.2, 0.0008, "edge"), ("shrub", 1.0, 0.004, "edge"),
+              ("wildflower_a", 0.45, 0.008, "meadow"), ("wildflower_b", 0.45, 0.008, "meadow"), ("tree_oak", 3.0, 0.0006, "lone"), ("tree_poplar", 2.2, 0.0010, "lone"),
               ("bush", 1.0, 0.010, "edge"), ("rock", 0.9, 0.0012, None), ("flowers_mix", 0.8, 0.008, "meadow"),
               ("flowers_yellow", 0.45, 0.010, "meadow"), ("dandelion", 0.45, 0.006, None), ("grass_tuft", 0.45, 0.02, None),
               ("flowers_white", 0.45, 0.005, "meadow"), ("pebbles", 0.4, 0.002, None), ("stone", 0.5, 0.0015, None),
               ("fern_small", 0.45, 0.01, "under"), ("mushrooms", 0.45, 0.004, "under"), ("stump", 0.8, 0.0004, "grove"),
               ("log", 0.9, 0.0003, "grove"), ("daisy", 0.4, 0.004, "meadow"), ("grass_tall", 0.45, 0.004, None)],
-    "sakura": [("tree_sakura", 3.0, 0.022, "grove"), ("tree_sakura", 3.0, 0.0015, "lone"), ("bush_pink", 1.0, 0.010, "edge"),
+    "sakura": [("tree_sakura", 3.0, 0.022, "grove"), ("wildflower_a", 0.45, 0.004, None), ("wildflower_b", 0.45, 0.004, None), ("tree_sakura", 3.0, 0.0015, "lone"), ("bush_pink", 1.0, 0.010, "edge"),
                ("flowers_white", 0.5, 0.010, None), ("petals", 0.45, 0.03, "under"), ("flowers_pink", 0.45, 0.008, None),
                ("grass_tuft", 0.45, 0.015, None), ("rock", 0.9, 0.001, None)],
-    "flower": [("tree_oak", 3.0, 0.0012, "lone"), ("tree_poplar", 2.2, 0.0008, "lone"), ("flowers_mix", 0.8, 0.02, None),
+    "flower": [("tree_oak", 3.0, 0.0012, "lone"), ("wildflower_a", 0.45, 0.012, None), ("wildflower_b", 0.45, 0.012, None), ("tree_poplar", 2.2, 0.0008, "lone"), ("flowers_mix", 0.8, 0.02, None),
                ("flowers_yellow", 0.45, 0.02, None), ("flowers_blue", 0.45, 0.014, None), ("flowers_pink", 0.45, 0.014, None),
                ("lavender", 0.5, 0.01, None), ("dandelion", 0.45, 0.008, None), ("bush", 1.0, 0.003, None),
                ("tulip", 0.45, 0.006, None), ("daisy", 0.45, 0.006, None), ("sunflower", 0.5, 0.003, "meadow"),
                ("rose", 0.5, 0.002, None), ("bush_flower", 1.0, 0.003, "edge"), ("hydrangea", 0.5, 0.002, None)],
-    "coast": [("tree_pine", 2.4, 0.004, "grove"), ("rock", 0.9, 0.005, None), ("grass_tuft", 0.45, 0.03, None),
+    "coast": [("tree_pine", 2.4, 0.003, "grove"), ("tree_seapine", 3.0, 0.002, "lone"), ("rock", 0.9, 0.005, None), ("grass_tuft", 0.45, 0.03, None),
               ("bush", 1.0, 0.003, None), ("flowers_white", 0.45, 0.004, None)],
-    "autumn": [("tree_maple", 3.0, 0.022, "grove"), ("tree_ginkgo", 2.6, 0.008, "grove2"), ("bush_orange", 1.0, 0.010, "edge"),
+    "autumn": [("tree_maple", 3.0, 0.020, "grove"), ("tree_ginkgo", 2.6, 0.008, "grove2"), ("tree_birch_gold", 2.2, 0.004, "edge"), ("bush_orange", 1.0, 0.010, "edge"),
                ("mushrooms", 0.45, 0.010, "under"), ("fern_small", 0.45, 0.008, "under"), ("stone", 0.5, 0.003, None),
                ("rock", 0.9, 0.0015, None), ("grass_tuft", 0.45, 0.008, None), ("maple_sapling", 0.5, 0.003, "edge"),
                ("pumpkins", 0.6, 0.0004, None), ("stump", 0.8, 0.0006, "grove")],
-    "ancient": [("tree_oak", 3.2, 0.026, "grove"), ("tree_pine", 2.4, 0.010, "grove"), ("fern", 0.9, 0.016, "under"),
+    "ancient": [("tree_ancient", 3.6, 0.010, "grove"), ("tree_oak", 3.2, 0.018, "grove"), ("tree_pine", 2.4, 0.008, "grove"), ("fern", 0.9, 0.016, "under"),
                 ("fern_small", 0.45, 0.016, None), ("mushrooms", 0.45, 0.014, "under"), ("rock", 0.9, 0.003, None),
                 ("bush", 1.0, 0.008, "edge"), ("sapling", 0.5, 0.003, None), ("log", 0.9, 0.002, "grove"),
                 ("mushroom_big", 0.7, 0.0015, "under"), ("mushroom_glow", 0.5, 0.0012, "under"), ("stump", 0.8, 0.002, "grove"),
                 ("fiddlehead", 0.45, 0.006, "under"), ("grass_tall", 0.45, 0.006, None)],
-    "misty": [("tree_willow", 3.0, 0.008, "water"), ("tree_oak", 3.0, 0.007, "grove"), ("flowers_blue", 0.45, 0.010, None),
+    "misty": [("tree_willow", 3.0, 0.008, "water"), ("shrub", 1.0, 0.004, "edge"), ("wildflower_b", 0.45, 0.006, None), ("tree_oak", 3.0, 0.005, "grove"), ("tree_birch", 2.2, 0.005, "grove"), ("flowers_blue", 0.45, 0.010, None),
               ("fern", 0.9, 0.005, None), ("grass_tuft", 0.45, 0.02, None), ("rock", 0.9, 0.0015, None),
               ("grass_tall", 0.45, 0.006, None), ("mushroom_glow", 0.5, 0.0005, None), ("log", 0.9, 0.0005, None)],
     "frost": [("tree_snowfir", 2.6, 0.016, "grove"), ("tree_snowfir", 2.6, 0.001, "lone"), ("tree_bare", 3.0, 0.0015, "lone"),
@@ -659,8 +660,20 @@ def add_landmarks(sc, rng, hcell):
 
     sc.add("lighthouse", 1002, 420, 5.0)
     sc.add("bench", 990, 412, 1.5, look="north")
-    for x, z in ((880, 556), (934, 650), (782, 738)):
-        sc.add("windmill", x, z, 5.0)
+    for i, (x, z) in enumerate(((880, 556), (934, 650), (782, 738))):
+        sc.add("windmill", x, z, 5.0, v=i)
+    sc.add("clocktower", 540, 872, 4.0, front_z=875)   # 하루미 광장 북동쪽 — 마을 어디서든 보이는 시계탑
+    sc.add("warehouse", 528, 938, 4.0, front_z=941)
+    sc.add("observatory", 600, 158, 3.5, front_z=161)  # 서리 고원 언덕 위 별 관측소
+    sc.add("ice_shrine", 790, 94, 3.5, front_z=97)     # 얼어붙은 호수 북쪽 얼음 사당
+    sc.add("chapel", 840, 678, 3.5, front_z=681)       # 꽃 마을 종탑 예배당
+    # 여신상: 지역마다 갈림길 곁에 하나 (나중에 빠른 이동·부활 지점)
+    for x, z in ((576, 664), (252, 616), (858, 628), (276, 364), (496, 352), (720, 362), (548, 132), (980, 438)):
+        sc.add("goddess", x, z, 2.2, front_z=z + 1)
+    sc.add("gazebo", 648, 338, 3.0, front_z=341)   # 안개 호수 남쪽 물가
+    sc.add("gazebo", 676, 470, 3.0, front_z=473)   # 거울 호수 동쪽 물가
+    for x, z in ((815, 664), (816, 640), (506, 900)):
+        sc.add("rose_arch", x, z, 1.5)
     sc.add("shrine", 110, 480, 3.5)
     for i, (x, z) in enumerate(((127, 556), (122, 540), (118, 524), (115, 508))):
         sc.add("torii", x, z, 2.2)
@@ -672,6 +685,16 @@ def add_landmarks(sc, rng, hcell):
     sc.add("fish_crates", 498, 946, 1.2)
     sc.add("buoy", 512, 966, 1.0)
     sc.add("buoy", 492, 972, 1.0)
+    # 항구: 창고 앞 살림, 부두 둘레 갈매기
+    for kind, x, z in (("lobster_trap", 520, 944), ("rope", 536, 945), ("oars", 512, 946), ("boat", 488, 958),
+                       ("seagull", 506, 956), ("seagull", 470, 950), ("seagull", 560, 952), ("lobster_trap", 543, 943)):
+        sc.add(kind, x, z, 0.6, v=1 if kind == "boat" else rng.randrange(2))
+    # 바닷가 갈매기: 남쪽 모래사장에 드문드문
+    for i in range(18):
+        x = rng.uniform(80, 980)
+        z = float(south_coast(np.array(x))) - rng.uniform(4, 14)
+        if sc.free(x, z, 0.5):
+            sc.add("seagull", x, z, 0.5, v=rng.randrange(2))
     # 거석 원: 일곱 개를 둥글게 (하나는 쓰러져 비었다)
     for i in range(8):
         if i == 5:
@@ -680,6 +703,13 @@ def add_landmarks(sc, rng, hcell):
         sc.add("standing_stone", 690 + math.cos(a) * 7, 762 + math.sin(a) * 5.5, 1.0, v=i % 4)
     sc.add("tent", 452, 568, 2.6)   # 천막 그림에 모닥불·통나무 의자가 들어 있다
     sc.add("barn", 690, 806, 4.0, front_z=809)
+    # 과수원: 헛간 둘레와 꽃 마을 남쪽에 사과나무 줄
+    for ox, oz in ((712, 790), (850, 700)):
+        for i in range(3):
+            for j in range(3):
+                x, z = ox + i * 7 + rng.uniform(-1, 1), oz + j * 7 + rng.uniform(-1, 1)
+                if sc.free(x, z, 2.4):
+                    sc.add("tree_apple", x, z, 2.4)
     # 밭마다 허수아비 하나 (꽃밭·밀밭)
     for x0, z0, x1, z1, kind in FIELDS:
         sc.add("scarecrow", (x0 + x1) * 0.5 + rng.uniform(-8, 8), (z0 + z1) * 0.5 + rng.uniform(-5, 5), 0.6)
@@ -727,7 +757,8 @@ def add_landmarks(sc, rng, hcell):
 VILLAGES = {
     "harumi": dict(streets=["s_harumi_n", "s_harumi_e", "s_harumi_w", "s_harumi_back"],
                    kinds=["house_red", "house_blue", "house_green", "house_yellow", "bakery", "flower_shop", "inn",
-                          "blacksmith", "general_store", "tavern"], center=PLAZA, radius=74),
+                          "blacksmith", "general_store", "tavern", "house_stone", "house_fisher", "house_stone"],
+                   center=PLAZA, radius=74),
     "hanami": dict(streets=["west", "s_hanami_s", "s_hanami_n"], kinds=["jhouse", "jhouse", "jhouse", "teahouse", "hokora"],
                    center=(222, 602), radius=44),
     "flower": dict(streets=["east", "s_flower_s", "s_flower_n"], kinds=["cottage", "cottage", "greenhouse",
@@ -800,7 +831,7 @@ def place_villages(sc, roads, water, hcell, slope):
 # 마을마다 마당 살림·정원수가 다르다 (같은 화분이 마을마다 줄지어 있으면 반복이 보인다)
 YARD = {
     "harumi": dict(props=["planter", "barrel", "crates", "bench", "flowers_mix", "bush", "street_lamp", "cart", "birdhouse",
-                          "watering_can"],
+                          "watering_can", "lobster_trap", "rope"],
                    garden=["flowers_mix", "flowers_yellow", "flowers_pink", "flowers_white", "lavender"], trees=["tree_oak", "tree_poplar"]),
     "hanami": dict(props=["jlantern", "paper_lantern", "twig_pot", "barrel", "bench", "bush_pink"],
                    garden=["flowers_pink", "flowers_white", "fern_small", "petals"], trees=["tree_sakura", "tree_seapine"]),
@@ -890,7 +921,9 @@ def water_props(sc, hcell, wc, slope, lake_surf):
                 for dz in range(1, 6):
                     qz = zi + dz
                     if qz < H and slope[qz, xi] < 0.5 and wc[qz, xi] < -999:
-                        if sc.free(px, qz + 0.5, 1.0):
+                        if hash01(x, z, 15) < 0.3 and sc.free(px, qz + 1.0, 2.0):
+                            sc.add("boulder", px, qz + 1.0, 2.0)
+                        elif sc.free(px, qz + 0.5, 1.0):
                             sc.add("rock", px, qz + 0.5, 1.0, v=int(hash01(x, z, 12) * 8))
                         break
                 continue
