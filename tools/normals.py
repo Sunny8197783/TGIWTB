@@ -5,7 +5,10 @@
   나무·덤불·바위(둥근 것): 반지름 = 그림 크기의 35% (6~36px) → 해 쪽 반이 밝고 반대쪽이 어둡다
   건물·가구(각진 것): 반지름 5px → 가장자리만 둥글게 (베개처럼 부풀지 않게)
   캐릭터 시트: 칸마다 반지름 8px
-결과: RGB = 법선*0.5+0.5 (x 오른쪽, y 위, z 앞), A = 원래 알파. <이름>_n.png 로 옆에 저장.
+결과: RG = 법선 xy*0.5+0.5 (x 오른쪽, y 위), B = 부피 깊이(0 = 판, 1 = 판에서 128px 앞), A = 원래 알파.
+  법선 z 는 셰이더가 xy 로 되살린다. 깊이는 그림을 둥근 덩어리로 부풀릴 때 쓴다 (sprite.gdshader 의 relief):
+  화면 픽셀은 그대로인데 그림자·가림·자기 그늘이 입체로 나온다. 둥근 것은 덩어리 반지름만큼, 각진 것은 얇게.
+<이름>_n.png 로 옆에 저장.
 
   /c/Users/gram/AppData/Local/Programs/Python/Python313/python.exe tools/normals.py [--force]
 """
@@ -35,15 +38,21 @@ def box_blur(a, r):
     return s[:a.shape[0], :a.shape[1]] / (k * k)
 
 
-def normal_map(rgba, radius, detail):
-    a = rgba[..., 3] > 127
-    # 알파를 세 번 흐리면 가우스에 가깝다 — 외곽선 근처는 낮고 안쪽은 높은 매끈한 언덕 (8방향 거리는 모가 났다)
+DEPTH_PX = 128.0   # B 채널 1.0 = 판에서 128px(4m) 앞
+
+
+def dome(a, radius):
+    """알파를 세 번 흐린 0..1 언덕 (외곽선 근처는 낮고 안쪽은 높다). 8방향 거리는 모가 났다."""
     h = a.astype(np.float32)
     r = max(1, int(radius / 2.2))
     for _ in range(3):
         h = box_blur(h, r)
-    h = np.clip((h - 0.15) / 0.85, 0.0, 1.0)
-    height = np.sqrt(h) * radius
+    return np.sqrt(np.clip((h - 0.15) / 0.85, 0.0, 1.0))
+
+
+def normal_map(rgba, radius, detail, depth_radius=None):
+    a = rgba[..., 3] > 127
+    height = dome(a, radius) * radius
     lum = (rgba[..., 0] * 0.3 + rgba[..., 1] * 0.59 + rgba[..., 2] * 0.11) / 255.0
     height += (lum - box_blur(lum, 2)) * detail
     height = np.where(a, height, 0.0)
@@ -52,10 +61,14 @@ def normal_map(rgba, radius, detail):
     dy = (p[:-2, 1:-1] - p[2:, 1:-1]) * 0.5   # 위가 + (그림의 y 는 아래로 자란다)
     n = np.stack([-dx, -dy, np.ones_like(dx)], -1)
     n /= np.linalg.norm(n, axis=-1, keepdims=True)
+    # 부피 깊이: 덩어리 크기(depth_radius)만큼 둥글게 — 법선(빛)은 잔 굴곡까지, 깊이는 큰 덩어리만
+    dr = depth_radius if depth_radius else radius
+    depth = np.where(a, dome(a, dr) * dr, 0.0)
     out = np.zeros(rgba.shape, np.uint8)
-    out[..., :3] = np.clip((n * 0.5 + 0.5) * 255 + 0.5, 0, 255).astype(np.uint8)
+    out[..., :2] = np.clip((n[..., :2] * 0.5 + 0.5) * 255 + 0.5, 0, 255).astype(np.uint8)
+    out[..., 2] = np.clip(depth / DEPTH_PX * 255 + 0.5, 0, 255).astype(np.uint8)
     out[..., 3] = rgba[..., 3]
-    out[~a, :3] = (128, 128, 255)
+    out[~a, :3] = (128, 128, 0)
     return out
 
 
@@ -80,13 +93,16 @@ def main():
             continue
         rgba = np.asarray(Image.open(f).convert("RGBA")).astype(np.float32)
         radius, detail = params(f)
+        depth_radius = radius
+        ys, xs = np.nonzero(rgba[..., 3] > 127)
+        if len(xs) == 0:
+            continue
+        size = min(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1)
         if radius is None:
-            ys, xs = np.nonzero(rgba[..., 3] > 127)
-            if len(xs) == 0:
-                continue
-            size = min(xs.max() - xs.min() + 1, ys.max() - ys.min() + 1)
             radius = float(np.clip(size * 0.35, 6, 36))
-        Image.fromarray(normal_map(rgba, radius, detail)).save(dst)
+            # 둥근 것(나무·덤불·바위): 깊이는 덩어리 반지름에 가깝게 — 옆에서 본 그림자가 실제 수관만큼 두툼하다
+            depth_radius = float(np.clip(size * 0.42, 6, 110))
+        Image.fromarray(normal_map(rgba, radius, detail, depth_radius)).save(dst)
         made += 1
     print("법선 지도", made, "장")
 
@@ -97,8 +113,11 @@ if __name__ == "__main__":
         yy, xx = np.mgrid[0:41, 0:41]
         img = np.zeros((41, 41, 4), np.float32)
         img[(xx - 20) ** 2 + (yy - 20) ** 2 <= 18 ** 2] = (200, 200, 200, 255)
-        n = normal_map(img, 12, 0.0).astype(np.float32) / 255 * 2 - 1
-        assert n[20, 20, 2] > 0.95 and n[20, 3, 0] < -0.5 and n[3, 20, 1] > 0.5, (n[20, 20], n[20, 3], n[3, 20])
+        m = normal_map(img, 12, 0.0)
+        n = m.astype(np.float32) / 255 * 2 - 1
+        # 가운데는 정면(xy ≈ 0), 왼쪽 가장자리는 왼쪽(-x), 위 가장자리는 위(+y); 깊이는 가운데가 가장 깊고 바깥은 0
+        assert abs(n[20, 20, 0]) < 0.1 and n[20, 3, 0] < -0.5 and n[3, 20, 1] > 0.5, (n[20, 20], n[20, 3], n[3, 20])
+        assert m[20, 20, 2] > m[20, 6, 2] > 0 and m[0, 0, 2] == 0, (m[20, 20, 2], m[20, 6, 2])
         print("normals ok")
     else:
         main()

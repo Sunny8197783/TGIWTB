@@ -87,7 +87,7 @@ public partial class GameRoot : Node
         if (System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--selftest") >= 0)
         {
             int code = 0;
-            try { Combat.Mastery.SelfCheck(); }
+            try { Combat.Mastery.SelfCheck(); PixelMmo.World.Footprint.SelfCheck(); }
             catch (System.Exception e) { GD.PrintErr(e.Message); code = 1; }
             ProcessMode = ProcessModeEnum.Disabled; // 나머지를 만들지 않았으니 한 프레임도 돌지 않게
             GetTree().Quit(code);
@@ -182,10 +182,12 @@ public partial class GameRoot : Node
         var feet = new Vector3(spawn.X, World.HeightAt(spawn.X, spawn.Y), spawn.Y);
         Rig.Target = feet;
         Rig.SnapNext();
+        var statues = new Statues(World);
         if (!off.Contains("hero"))
         {
             Stage.AddChild(new Hero());
-            Hero.Instance.Teleport(feet);
+            // 마지막으로 기도한 여신상 앞에서 시작한다 (처음이면 하루미 광장)
+            Hero.Instance.Teleport(statues.RespawnFeet(Hero.Instance) ?? feet);
         }
         if (!off.Contains("monsters"))
             AddChild(new MonsterSpawner());
@@ -194,6 +196,8 @@ public partial class GameRoot : Node
         if (Hero.Instance != null)
         {
             hud.Bind(Hero.Instance);
+            ui.AddChild(statues);
+            statues.Bind(Hero.Instance);
             var creator = new CharacterCreator();
             ui.AddChild(creator);
             creator.Bind(Hero.Instance);

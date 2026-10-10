@@ -41,6 +41,14 @@ float fbm3(vec2 p) {
 	return vnoise(p) * 0.55 + vnoise(p * 2.03 + 11.7) * 0.3 + vnoise(p * 4.11 + 3.1) * 0.15;
 }
 
+// 넓은 들판의 색 얼룩: 수백 m 파장으로 풀빛이 누렇게·푸르게 옮겨 간다 (같은 초록이 끝없이 이어지면 반복으로 읽힌다).
+// 지형(terrain)과 풀포기(sprite, instance_tint)가 같이 쓴다 — 풀만 다른 색으로 뜨지 않게
+vec3 macro_tint(vec2 xz) {
+	float m = fbm3(xz * 0.0045);
+	float d = vnoise(xz * 0.016 + 40.0);
+	return mix(vec3(0.86, 0.98, 1.03), vec3(1.1, 1.03, 0.78), smoothstep(0.3, 0.72, m)) * (0.93 + 0.14 * d);
+}
+
 // 흘러가는 구름 그림자. 1 = 해, 0.55 = 구름 밑.
 float cloud_shade(vec2 xz, float t, vec2 wind_dir) {
 	vec2 p = xz * 0.018 + wind_dir * t * 0.012;

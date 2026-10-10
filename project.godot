@@ -83,6 +83,10 @@ upright_fix={
 "type": "float",
 "value": 1.0
 }
+view_back={
+"type": "vec3",
+"value": Vector3(0, 0.6157, 0.788)
+}
 ao_map={
 "type": "sampler2D",
 "value": ""

@@ -84,14 +84,15 @@ public partial class CameraRig : Node
 
         // 서 있는 판은 38° 에서 1:1 이 되게 늘려 두었다 — 고개를 들면 그만큼 덜 늘린다 (sprite.gdshader)
         float fix = Mathf.Cos(Mathf.DegToRad(Px.PitchDeg)) / Mathf.Cos(Mathf.DegToRad(_pitchNow));
+        float rad = Mathf.DegToRad(_pitchNow);
+        Vector3 back = new(0f, Mathf.Sin(rad), Mathf.Cos(rad));
         if (!Mathf.IsEqualApprox(fix, _uprightFix))
         {
             _uprightFix = fix;
             RenderingServer.GlobalShaderParameterSet(Uniform.UprightFix, fix);
+            // 부피를 부풀리는 방향 = 지금 카메라 뒤쪽 (그래야 화면 픽셀이 안 움직인다)
+            RenderingServer.GlobalShaderParameterSet(Uniform.ViewBack, back);
         }
-
-        float rad = Mathf.DegToRad(_pitchNow);
-        Vector3 back = new(0f, Mathf.Sin(rad), Mathf.Cos(rad));
         Vector3 eye = _smoothed + _offsetNow + back * _distNow + Shake;
         var basis = Basis.LookingAt(-back, Vector3.Up);
         _view?.PlaceCamera(new Transform3D(basis, eye));

@@ -37,6 +37,8 @@ public partial class GrassField : Node3D
         (new Color(0.66f, 0.6f, 0.24f), 0.8f),  // GINKGO
         (new Color(0.86f, 0.72f, 0.34f), 8.0f), // WHEAT
         (null, 0f),                             // ICE
+        (new Color(0.72f, 0.66f, 0.44f), 0.7f), // FROSTGRASS (눈 사이 마른 풀)
+        (new Color(0.66f, 0.6f, 0.26f), 2.0f),  // GOLDGRASS (가을 빈터)
     };
     private const byte Tulip = 11, Lavender = 12, Wheat = 17;
     private const float RowWidth = 1.6f;   // 꽃밭 한 줄 (m)
@@ -175,9 +177,10 @@ public partial class GrassField : Node3D
                     Add(px, y, pz, flip, sy, tint, rng.Next(4));
                     if (g == Tulip)
                     {
-                        // 꽃송이: 줄마다 한 색, 48m 밭마다 색 순서가 다르다
+                        // 꽃송이: 줄마다 한 색, 약 44m 마다 색 순서가 바뀐다. 바뀌는 자리가 줄마다 어긋나
+                        // 밭이 세로 경계로 반듯하게 잘려 보이지 않는다 (terrain.gdshader 의 tulip_color 와 같은 계산)
                         int rowI = (int)MathF.Floor(pz / RowWidth);
-                        int block = (int)(px / 48f) * 31 + (int)(pz / 40f) * 17;
+                        int block = (int)MathF.Floor((px + 14f * MathF.Sin(rowI * 0.9f)) / 44f) * 31 + (int)(pz / 40f) * 17;
                         var c = TulipColors[(int)((uint)(rowI * 2654435761u + (uint)block * 40503u) % (uint)TulipColors.Length)];
                         Add(px, y + 0.02f, pz + 0.01f, flip, 1f, c * (0.9f + rng.NextSingle() * 0.15f), 4 + rng.Next(2));
                     }

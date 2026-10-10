@@ -53,6 +53,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private bool _persist;                  // 캡처(검증) 실행은 진짜 세이브를 읽지도 쓰지도 않는다
     private string _lookBase;
     private int _lookAccent;
+    private readonly HashSet<string> _statues = new();
+    private string _respawnStatue;
 
     public float Hp => _hp;
     public float MaxHp => T.HeroMaxHp;
@@ -62,6 +64,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
     public float MasteryProgress(string skillId) => skillId != null && SkillDef.All.TryGetValue(skillId, out var def) ? _mastery.Progress(def) : -1f;
     public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def);
+    public IReadOnlySet<string> Statues => _statues;
+    public string RespawnStatue => _respawnStatue;
     public string LookBase => _lookBase;
     public int LookAccent => _lookAccent;
     /// <summary>세이브에 모습이 없었다 (처음 켬) — GameRoot 가 모습 고르기를 연다</summary>
@@ -99,6 +103,8 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             lookAccent = save.LookAccent;
             FirstLaunch = lookBase == null;
             _mastery.Load(save);
+            _statues.UnionWith(save.Statues ?? new List<string>());
+            _respawnStatue = save.RespawnStatue;
             // 진화한 칸은 세이브 쪽을 따른다 (없는 스킬 id 는 버린다)
             for (int i = 0; save.Loadout != null && i < _loadout.Length && i < save.Loadout.Count; i++)
                 if (save.Loadout[i] != null && SkillDef.All.ContainsKey(save.Loadout[i]))
@@ -138,7 +144,11 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     {
         if (!_persist)
             return;
-        var save = new SaveData { Loadout = new List<string>(_loadout), LookBase = _lookBase, LookAccent = _lookAccent };
+        var save = new SaveData
+        {
+            Loadout = new List<string>(_loadout), LookBase = _lookBase, LookAccent = _lookAccent,
+            Statues = new List<string>(_statues), RespawnStatue = _respawnStatue,
+        };
         _mastery.Save(save);
         save.Write();
     }
@@ -153,6 +163,23 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         Velocity = Vector3.Zero;
         _look = Vector3.Zero;
         GameRoot.Instance.Rig.SnapNext();
+    }
+
+    public bool Pray(string statueId, Vector3 respawnFeet)
+    {
+        bool first = _statues.Add(statueId);
+        _respawnStatue = statueId;
+        _spawn = respawnFeet;
+        _hp = T.HeroMaxHp;
+        Save();
+        return first;
+    }
+
+    public void TravelTo(Vector3 feet)
+    {
+        Teleport(feet);
+        Enter(State.Move);
+        _iframes = T.HurtIFrames;
     }
 
     // ── 매 물리 프레임 ─────────────────────────────────────

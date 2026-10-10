@@ -50,6 +50,7 @@ public static class Uniform
         Thickness = "thickness",
         TimeSlow = "time_slow",
         UprightFix = "upright_fix",
+        ViewBack = "view_back",
         Vignette = "vignette",
         VignetteColor = "vignette_color",
         WorldTime = "world_time";

@@ -1120,5 +1120,20 @@
   "dest": "art/env/tree_seapine_2.png",
   "object": "5a828579-2f8f-4df0-82e3-8caf4ebbfab9",
   "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art_src/world_tree/trunk.png",
+  "object": "235f9da1-a1a9-4596-8e9a-606bb8ea15c4",
+  "note": "세계수 조각 (Pro Flash, 고목을 화풍 참고로) → tools/compose_world_tree.py 가 art/env/tree_world_0.png 로 합성"
+ },
+ {
+  "dest": "art_src/world_tree/crown_a.png",
+  "object": "816564bc-2ac9-4ac9-a812-cb7e2556687e",
+  "note": "세계수 조각 (Pro Flash, 고목을 화풍 참고로) → tools/compose_world_tree.py 가 art/env/tree_world_0.png 로 합성"
+ },
+ {
+  "dest": "art_src/world_tree/crown_b.png",
+  "object": "f13c1e30-08e5-41dc-957c-0baf3ae643b3",
+  "note": "세계수 조각 (Pro Flash, 고목을 화풍 참고로) → tools/compose_world_tree.py 가 art/env/tree_world_0.png 로 합성"
  }
 ]

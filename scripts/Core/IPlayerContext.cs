@@ -23,4 +23,12 @@ public interface IPlayerContext
     void SetLook(string baseId, int accent);
     /// <summary>지금 상태를 저장한다 (모습 확정 등)</summary>
     void Save();
+    /// <summary>깨운 여신상 id</summary>
+    System.Collections.Generic.IReadOnlySet<string> Statues { get; }
+    /// <summary>마지막으로 기도한 여신상 (없으면 null)</summary>
+    string RespawnStatue { get; }
+    /// <summary>여신상에 기도: 깨우고(처음이면 true), 부활 지점으로 정하고, 체력을 채운다</summary>
+    bool Pray(string statueId, Vector3 respawnFeet);
+    /// <summary>빠른 이동 (발 위치)</summary>
+    void TravelTo(Vector3 feet);
 }
