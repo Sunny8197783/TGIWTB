@@ -11,23 +11,16 @@ config_version=5
 [application]
 
 config/name="PixelMmo"
-config/description="P1 — 전투 프로토타입"
-run/main_scene="res://scenes/Boot.tscn"
-config/features=PackedStringArray("4.7", "C#", "GL Compatibility")
-
-[autoload]
-
-GameDb="*res://scripts/Data/GameDatabase.cs"
-SaveSystem="*res://scripts/Runtime/SaveSystem.cs"
-InputSetup="*res://scripts/Runtime/InputSetup.cs"
+config/description="저해상도 3D 디오라마 + 픽셀 스프라이트 액션 RPG"
+run/main_scene="res://scenes/Main.tscn"
+config/features=PackedStringArray("4.7", "C#", "Mobile")
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/window_width_override=1280
-window/size/window_height_override=720
-window/stretch/mode="viewport"
+window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [dotnet]
 
@@ -37,8 +30,96 @@ project/assembly_name="PixelMmo"
 
 export/convert_text_resources_to_binary=false
 
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+common/physics_ticks_per_second=60
+
 [rendering]
 
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
 textures/canvas_textures/default_texture_filter=0
-renderer/rendering_method="gl_compatibility"
-renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=0
+lights_and_shadows/directional_shadow/size=2048
+lights_and_shadows/directional_shadow/soft_shadow_filter_quality=1
+
+[shader_globals]
+
+world_time={
+"type": "float",
+"value": 0.0
+}
+night={
+"type": "float",
+"value": 0.0
+}
+sun_dir={
+"type": "vec3",
+"value": Vector3(0.3, 0.8, 0.5)
+}
+sun_color={
+"type": "color",
+"value": Color(1, 0.95, 0.85, 1)
+}
+sky_horizon={
+"type": "color",
+"value": Color(0.7, 0.85, 1, 1)
+}
+sky_zenith={
+"type": "color",
+"value": Color(0.3, 0.55, 0.95, 1)
+}
+wind={
+"type": "vec2",
+"value": Vector2(0.6, 0.2)
+}
+map_size={
+"type": "vec2",
+"value": Vector2(1024, 1024)
+}
+upright_fix={
+"type": "float",
+"value": 1.0
+}
+ao_map={
+"type": "sampler2D",
+"value": ""
+}
+light_dir={
+"type": "vec3",
+"value": Vector3(0.3, 0.8, 0.5)
+}
+height_map={
+"type": "sampler2D",
+"value": ""
+}
+ground_map={
+"type": "sampler2D",
+"value": ""
+}
+water_map={
+"type": "sampler2D",
+"value": ""
+}
+time_slow={
+"type": "float",
+"value": 0.0
+}
+hero_screen={
+"type": "vec2",
+"value": Vector2(-1000, -1000)
+}
+hero_z={
+"type": "float",
+"value": 0.0
+}
+
+[importer_defaults]
+
+texture={
+"compress/mode": 0,
+"detect_3d/compress_to": 0,
+"mipmaps/generate": false
+}

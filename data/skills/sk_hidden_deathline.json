@@ -1,26 +1,8 @@
 {
   "id": "sk_hidden_deathline",
   "name": "사선보",
+  // 히든 (규칙 4: 이 조건은 게임 안 어디에도 보이지 않는다). 칸에 넣지 않는 패시브
   "hidden": true,
-  "kind": "passive",
-  "inputAction": "",
-  "cooldown": 0.0,
-  "heavy": false,
-  "shape": { "kind": "self", "angleDeg": 0.0, "rangePx": 0.0 },
-  "damage": { "base": 0.0, "scaling": {} },
-  "learnTrigger": {
-    "type": "situational_repeat",
-    "counter": "lowhp_dodge_success",
-    "hpRatioAtMost": 0.1,
-    "requiredCount": 50,
-    "announce": "몸이 먼저 움직였다."
-  },
-  "passive": {
-    "dashInvulnSeconds": 0.2
-  },
-  "mastery": {
-    "minInterval": 0.5,
-    "damageBonusPer100": 0.0,
-    "evolution": null
-  }
+  "learn": { "counter": "perfect_dodge", "hp_ratio_at_most": 0.3, "required": 15, "announce": "몸이 먼저 움직였다." },
+  "passive": { "perfect_dodge_window": 0.25 }
 }

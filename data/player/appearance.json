@@ -1,0 +1,22 @@
+{
+  // M6 모습: 체형·머리·옷이 다른 원화(바탕)를 고르고, 옷 색만 바꾼다 (Data/AppearanceDef, Render/Recolor).
+  // accent_hue·accent_sat: 원화에서 옷 색으로 칠할 픽셀 (색상 범위°, 최소 채도).
+  //   accent_val: 최소 명도 (같은 색상의 검은 머리·외곽선을 뺄 때).
+  //   python tools/palette.py <시트> --mark out.png 170,205,0.25[,0.2] 로 옷만 걸리는지 눈으로 확인하고 적는다.
+  "bases": [
+    { "id": "swordsman",   "name": "검사",   "art": "res://art/characters/hero",             "accent_hue": [170, 205], "accent_sat": 0.25 },
+    { "id": "swordswoman", "name": "여검사", "art": "res://art/characters/hero_swordswoman", "accent_hue": [212, 246], "accent_sat": 0.2, "accent_val": 0.2 },
+    { "id": "warrior",     "name": "전사",   "art": "res://art/characters/hero_warrior",     "accent_hue": [70, 150],  "accent_sat": 0.25 },
+    { "id": "ranger",      "name": "나그네", "art": "res://art/characters/hero_ranger",      "accent_hue": [60, 150],  "accent_sat": 0.2 }
+  ],
+  // 0번은 원래 색. hue 가 없으면 색상은 그대로 두고 채도·명도만 바꾼다. min_sat: 채도 하한 (칙칙한 옷도 또렷하게)
+  "accents": [
+    { "name": "원래 색" },
+    { "name": "진홍", "hue": 352, "min_sat": 0.55 },
+    { "name": "남색", "hue": 226, "min_sat": 0.45 },
+    { "name": "숲빛", "hue": 112, "sat": 0.9, "min_sat": 0.4 },
+    { "name": "보라", "hue": 276, "min_sat": 0.45 },
+    { "name": "황토", "hue": 38, "val": 1.5, "min_sat": 0.62 },
+    { "name": "먹색", "sat": 0.08, "val": 0.72 }
+  ]
+}

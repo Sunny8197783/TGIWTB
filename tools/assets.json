@@ -1,0 +1,1124 @@
+[
+ {
+  "object": "3d9d769e-c5b0-4e58-8e24-fd157c48f0ce",
+  "grid": 3,
+  "cells": [
+   "bush_0",
+   "bush_pink_0",
+   "bush_orange_0",
+   "flowers_mix_0",
+   "fern_0",
+   "",
+   "rock_0",
+   "reeds_0",
+   "bush_1"
+  ],
+  "note": "자연 소품 A"
+ },
+ {
+  "object": "5ccf20d9-5033-4ada-9786-53b53b644e70",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "stone_lantern_0",
+   "signpost_0",
+   "well_0",
+   "crates_0",
+   "bench_0",
+   "planter_0"
+  ],
+  "note": "마을 소품 A (가로등·통은 안 나옴)"
+ },
+ {
+  "object": "4c17aee1-97dc-444e-a69e-2488dbdaf0bc",
+  "grid": 4,
+  "cells": [
+   "flowers_yellow_0",
+   "flowers_white_0",
+   "flowers_blue_0",
+   "flowers_pink_0",
+   "mushrooms_0",
+   "mushrooms_1",
+   "pebbles_0",
+   "stone_0",
+   "fern_small_0",
+   "grass_tuft_0",
+   "petals_0",
+   "lily_pad_0",
+   "lily_pad_1",
+   "sapling_0",
+   "lavender_0",
+   "dandelion_0"
+  ],
+  "note": "작은 땅 장식 A"
+ },
+ {
+  "object": "e210931e-430d-4df9-b128-6c969d0e8018",
+  "cols": 3,
+  "rows": 2,
+  "cells": [
+   "street_lamp_0",
+   "barrel_0",
+   "market_stall_0",
+   "fence_0",
+   "hay_bale_0",
+   "cart_0"
+  ],
+  "note": "마을 소품 B"
+ },
+ {
+  "object": "9d79fc9e-05fd-4850-8689-a7e57312def1",
+  "grid": 2,
+  "cells": [
+   "boat_0",
+   "dock_0",
+   "buoy_0",
+   "fish_crates_0"
+  ],
+  "note": "물가 소품"
+ },
+ {
+  "dest": "art/env/tavern_0.png",
+  "object": "98fd96fd-1b26-4863-b249-cb03c86ad20a"
+ },
+ {
+  "dest": "art/env/fountain_0.png",
+  "object": "e1c2165f-225a-4a74-adab-2c7ecffa4b8f"
+ },
+ {
+  "dest": "art/env/torii_0.png",
+  "object": "29554efe-1aed-439a-a003-4f36b452bca6"
+ },
+ {
+  "dest": "art/env/shrine_0.png",
+  "object": "61770296-d9f6-44ab-a9b9-94183c1df69d"
+ },
+ {
+  "dest": "art/env/pavilion_0.png",
+  "object": "0c28ddc0-a382-4d17-aa5b-70d629161289"
+ },
+ {
+  "dest": "art/env/windmill_0.png",
+  "object": "e62a1e82-28dd-4bb8-a64c-e94dfd915fe9"
+ },
+ {
+  "dest": "art/env/inn_0.png",
+  "object": "169e2ad6-289f-43b7-b12d-2680351d9417"
+ },
+ {
+  "dest": "art/env/lighthouse_0.png",
+  "object": "c0d40ba8-3b2b-4176-b492-006e13dabdbf"
+ },
+ {
+  "dest": "art/env/general_store_0.png",
+  "object": "f41717ea-e4af-43a2-98be-ed2fd13445e8"
+ },
+ {
+  "dest": "art/env/blacksmith_0.png",
+  "object": "112edc22-3a78-47a1-bc36-aadfae09c269"
+ },
+ {
+  "dest": "art/env/flower_shop_0.png",
+  "object": "29a218ac-72b9-4368-bd55-4dbf2b01fae6"
+ },
+ {
+  "dest": "art/env/bakery_0.png",
+  "object": "8e03d102-634d-439c-90a4-4977a502c23d"
+ },
+ {
+  "dest": "art/env/house_yellow_0.png",
+  "object": "94abb3be-3ca5-4ed6-a7ab-ba55bae65e42"
+ },
+ {
+  "dest": "art/env/house_green_0.png",
+  "object": "2aeba236-7999-439f-a3ec-c8467d29e42c"
+ },
+ {
+  "dest": "art/env/house_blue_0.png",
+  "object": "c684c9e8-0b81-430d-a4a7-0a394c1f29fc"
+ },
+ {
+  "dest": "art/env/tree_sakura_0.png",
+  "object": "1450c6f8-7eb5-4fd0-9b5d-a0c347181ee9",
+  "note": "스타일 기준 에셋"
+ },
+ {
+  "dest": "art/env/tree_oak_0.png",
+  "object": "df55d379-383c-498b-a43e-2ad18b59acc9"
+ },
+ {
+  "dest": "art/env/house_red_0.png",
+  "object": "bb54adbd-3188-4e0f-8ff5-9d076df2338c"
+ },
+ {
+  "dest": "art/env/tree_maple_0.png",
+  "object": "711b041c-f6ea-461d-af8f-b33d22250718"
+ },
+ {
+  "dest": "art/env/tree_pine_0.png",
+  "object": "4b464b0d-10a9-4a74-a86e-4fc504e5089b"
+ },
+ {
+  "sheet": "art/characters/hero/rot.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "rotations": true,
+  "note": "다른 시트의 빈 방향을 채우는 기준이라 맨 앞"
+ },
+ {
+  "sheet": "art/characters/hero/idle.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_idle",
+  "note": "북쪽 1·2 프레임은 칼이 사라져 0·3 프레임으로 덮어씀 (art_src/hero/idle/north) — --force 로 다시 받으면 되살아난다"
+ },
+ {
+  "sheet": "art/characters/hero/run.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_run_v3b"
+ },
+ {
+  "sheet": "art/characters/hero/dash.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_dash_b"
+ },
+ {
+  "sheet": "art/characters/hero/guard.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_guard_b"
+ },
+ {
+  "sheet": "art/characters/hero/attack1.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack1"
+ },
+ {
+  "sheet": "art/characters/hero/attack2.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack2"
+ },
+ {
+  "sheet": "art/characters/hero/attack3.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_attack3"
+ },
+ {
+  "sheet": "art/characters/hero/hurt.png",
+  "char": "2eadfe85-d00e-4c0a-a0ce-bfcf122a99e1",
+  "anim": "hero_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/rot.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/sakura_slime/attack.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_attack"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/idle.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_idle"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/move.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_move"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/rot.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/forest_goblin/attack.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_attack"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/move.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_walk"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/hurt.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/rot.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/idle.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_idle"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/run.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_run"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/dash.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_dash"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/guard.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_guard"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack1.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack2.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/attack3.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_swordswoman/hurt.png",
+  "char": "ec4a1180-3342-4f59-98bb-d245237f68ca",
+  "anim": "sw_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/rot.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_ranger/rot.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hero_warrior/idle.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_idle"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/run.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_run"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/dash.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_dash"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/guard.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_guard"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack1.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack2.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/attack3.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_warrior/hurt.png",
+  "char": "85894492-5ed2-470c-bf48-c2c2b35ce3cf",
+  "anim": "wa_hurt"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/idle.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_idle",
+  "note": "북쪽은 skeleton-v3 가 앞모습으로 뽑아 회전 원화 북쪽으로 4칸을 덮어씀 (art_src/hero_ranger/idle/north) — --force 로 다시 받으면 되살아난다"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/run.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_run"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/dash.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_dash"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/guard.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_guard"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack1.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack1"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack2.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack2"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/attack3.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_attack3"
+ },
+ {
+  "sheet": "art/characters/hero_ranger/hurt.png",
+  "char": "b6b5d282-b80d-4076-9aef-fd7ba644b8c5",
+  "anim": "rg_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/hurt.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_hurt"
+ },
+ {
+  "sheet": "art/characters/sakura_slime/death.png",
+  "char": "65e6f26d-1203-4079-a2b6-71ccd434f754",
+  "anim": "slime_death"
+ },
+ {
+  "sheet": "art/characters/forest_goblin/death.png",
+  "char": "765d9fad-567c-4b4f-8456-ae18b3207bb7",
+  "anim": "goblin_death"
+ },
+ {
+  "dest": "art/env/tree_sakura_1.png",
+  "object": "7c5d49c1-bbdf-46e4-bc65-229e9f1d04c8",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_sakura_3.png",
+  "object": "59eb6871-848d-492c-bede-9265b540d4a4",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_oak_1.png",
+  "object": "eee33393-81fa-48e9-92fc-b4acef55c220",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_oak_2.png",
+  "object": "cec44758-2834-4b4a-aa35-5ee383befaf4",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_oak_3.png",
+  "object": "246a935b-a7e9-4280-b429-238547b9fdb2",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_maple_1.png",
+  "object": "5e79e3af-3d89-4845-85a5-4f1e28c03c88",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_ginkgo_0.png",
+  "object": "15a7d7ed-f382-4546-beba-930d968b5878",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_sakura_2.png",
+  "object": "d1f067db-ae28-4238-8e8a-86bf5d9a9d7f",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_maple_2.png",
+  "object": "dad43d1f-ae74-40f1-89b5-4189cbb673bd",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_ginkgo_1.png",
+  "object": "bfdeeb6f-73fe-4558-9f07-9e609e6b64ca",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_bare_0.png",
+  "object": "e7dae8bd-a07f-40f3-85cd-588d52139cb6",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_pine_1.png",
+  "object": "5d4eee50-fcb1-4152-83f5-e54421f4989b",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_pine_2.png",
+  "object": "59c728eb-7197-41cf-af4c-22888b54abf0",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_snowfir_0.png",
+  "object": "f6a4c079-5966-4244-9a0e-87264c9bb193",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_snowfir_1.png",
+  "object": "2c4dda37-36c2-422a-ba21-3641a9c17fe2",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_willow_0.png",
+  "object": "13984a28-19b3-4cb6-bc6b-674620fb1b5d",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_willow_1.png",
+  "object": "ad9c76f5-0c48-4a38-a591-133b1e367e56",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_poplar_0.png",
+  "object": "eab908c4-74ab-4fb3-ae70-e7bd3b10a93a",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_poplar_1.png",
+  "object": "dcb7c9e7-51fd-4628-a9b6-d505e2ea19a8",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_seapine_0.png",
+  "object": "fd549d99-0bfe-4136-86ec-b362abd2cde8",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_seapine_1.png",
+  "object": "6523c312-d19d-4216-8c71-6d3d701895d2",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_sakura_4.png",
+  "object": "5abe68cd-e5d6-4562-9b71-e5f734ee092b",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_snowfir_2.png",
+  "object": "adc6f5e5-6820-4adc-9336-31572877bdd8",
+  "note": "큰 지도 (Pro Flash, 기존 나무를 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_giant_0.png",
+  "object": "ff1c39e7-943d-4998-b62b-2389d33d7875",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_lone_0.png",
+  "object": "3a5b8424-a9f6-45a8-8aa1-1ea14873950f",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/jhouse_0.png",
+  "object": "9f41f2e3-fa13-454c-ab30-8a2272cb45bc",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/jhouse_1.png",
+  "object": "c49c103a-c261-4d0e-a5e1-c8753de27c3c",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/teahouse_0.png",
+  "object": "ad5bd15a-3b1b-4796-b5b7-3f4b3b035d63",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/temple_0.png",
+  "object": "86e9fa4c-6676-4994-83d6-0dcde7fe18fb",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/pagoda_0.png",
+  "object": "1c536b44-008f-4ca5-88ad-c094d85f3c53",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/tree_sakura_giant_0.png",
+  "object": "2e6f752c-5da1-4602-89ef-43a559e122e9",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/jhouse_2.png",
+  "object": "ea810069-ce2e-4279-900b-248d8ae8a9f6",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/chalet_0.png",
+  "object": "eb24e41f-88fc-4ce6-a770-eafadaf2c577",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/chalet_1.png",
+  "object": "8d9c15d9-63c1-4e5b-835a-46cb85b4d955",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/lodge_0.png",
+  "object": "e661574b-9ba8-45da-85d2-ec32ce666f13",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/cottage_0.png",
+  "object": "fc4bc8ef-d0dc-4f1c-9abe-d3541afdeca8",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/cottage_1.png",
+  "object": "09c297a6-9055-4d0a-9cac-0bd5031222e7",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/greenhouse_0.png",
+  "object": "fdc4c619-d516-405e-803e-c8cbc32bc8c5",
+  "note": "큰 지도 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "object": "a7c03d73-670b-42b6-a271-7f3ef20bd0c9",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "snowman_0",
+   "snow_sapling_0",
+   "snow_rock_0",
+   "snow_rock_1",
+   "snowman_1",
+   "ice_0",
+   "snow_fence_0",
+   "snow_fence_1",
+   "snow_rock_2",
+   "sled_0",
+   "snow_sign_0",
+   "snow_bush_0",
+   "snow_bush_1",
+   "snow_fence_2",
+   "snow_stump_0",
+   "snow_rock_3"
+  ],
+  "note": "겨울 소품 (map_object, 배경판 지움)"
+ },
+ {
+  "dest": "art/env/tree_snowfir_3.png",
+  "object": "2064ba99-b040-4835-9908-2d0190f87dff",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/castle_ruin_0.png",
+  "object": "33b54847-bfca-495b-9d75-7219948ed820",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/watchtower_ruin_0.png",
+  "object": "50d4d808-4a22-4b22-85f3-36d6b4c127c3",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/onsen_0.png",
+  "object": "cb20869e-9492-4bbe-802a-b4af85299add",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tent_0.png",
+  "object": "d01151aa-1ef2-456c-a955-8b32eaf08471",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/barn_0.png",
+  "object": "93706f0c-1331-463a-87d8-43cbaea7bbd6",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/hokora_0.png",
+  "object": "c65619eb-1df9-47e1-8d13-38909950f4d4",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/stable_0.png",
+  "object": "1ec5e50b-d7c6-49e5-85f5-f0769cd4abdd",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "ea30b179-549e-486a-9287-b25007da24d5",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "tulip_0",
+   "tulip_1",
+   "daisy_0",
+   "hydrangea_0",
+   "sunflower_0",
+   "rose_0",
+   "sunflower_1",
+   "lavender_1",
+   "wheelbarrow_0",
+   "scarecrow_0",
+   "crates_1",
+   "bush_flower_0",
+   "planter_1",
+   "watering_can_0",
+   "bush_flower_1",
+   "birdhouse_0"
+  ],
+  "note": "꽃밭 소품 (map_object, 배경판 지움)"
+ },
+ {
+  "object": "0844b7de-ecbf-4b09-b454-3aa1d68e0703",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "jlantern_0",
+   "jlantern_1",
+   "",
+   "twig_pot_0",
+   "pumpkins_0",
+   "pumpkins_1",
+   "berries_0",
+   "pumpkins_2",
+   "persimmon_basket_0",
+   "maple_sapling_0",
+   "",
+   "",
+   "maple_sapling_1",
+   "",
+   "paper_lantern_0",
+   ""
+  ],
+  "note": "단풍·일본 소품 (map_object, 쓸 만한 것만)"
+ },
+ {
+  "object": "92d57322-bde2-41a1-af89-00f913cd4a09",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "log_0",
+   "",
+   "mushroom_big_0",
+   "mushroom_glow_0",
+   "mushroom_big_1",
+   "stump_0",
+   "fern_1",
+   "",
+   "stump_1",
+   "",
+   "stump_2",
+   "fiddlehead_0",
+   "stump_3",
+   "flowers_white_1",
+   "stump_4",
+   "grass_tall_0"
+  ],
+  "note": "고목의 숲 소품 (map_object, 쓸 만한 것만)"
+ },
+ {
+  "dest": "art/env/standing_stone_0.png",
+  "object": "1f8e5d65-da63-4688-8557-21b132db7985",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/standing_stone_1.png",
+  "object": "bbc6069a-e16e-4453-aab7-524af4eeee61",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/standing_stone_2.png",
+  "object": "ab79ef96-5053-412c-84f1-d260b59410b5",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/ruin_pillar_0.png",
+  "object": "408109da-c771-44f8-b6b4-098bd03d8e84",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/ruin_arch_0.png",
+  "object": "e03e4c0f-29ee-484c-9054-83038a29c343",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/ruin_wall_0.png",
+  "object": "c8d2156b-00c8-4973-9a60-5568eaf8dd7d",
+  "note": "폐허 (map_object)"
+ },
+ {
+  "dest": "art/env/tree_ancient_0.png",
+  "object": "82062019-4a4d-40a4-9440-c40478f0eb6f",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_ancient_1.png",
+  "object": "b6d45627-6a8f-446e-909f-d54a7f613116",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_gold_0.png",
+  "object": "6111e3eb-cc65-40f1-8038-8ca5a78d7f99",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_0.png",
+  "object": "7fbd063a-1ec1-4b2a-a9c1-b7d11e62654c",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_oak_4.png",
+  "object": "af35ea43-efdc-4f6a-82f8-a51177d5d3b7",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_maple_3.png",
+  "object": "16eab74d-88dd-4704-8b19-f96c0b5c310d",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_bare_1.png",
+  "object": "060d6c3e-3a21-4773-bc7a-1abcfbb6dd9f",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_apple_0.png",
+  "object": "a7f53bbb-9c96-4148-8514-c74596302627",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "2636bb2b-a662-4484-8f39-f96b0132e054",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "shrub_0",
+   "shrub_1",
+   "",
+   "",
+   "shrub_2",
+   "",
+   "",
+   "",
+   "",
+   "shrub_3",
+   "shrub_4",
+   "",
+   "shrub_5",
+   "",
+   "",
+   ""
+  ],
+  "note": "덤불 (둥근 것만) (map_object, 배경판 지움)"
+ },
+ {
+  "object": "7599590b-00fa-4ab3-957a-7a031e04d4be",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "rock_1",
+   "",
+   "rock_2",
+   "rock_3",
+   "pebbles_1",
+   "pebbles_2",
+   "pebbles_3",
+   "rock_4",
+   "pebbles_4",
+   "pebbles_5",
+   "rock_5",
+   "rock_6",
+   "rock_7",
+   "",
+   "",
+   ""
+  ],
+  "note": "바위·자갈 (map_object, 배경판 지움)"
+ },
+ {
+  "object": "f426da60-8c66-4017-b53b-ba99797d0bdb",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "boat_1",
+   "",
+   "rope_0",
+   "lobster_trap_0",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "",
+   "seagull_0",
+   "oars_0",
+   "",
+   "seagull_1"
+  ],
+  "note": "항구 소품 (고른 것만) (map_object, 배경판 지움)"
+ },
+ {
+  "object": "b6b5cdcc-2f8d-47b4-b6a6-01801bce90fc",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "wildflower_a_0",
+   "wildflower_a_1",
+   "wildflower_a_2",
+   "wildflower_a_3",
+   "wildflower_a_4",
+   "wildflower_a_5",
+   "wildflower_a_6",
+   "wildflower_a_7",
+   "wildflower_b_0",
+   "wildflower_b_1",
+   "wildflower_b_2",
+   "wildflower_b_3",
+   "wildflower_b_4",
+   "wildflower_b_5",
+   "wildflower_b_6",
+   "wildflower_b_7"
+  ],
+  "note": "들꽃 16종 (map_object, 배경판 지움)"
+ },
+ {
+  "dest": "art/env/clocktower_0.png",
+  "object": "0e4bfd3a-b6f5-4120-8b42-d856ab13e67b",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/house_stone_0.png",
+  "object": "f20c3a2e-e25f-40fa-b382-2a0aebd6360e",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/house_fisher_0.png",
+  "object": "fb527ee4-042a-4b90-bcf1-10436a52d2e8",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/warehouse_0.png",
+  "object": "0e1e7119-9d4f-43c4-a96a-02fa5f600eee",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/windmill_1.png",
+  "object": "075fb16c-e148-426c-a6ee-5ab3890dea63",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/observatory_0.png",
+  "object": "f66d9aa2-ebcc-4c2a-856e-e91611cba980",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/ice_shrine_0.png",
+  "object": "7ca1801e-9471-4a63-a33f-caa6a0c7c847",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/chapel_0.png",
+  "object": "20e5b109-26d7-4068-bbf3-4dc8056860ed",
+  "note": "큰 지도 랜드마크 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/bush_2.png",
+  "object": "2a1a1a91-3129-4bcc-9d9e-1ae55b5d8ce1",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/bush_3.png",
+  "object": "fe42c169-91bf-457d-8742-12955bfbaed8",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/goddess_0.png",
+  "object": "c82e09b4-da25-47bd-b52f-dfcde968b3a1",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/gazebo_0.png",
+  "object": "b2414f09-e42f-4613-86bd-9a71d6f4c3b8",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/rose_arch_0.png",
+  "object": "985b2501-fe71-46da-80b9-fa5219a52c7a",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/boulder_0.png",
+  "object": "9519269f-0484-4c4d-a79d-a160d49d489d",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "94236bef-fa9b-418e-896a-b171afb810bd",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "grass_tuft_1",
+   "",
+   "",
+   "grass_tuft_2",
+   "fern_small_1",
+   "grass_tuft_3",
+   "grass_tuft_4",
+   "grass_tuft_5",
+   "",
+   "",
+   "grass_tuft_6",
+   "grass_tuft_7",
+   "fern_small_2",
+   "fern_small_3",
+   "fern_small_4",
+   "fern_small_5"
+  ],
+  "note": "풀포기·작은 고사리 (map_object)"
+ },
+ {
+  "dest": "art/env/shepherd_hut_0.png",
+  "object": "81a00fe7-0c5f-45b9-b166-77eb47b2aed1",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/stump_house_0.png",
+  "object": "777d296c-bf62-4533-a69e-215714e236a0",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/fairy_ring_0.png",
+  "object": "3562310f-def6-4bb0-85c8-867e6649f55a",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/ice_hut_0.png",
+  "object": "608099af-23fd-43f8-ab66-a508403e95e2",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/moon_deck_0.png",
+  "object": "d7e88345-e731-463c-b8f3-68175f8891ed",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/boathouse_0.png",
+  "object": "f10c3a86-9816-4e0a-802b-1abe567306c0",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/pass_gate_0.png",
+  "object": "26fe3960-6ded-4783-beb8-cc150dfbde2e",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/house_tower_0.png",
+  "object": "46533026-c750-4caa-97f7-cc13fcdc8c4a",
+  "note": "큰 지도 볼거리 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_willow_2.png",
+  "object": "873f0e59-480a-496a-aecd-897c89432ab4",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_poplar_2.png",
+  "object": "3be23e12-45cc-4904-882b-0201cb8cc4a5",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_ginkgo_2.png",
+  "object": "52ef55f2-8ce1-4009-95b1-52295a5eea1d",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_apple_1.png",
+  "object": "e2d0d107-3d0a-4b87-a8a5-89581baf4395",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_1.png",
+  "object": "3b118fc6-702c-4e02-9b30-c8b70337a3aa",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_birch_gold_1.png",
+  "object": "fba83f76-5f53-4de9-9514-3cb950a71bf9",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_cedar_0.png",
+  "object": "061e5b59-3f2b-4d1d-91d7-0491e618268a",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "object": "96db4849-a31a-4b91-8b87-da2e1a6586c2",
+  "grid": 4,
+  "clear_bg": true,
+  "bg_tol": 60,
+  "cells": [
+   "flowers_yellow_1",
+   "flowers_blue_1",
+   "flowers_pink_1",
+   "flowers_white_2",
+   "flowers_mix_1",
+   "flowers_mix_2",
+   "flowers_blue_2",
+   "flowers_pink_2",
+   "flowers_yellow_2",
+   "flowers_mix_3",
+   "flowers_blue_3",
+   "flowers_pink_3",
+   "flowers_white_3",
+   "flowers_blue_4",
+   "flowers_yellow_3",
+   "flowers_white_4"
+  ],
+  "note": "꽃포기 변형 (map_object)"
+ },
+ {
+  "dest": "art/env/bush_pink_1.png",
+  "object": "9c6ab74b-f342-41f4-a3fc-8a474aea12b4",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/bush_orange_1.png",
+  "object": "287f8d44-688e-4cbc-ab5d-6841aebe9510",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_pine_3.png",
+  "object": "b22253f7-a9e1-4d04-b2f1-61d68bb03718",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_ancient_2.png",
+  "object": "b4732afc-6100-4e57-991d-d91b0275c948",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_maple_4.png",
+  "object": "26a1c5ce-6c05-4805-afd0-b717729510b9",
+  "note": "큰 지도 (Pro Flash)"
+ },
+ {
+  "dest": "art/env/tree_seapine_2.png",
+  "object": "5a828579-2f8f-4df0-82e3-8caf4ebbfab9",
+  "note": "큰 지도 (Pro Flash)"
+ }
+]
