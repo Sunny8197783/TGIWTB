@@ -13,6 +13,7 @@ namespace PixelMmo.Dev;
 ///   --settle=N         장면을 옮긴 뒤 N 프레임 뒤에 찍는다 (기본 24, 동작 한가운데를 찍을 때 줄인다)
 ///   --press=a,b        장면마다 그 조작을 누른다 (move_right 처럼 누르고 있기, attack 처럼 한 번)
 ///   --exp=N            장면마다 경험치 N (레벨업 연출)  ·  --level=N --job=id  레벨·직업을 정해 시작
+///   --tap=interact:7:30  그 조작을 7번, 30 물리 프레임마다 톡 누른다 (대화 넘기기 → 전직 확인)
 ///   --react=guard|dodge --after=N
 ///                      적의 공격 예고가 끝나기 직전에 그 조작을 누르고 N 프레임 뒤에 찍는다 (패링·완벽 회피 확인)
 ///   --novsync          60fps 상한을 풀어 실제 여유를 잰다
@@ -29,6 +30,8 @@ public partial class DevCapture : Node
     private readonly List<string> _press = new();
     private int _exp;   // --exp=N : 장면마다 경험치 N (레벨업 연출 확인)
     private bool _pressPending;
+    private string _tap;
+    private int _tapCount, _tapEvery, _tapClock;
     private string _react;
     private int _after = 6;
     private bool _reacted;
@@ -127,6 +130,13 @@ public partial class DevCapture : Node
                 _exp = int.Parse(a.Substring(6));
             else if (a.StartsWith("--press="))
                 _press.AddRange(a.Substring(8).Split(','));
+            else if (a.StartsWith("--tap="))
+            {
+                var t = a.Substring(6).Split(':');
+                _tap = t[0];
+                _tapCount = int.Parse(t[1]);
+                _tapEvery = int.Parse(t[2]);
+            }
             else if (a.StartsWith("--react="))
                 _react = a.Substring(8);
             else if (a.StartsWith("--after="))
@@ -167,6 +177,7 @@ public partial class DevCapture : Node
         _lastGc = System.GC.CollectionCount(0);
         _pressPending = _press.Count > 0 || _exp > 0;
         _reacted = false;
+        _tapClock = 0;
     }
 
     public override void _PhysicsProcess(double delta)
@@ -196,6 +207,14 @@ public partial class DevCapture : Node
                 Combat.Hero.Instance?.GrantExp(_exp);
             foreach (var action in _press)
                 Input.ActionPress(action);
+        }
+        if (_tap != null)
+        {
+            if (_tapClock % _tapEvery == 0 && _tapClock / _tapEvery < _tapCount)
+                Input.ActionPress(_tap);
+            else if (_tapClock % _tapEvery == 1)
+                Input.ActionRelease(_tap);
+            _tapClock++;
         }
     }
 

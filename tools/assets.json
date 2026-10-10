@@ -1335,17 +1335,20 @@
  {
   "sheet": "art/characters/job_rogue_m/attack1.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
-  "anim": "rg_attack1"
+  "anim": "rg_attack1",
+  "deglow": ["south", "north-west"]
  },
  {
   "sheet": "art/characters/job_rogue_m/attack2.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
-  "anim": "rg_attack2"
+  "anim": "rg_attack2",
+  "redo": {"east": "rg_attack2b"}
  },
  {
   "sheet": "art/characters/job_rogue_m/attack3.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
-  "anim": "rg_attack3"
+  "anim": "rg_attack3",
+  "deglow": ["south"]
  },
  {
   "sheet": "art/characters/job_rogue_f/rot.png",
@@ -1386,12 +1389,14 @@
  {
   "sheet": "art/characters/job_rogue_f/attack2.png",
   "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
-  "anim": "rg_attack2"
+  "anim": "rg_attack2",
+  "redo": {"south-east": "rg_attack2b"}
  },
  {
   "sheet": "art/characters/job_rogue_f/attack3.png",
   "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
-  "anim": "rg_attack3"
+  "anim": "rg_attack3b",
+  "redo": {"south-east": "rg_attack3c", "north-west": "rg_attack3c", "west": "rg_attack3c"}
  },
  {
   "sheet": "art/characters/npc_guide/rot.png",

@@ -40,9 +40,12 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
   - 처음 그리는 셰이더는 파이프라인을 만드느라 멈칫한다 → 새 이펙트 셰이더는 `CombatFx.Prewarm` 에 넣는다
 - 동작 확인: `--press=attack --settle=12` (누르고 12프레임 뒤), `--react=guard --after=7` (적 공격 예고 끝에 막기 → 패링)
 - 캐릭터 그림: `tools/assets.json` 에 `{"sheet": ..., "char": id, "anim": "PixelLab 애니 이름"}` → 원본은 `art_src/`, 시트는 `art/characters/<캐릭터>/<동작>.png`
+  - 한 방향만 망쳤으면 그 방향만 다시 뽑아 `"redo": {"west": "새 애니 이름"}`, 칼끝 푸른 빛만 남았으면 `"deglow": ["south"]` (푸른 옷·눈 없는 캐릭터만). 받은 뒤 `--force`
+  - rot 시트를 먼저 받는다 (없으면 그 동작 시트가 빈 줄로 묶인다)
 - 스킬: `data/skills/*.json` (이벤트 목록, `Combat/SkillRunner` 가 해석. 투사체는 `projectile`·`rain` 이벤트 → `Combat/Projectile`). 칸 구성은 직업이 정한다
 - 직업(M8): `data/jobs/*.json` — 평타 연속기(근접 베기 또는 투사체)·스킬 칸(열리는 레벨)·성별별 원화·레벨당 체력·힘. 레벨 곡선 `data/player/levels.json`, 몬스터 `exp`
-  - 견습생으로 시작 → Lv 10 에 마을 교관 NPC(`data/npcs/*.json`, `World/Npcs`)에게서 전직. 확인은 `--job=archer --level=15 --press=skill_3 --settle=40`
+  - 견습생으로 시작 → Lv 10 에 마을 교관 NPC(`data/npcs/*.json`, `World/Npcs`)에게서 전직. 확인은 `--job=archer --level=15 --press=skill_3 --settle=40`,
+    전직 대화는 `--level=10 --tap=interact:6:30 --settle=200 --shot=533,885,10` (전사 교관 앞에서 F 를 30프레임마다 톡톡)
 - 숙련·진화: 스킬 JSON 의 `mastery.evolution`. 진화 확인은 `--mastery=sk_moon_crescent:29.5 --press=skill_1 --settle=40`. 판정 규칙 검사는 `tools/godot.sh --headless -- --selftest`
 - 전망 지점은 지도 meta `viewpoints` (pitch·distance·look_ahead·look_up), 환경음은 `data/world/ambience.json` + `python tools/synth_ambience.py` (자연 소리는 Kenney 에 없어 합성). 끄기 `--no=ambience`
 - 세이브는 `user://save.json`. 캡처(`--capture`) 실행은 세이브를 읽지도 쓰지도 않는다

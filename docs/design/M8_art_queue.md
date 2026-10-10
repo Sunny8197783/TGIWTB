@@ -24,6 +24,13 @@ archer_f ✓ fetched
 archer_m ✓ fetched
 mage_m ✓ fetched
 mage_f ✓ fetched
-rogue_m 10c158bb: attack1 ✓ attack2 ✓ attack3 ✓(029d84cc 확인 전) / run ca7fa736 [NW,W,SW 남음] / idle·dash·guard·hurt -
-rogue_f fa94cde3: -
+rogue_m 10c158bb: 전부 ✓ (idle b5bcecf7)
+rogue_f fa94cde3 (남쪽 시험 → 나머지 7방향): attack1 c1d51b35 · attack2 325341c5 · attack3 82e27a09(마법 궤적 → 버림) attack3b becaf7f9 · run 2f912f19 · dash 42559296 · guard 1c9da63e · hurt 69799467 · idle a5adb00e ✓
+npc idle 그룹: guide a88a962a · warrior c6d19149 · archer c1e7aaf6 · mage 47b1f9fe · rogue 06d89d79
 npc_guide 39995271, npc_warrior 6c409a6e, npc_archer b39df277, npc_mage cfcaa900, npc_rogue fbede50e: idle -
+
+## 다시 뽑은 방향 (assets.json "redo")
+프롬프트 끝에 "plain grey steel daggers, no glow, no magic, no energy, no sparks, no light effects"
+- rogue_f attack3 SE·NW·W → rg_attack3c cdfabf05 · attack2 SE → rg_attack2b e0e1bfbe
+- rogue_m attack2 E(청록 궤적) → rg_attack2b. attack3 S 는 다시 뽑아도 고리가 더 생겨 원본 + "deglow", attack1 S·NW 도 deglow. NW 공격 끝에 얼굴이 보이게 도는 건 다시 뽑아도 같아서 둠
+- 작게 남긴 것: rogue_f attack1 E 마지막 칸 불티, rogue_m attack1 S 마지막 칸 줄, rogue_m attack2 W 노란 반짝임

@@ -4,6 +4,8 @@
   {"dest": "art/env/tree_oak_0.png", "object": "<object id>"}          단방향 오브젝트
   {"sheet": "art/characters/hero/run.png", "char": "<id>", "anim": "hero_run_v3b"}   PixelLab 애니메이션 이름
   {"sheet": "art/characters/hero/rot.png", "char": "<id>", "rotations": true}
+      망친 방향만 다시 뽑았으면 "redo": {"west": "rg_attack3c"} (그 방향만 다른 애니메이션 이름에서 가져온다)
+      다시 뽑아도 푸른 마법 빛이 남으면 "deglow": ["south"] — 그 방향에서 채도 높은 청록·파랑 픽셀을 지운다 (푸른 옷·눈이 없는 캐릭터만)
   {"object": "<id>", "grid": 3, "cells": ["bush_0", "bush_pink_0", ...]}   작은 소품 여럿을 한 장에 격자로 뽑은 것.
       가로·세로 칸 수가 다르면 "cols"/"rows". 이름은 왼쪽 위부터 읽는 순서.
       칸마다 잘라 art/env/<이름>.png 로. 빈 이름("")은 건너뛴다. 한 번 생성으로 소품 9개 — 화풍도 저절로 맞는다.
@@ -221,7 +223,8 @@ def fetch_character(item, force):
         if item.get("rotations"):
             members = [n for n in names if n.endswith(f"/rotations/{d}.png")]
         else:
-            prefix = f"/animations/{item['anim']}/{d}/"
+            # redo: {"west": "rg_attack3c"} — 망친 방향만 다시 뽑은 애니메이션으로
+            prefix = f"/animations/{item.get('redo', {}).get(d, item['anim'])}/{d}/"
             members = sorted(n for n in names if prefix in n)
         for i, m in enumerate(members):
             fdest = os.path.join(folder, d, f"{i}.png")
@@ -294,6 +297,16 @@ def clear_bg(img, tol=48):
     return w, h, px
 
 
+def deglow(img):
+    """v3 가 칼끝에 그려 넣는 푸른 빛·고리를 지운다. 강철 날(옅은 회청색)은 채도가 낮아 남는다."""
+    w, h, px = img
+    def glow(c):
+        r, g, b, a = c
+        hi = max(g, b)
+        return a > 127 and hi > 140 and b - r > 60 and hi - min(r, g, b) > 0.45 * hi
+    return w, h, [(0, 0, 0, 0) if glow(c) else c for c in px]
+
+
 def pack(item):
     folder = src_dir(item)
     # skip_first: v3 가 맨 앞에 붙인 서 있는 원화 칸을 뺀다 (달리기처럼 도는 동작에서 한 번씩 멈칫했다)
@@ -307,6 +320,7 @@ def pack(item):
     for row, d in enumerate(DIRS):
         rot_path = os.path.join(rot_dir, d, "0.png")
         if not os.path.exists(rot_path):
+            print("rot 원화가 없어 빈 줄:", rot_path, "— rot 시트를 먼저 받는다")
             continue
         ref = png.read_rgba(rot_path)
         # 원화 자리: 캔버스 가운데와 발밑 줄을 ANCHOR 에
@@ -317,7 +331,9 @@ def pack(item):
             imgs, off = [ref] * frames, (0, 0)  # 아직 없는 방향은 서 있는 원화
         else:
             imgs = [clear_bg(png.read_rgba(p)) for p in paths]
-            if d not in cache:
+            if d in item.get("deglow", ()):
+                imgs = [deglow(im) for im in imgs]
+            if d not in cache or d in item.get("redo", {}):
                 w, h, px = imgs[0]
                 guess = ((ref[0] - w) // 2, max(opaque_rows(*ref)) - max(opaque_rows(w, h, px)))
                 cache[d] = align(ref, imgs[0], guess)
