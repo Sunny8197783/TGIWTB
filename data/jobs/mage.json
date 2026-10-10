@@ -1,0 +1,23 @@
+{
+  // 견습 마법사: 느리지만 적을 따라 휘는 마법탄 두 발 + 터지는 큰 구슬. 체력이 가장 낮다
+  "id": "mage",
+  "name": "견습 마법사",
+  "tier": 1,
+  "description": "읽는 것으로 시작해서 태우는 것으로 끝난다.",
+  "required_level": 10, "from": ["novice"], "trainer": "npc_mage",
+  "art": {
+    "m": { "art": "res://art/characters/job_mage_m", "accent_hue": [200, 250], "accent_sat": 0.25 },
+    "f": { "art": "res://art/characters/job_mage_f", "accent_hue": [255, 300], "accent_sat": 0.2 }
+  },
+  "hp": 85, "hp_per_level": 6, "power_per_level": 0.065,
+  "palette": "moon",
+  "attack": [
+    { "anim": "attack1", "duration": 0.4, "hit_at": 0.2, "cancel_at": 0.26, "lunge": 0, "damage": 12, "start_frame": 1, "hit_frame": 4, "slash": "none", "sound": "impactBell_heavy",
+      "projectile": { "kind": "bolt", "speed": 16, "range": 13, "radius": 0.45, "homing": 140 } },
+    { "anim": "attack1", "duration": 0.4, "hit_at": 0.2, "cancel_at": 0.26, "lunge": 0, "damage": 12, "start_frame": 1, "hit_frame": 4, "slash": "none", "sound": "impactBell_heavy",
+      "projectile": { "kind": "bolt", "speed": 16, "range": 13, "radius": 0.45, "homing": 140 } },
+    { "anim": "attack3", "duration": 0.72, "hit_at": 0.44, "cancel_at": 0.54, "lunge": 0, "damage": 28, "heavy": true, "start_frame": 1, "hit_frame": 7, "slash": "none", "sound": "impactBell_heavy",
+      "projectile": { "kind": "orb", "speed": 11, "range": 11, "radius": 0.6, "explode": 2.4 } }
+  ],
+  "skills": [ { "id": "sk_ice_lance", "level": 10 }, { "id": "sk_flame_wave", "level": 12 }, { "id": "sk_thunder_call", "level": 15 } ]
+}

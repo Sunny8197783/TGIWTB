@@ -1,0 +1,18 @@
+{
+  "id": "sk_arrow_rain",
+  "name": "화살비",
+  "cooldown": 11.0, "duration": 0.75, "cancel_at": 0.6,
+  "anim": "attack3", "anim_hit_frame": 9, "anim_hit_at": 0.34,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "leaf",
+  // 하늘로 쏘아 올린 화살이 앞쪽 6m 둘레에 1초 동안 쏟아진다
+  "events": [
+    { "t": 0.0,  "fx": "sfx", "sound": "cloth", "pitch": 0.7, "db": -6 },
+    { "t": 0.34, "fx": "sparkle", "count": 14, "radius": 0.6 },
+    { "t": 0.34, "fx": "sfx", "sound": "swing_heavy", "pitch": 1.5, "db": -4 },
+    { "t": 0.55, "fx": "ring", "forward": 6, "radius": 3.4, "life": 0.6 },
+    { "t": 0.55, "fx": "rain", "forward": 6, "radius": 3.2, "count": 20, "time": 1.0, "damage": 9,
+      "projectile": { "kind": "arrow", "speed": 26, "range": 12, "radius": 0.9, "fall": true } },
+    { "t": 0.9,  "fx": "sfx", "sound": "impactWood_medium", "pitch": 1.2, "db": -6 }
+  ]
+}

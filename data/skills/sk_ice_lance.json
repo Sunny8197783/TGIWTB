@@ -1,0 +1,16 @@
+{
+  "id": "sk_ice_lance",
+  "name": "얼음창",
+  "cooldown": 5.0, "duration": 0.55, "cancel_at": 0.42,
+  "anim": "attack1", "anim_hit_frame": 4, "anim_hit_at": 0.26,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "ice",
+  // 빠르고 곧은 얼음 창 — 줄 선 적을 넷까지 꿰뚫는다
+  "events": [
+    { "t": 0.0,  "fx": "sparkle", "count": 10, "radius": 0.5, "forward": 0.5 },
+    { "t": 0.08, "fx": "sfx", "sound": "impactMetal_light", "pitch": 2.0, "db": -8 },
+    { "t": 0.26, "fx": "projectile", "damage": 26, "projectile": { "kind": "bolt", "speed": 28, "range": 16, "radius": 0.45, "pierce": 4 } },
+    { "t": 0.26, "fx": "sfx", "sound": "impactBell_heavy", "pitch": 1.8, "db": -6 },
+    { "t": 0.26, "fx": "shake", "amount": 0.15 }
+  ]
+}

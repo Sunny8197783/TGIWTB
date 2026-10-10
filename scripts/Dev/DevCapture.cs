@@ -12,6 +12,7 @@ namespace PixelMmo.Dev;
 ///   --hold=초          각 장면에 이만큼 머물며 프레임 시간을 잰다
 ///   --settle=N         장면을 옮긴 뒤 N 프레임 뒤에 찍는다 (기본 24, 동작 한가운데를 찍을 때 줄인다)
 ///   --press=a,b        장면마다 그 조작을 누른다 (move_right 처럼 누르고 있기, attack 처럼 한 번)
+///   --exp=N            장면마다 경험치 N (레벨업 연출)  ·  --level=N --job=id  레벨·직업을 정해 시작
 ///   --react=guard|dodge --after=N
 ///                      적의 공격 예고가 끝나기 직전에 그 조작을 누르고 N 프레임 뒤에 찍는다 (패링·완벽 회피 확인)
 ///   --novsync          60fps 상한을 풀어 실제 여유를 잰다
@@ -26,6 +27,7 @@ public partial class DevCapture : Node
     private float _hold;
 
     private readonly List<string> _press = new();
+    private int _exp;   // --exp=N : 장면마다 경험치 N (레벨업 연출 확인)
     private bool _pressPending;
     private string _react;
     private int _after = 6;
@@ -87,6 +89,18 @@ public partial class DevCapture : Node
         }
     }
 
+    /// <summary>--level=N --job=id : 레벨·직업을 정해 시작 (세이브와 무관). 스킬 칸도 그 레벨만큼 열린다</summary>
+    public static void JobOverride(ref int level, ref Data.JobDef job)
+    {
+        foreach (string a in OS.GetCmdlineUserArgs())
+        {
+            if (a.StartsWith("--level="))
+                level = int.Parse(a.Substring(8));
+            else if (a.StartsWith("--job="))
+                job = Data.JobDef.Get(a.Substring(6));
+        }
+    }
+
     // "방금 눌렀다"는 물리 프레임 번호로 판정된다 — 주인공보다 먼저 도는 물리 프레임 안에서 눌러야 한다
     public override void _EnterTree() => ProcessPhysicsPriority = -100;
 
@@ -109,6 +123,8 @@ public partial class DevCapture : Node
                 _hold = float.Parse(a.Substring(7), CultureInfo.InvariantCulture);
             else if (a.StartsWith("--settle="))
                 _settle = int.Parse(a.Substring(9));
+            else if (a.StartsWith("--exp="))
+                _exp = int.Parse(a.Substring(6));
             else if (a.StartsWith("--press="))
                 _press.AddRange(a.Substring(8).Split(','));
             else if (a.StartsWith("--react="))
@@ -149,7 +165,7 @@ public partial class DevCapture : Node
         _stats.Clear();
         _spikes = _gcSpikes = _gcCount = 0;
         _lastGc = System.GC.CollectionCount(0);
-        _pressPending = _press.Count > 0;
+        _pressPending = _press.Count > 0 || _exp > 0;
         _reacted = false;
     }
 
@@ -176,6 +192,8 @@ public partial class DevCapture : Node
         if (_pressPending)
         {
             _pressPending = false;
+            if (_exp > 0)
+                Combat.Hero.Instance?.GrantExp(_exp);
             foreach (var action in _press)
                 Input.ActionPress(action);
         }

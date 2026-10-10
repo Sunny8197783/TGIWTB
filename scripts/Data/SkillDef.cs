@@ -68,7 +68,7 @@ public sealed class SkillDef
     {
         /// <summary>시작 후 몇 초에</summary>
         public float T { get; set; }
-        /// <summary>sfx / slash / ring / sparkle / petals / lightning / hit / dash / flash / shake / slow / spin</summary>
+        /// <summary>sfx / slash / ring / sparkle / petals / lightning / hit / dash / flash / shake / slow / spin / projectile / rain</summary>
         public string Fx { get; set; }
         // 쓰는 것만 채운다 — 나머지는 기본값
         public string Sound { get; set; }
@@ -89,6 +89,8 @@ public sealed class SkillDef
         public float Amount { get; set; } = 0.5f; // flash 세기, shake 충격량, slow 배율
         public string Anim { get; set; }          // spin: 멈춰 세울 동작
         public int Frame { get; set; }            // spin: 그 동작의 칸 (칼을 뻗은 칸)
+        public JobDef.ProjectileDef Projectile { get; set; } // projectile·rain: 무엇을 쏘나
+        public float Angle { get; set; }          // projectile: 바라보는 쪽에서 돌린 각 (도, 오른쪽 +)
     }
 
     private static Dictionary<string, SkillDef> _all;

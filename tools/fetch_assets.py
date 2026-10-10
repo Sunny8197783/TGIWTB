@@ -97,7 +97,11 @@ def trim(path, pad=1):
 def main():
     manifest = json.load(open(os.path.join(ROOT, "tools", "assets.json"), encoding="utf-8"))
     force = "--force" in sys.argv
+    # --only=글자: 경로에 이 글자가 든 항목만 (생성이 덜 끝난 캐릭터를 서 있는 원화로 묶어 버리지 않게)
+    only = next((a[7:] for a in sys.argv if a.startswith("--only=")), None)
     for item in manifest:
+        if only and only not in item.get("sheet", item.get("dest", "")):
+            continue
         if "object" in item and "cells" in item:
             fetch_packed(item, force)
         elif "object" in item:
@@ -292,7 +296,9 @@ def clear_bg(img, tol=48):
 
 def pack(item):
     folder = src_dir(item)
-    frames = 1 if item.get("rotations") else frame_count(folder)
+    # skip_first: v3 가 맨 앞에 붙인 서 있는 원화 칸을 뺀다 (달리기처럼 도는 동작에서 한 번씩 멈칫했다)
+    start = 1 if item.get("skip_first") else 0
+    frames = 1 if item.get("rotations") else frame_count(folder) - start
     rot_dir = os.path.join(SRC, os.path.basename(os.path.dirname(item["sheet"])), "rot")
     cache_path = os.path.join(folder, "offsets.json")
     cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
@@ -306,7 +312,7 @@ def pack(item):
         # 원화 자리: 캔버스 가운데와 발밑 줄을 ANCHOR 에
         rx = ANCHOR[0] - ref[0] // 2
         ry = ANCHOR[1] - max(opaque_rows(*ref))
-        paths = [os.path.join(folder, d, f"{i}.png") for i in range(frames)]
+        paths = [os.path.join(folder, d, f"{i}.png") for i in range(start, start + frames)]
         if item.get("rotations") or not all(os.path.exists(p) for p in paths):
             imgs, off = [ref] * frames, (0, 0)  # 아직 없는 방향은 서 있는 원화
         else:

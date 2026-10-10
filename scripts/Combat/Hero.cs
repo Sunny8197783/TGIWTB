@@ -40,7 +40,12 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private bool _hitDone, _slashDone, _counter;
     private float _guardAge;
     private float _iframes;
-    private float _hp = T.HeroMaxHp;
+    private float _hp = 100f;
+    private JobDef _job = JobDef.Get(JobDef.Novice);
+    private int _level = 1;
+    private int _exp;
+    private string _gender = "m";
+    private string _artFolder;
     private float _flash;
     private Color _flashColor = Colors.White;
     private Vector3 _spawn;
@@ -57,13 +62,20 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private string _respawnStatue;
 
     public float Hp => _hp;
-    public float MaxHp => T.HeroMaxHp;
+    public float MaxHp => _job.MaxHp(_level);
+    public int Level => _level;
+    public int Exp => _exp;
+    public int ExpToNext => LevelDef.Instance.Need(_level);
+    public string JobId => _job.Id;
+    public string JobName => _job.Name;
+    /// <summary>레벨이 올린 피해 배율 (직업마다 레벨당 증가율이 다르다)</summary>
+    public float Power => _job.Power(_level);
     public bool IsAlive => _state != State.Dead;
     public Vector3 WorldPosition => GlobalPosition;
     public IReadOnlyList<string> Skills => _loadout;
     public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
     public float MasteryProgress(string skillId) => skillId != null && SkillDef.All.TryGetValue(skillId, out var def) ? _mastery.Progress(def) : -1f;
-    public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def);
+    public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def) * Power;
     public IReadOnlySet<string> Statues => _statues;
     public string RespawnStatue => _respawnStatue;
     public string LookBase => _lookBase;
@@ -88,9 +100,6 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             Position = new Vector3(0f, 0.75f, 0f),
         });
         _skill = new SkillRunner(this);
-        var equipped = Json.ParseString(FileAccess.GetFileAsString("res://data/player/loadout.json")).AsGodotDictionary()["skills"].AsStringArray();
-        for (int i = 0; i < _loadout.Length && i < equipped.Length; i++)
-            _loadout[i] = equipped[i];
 
         _mastery = new Mastery(SkillDef.All.Values);
         _persist = !Dev.DevCapture.Requested();
@@ -105,15 +114,17 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             _mastery.Load(save);
             _statues.UnionWith(save.Statues ?? new List<string>());
             _respawnStatue = save.RespawnStatue;
-            // 진화한 칸은 세이브 쪽을 따른다 (없는 스킬 id 는 버린다)
-            for (int i = 0; save.Loadout != null && i < _loadout.Length && i < save.Loadout.Count; i++)
-                if (save.Loadout[i] != null && SkillDef.All.ContainsKey(save.Loadout[i]))
-                    _loadout[i] = save.Loadout[i];
+            _level = Mathf.Clamp(save.Level, 1, LevelDef.Instance.MaxLevel);
+            _exp = save.Exp;
+            _job = JobDef.Get(save.Job);
         }
+        Dev.DevCapture.JobOverride(ref _level, ref _job);
         foreach (var (id, value) in Dev.DevCapture.MasterySeeds())
             _mastery.Seed(id, value);
         Dev.DevCapture.LookOverride(ref lookBase, ref lookAccent);
         SetLook(lookBase, lookAccent);
+        RebuildLoadout();
+        _hp = MaxHp;
     }
 
     /// <summary>모습을 바꾼다: 바탕 원화가 다르면 스프라이트를 새로 만들고, 옷 색은 불러올 때 칠한다 (Render/Recolor).</summary>
@@ -122,7 +133,11 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         var look = AppearanceDef.Instance;
         var b = look.Find(baseId);
         accent = Mathf.Clamp(accent, 0, look.Accents.Count - 1);
-        if (_sprite != null && b.Id == _lookBase && accent == _lookAccent)
+        // 직업 옷이 있으면 그 원화 (성별은 처음 고른 모습을 따른다), 견습생은 고른 모습 그대로
+        var art = _job.ArtFor(b.Gender);
+        if (art == null || !ResourceLoader.Exists(art.Art + "/rot.png"))
+            art = b; // 직업 원화가 아직 없으면 (생성 중) 고른 모습으로
+        if (_sprite != null && b.Id == _lookBase && accent == _lookAccent && art.Art == _artFolder)
             return;
         int dir = _sprite?.Dir ?? 0;
         if (_sprite != null)
@@ -130,7 +145,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             RemoveChild(_sprite);
             _sprite.QueueFree();
         }
-        _sprite = new CharacterSprite(b.Art, Recolor.For(b, look.Accents[accent]));
+        _sprite = new CharacterSprite(art.Art, Recolor.For(art, look.Accents[accent]));
+        _artFolder = art.Art;
+        _gender = b.Gender;
         AddChild(_sprite);
         _sprite.ExemptFromSlow();
         _sprite.Dir = dir;
@@ -146,8 +163,9 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             return;
         var save = new SaveData
         {
-            Loadout = new List<string>(_loadout), LookBase = _lookBase, LookAccent = _lookAccent,
+            LookBase = _lookBase, LookAccent = _lookAccent,
             Statues = new List<string>(_statues), RespawnStatue = _respawnStatue,
+            Level = _level, Exp = _exp, Job = _job.Id,
         };
         _mastery.Save(save);
         save.Write();
@@ -170,7 +188,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         bool first = _statues.Add(statueId);
         _respawnStatue = statueId;
         _spawn = respawnFeet;
-        _hp = T.HeroMaxHp;
+        _hp = MaxHp;
         Save();
         return first;
     }
@@ -180,6 +198,97 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         Teleport(feet);
         Enter(State.Move);
         _iframes = T.HurtIFrames;
+    }
+
+    // ── 레벨·직업 ───────────────────────────────────────
+
+    /// <summary>경험치를 얻는다 (적을 쓰러뜨렸을 때). 넘치면 몇 단계든 오른다 — 오를 때마다 체력이 차고 칸이 열린다</summary>
+    public void GrantExp(int amount)
+    {
+        if (amount <= 0 || !IsAlive)
+            return;
+        var levels = LevelDef.Instance;
+        _exp += amount;
+        Hud.Exp(GlobalPosition + Vector3.Up * 2.2f, amount);
+        bool up = false;
+        while (_level < levels.MaxLevel && _exp >= levels.Need(_level))
+        {
+            _exp -= levels.Need(_level);
+            _level++;
+            up = true;
+        }
+        if (_level >= levels.MaxLevel)
+            _exp = 0;
+        if (!up)
+            return;
+        var unlocked = RebuildLoadout();
+        _hp = MaxHp;
+        _iframes = T.LevelUpIFrames;
+        var pal = CombatFx.PaletteOf("thunder");
+        CombatFx.Shockwave(GlobalPosition, 2.6f, 0.5f, pal);
+        CombatFx.SparkleBurst(GlobalPosition + Vector3.Up * 0.9f, 36, 1.2f, pal);
+        Sfx.Play("confirmation", -4f, 1f, 0f, "UI");
+        Sfx.Play("impactBell_heavy", -8f, 1.6f, 0f, "UI");
+        string sub = unlocked != null ? $"새 스킬: {unlocked}" : _job.Id == JobDef.Novice && CanChangeJobSomewhere() ? "마을의 교관을 찾아가 전직할 수 있다" : $"{JobName}";
+        Hud.Announce($"레벨 {_level}", sub, new Color(1f, 0.92f, 0.5f));
+        Save();
+    }
+
+    private bool CanChangeJobSomewhere()
+    {
+        foreach (var j in JobDef.All.Values)
+            if (CanBecome(j))
+                return true;
+        return false;
+    }
+
+    /// <summary>이 직업으로 전직할 수 있나 — 레벨과 지금 직업만 본다 (교관 대화가 묻는다)</summary>
+    public bool CanBecome(JobDef job) => job.Id != _job.Id && job.From.Contains(_job.Id) && _level >= job.RequiredLevel;
+
+    /// <summary>전직: 원화·평타·스킬 칸이 그 직업으로 바뀌고 체력이 찬다</summary>
+    public void ChangeJob(string jobId)
+    {
+        var job = JobDef.Get(jobId);
+        if (!CanBecome(job))
+            return;
+        _job = job;
+        string look = _lookBase;
+        _lookBase = null; // SetLook 이 같은 모습이라고 건너뛰지 않게
+        SetLook(look, _lookAccent);
+        RebuildLoadout();
+        _hp = MaxHp;
+        _combo = 0;
+        Enter(State.Move);
+        var pal = CombatFx.PaletteOf(job.Palette);
+        CombatFx.Shockwave(GlobalPosition, 4f, 0.7f, pal);
+        CombatFx.SparkleBurst(GlobalPosition + Vector3.Up * 1f, 60, 1.8f, pal);
+        CombatFx.Flash(Colors.White, 0.6f);
+        Sfx.Play("impactBell_heavy", -2f, 0.8f, 0f, "UI");
+        Hud.Announce($"전직 — {job.Name}", job.Description, pal.Bright);
+        Save();
+    }
+
+    /// <summary>
+    /// 스킬 칸 = 직업이 정한 스킬 중 레벨이 찬 것. 숙련으로 진화한 스킬은 진화형으로 (숙련은 진화형 이름으로 옮겨져 있다).
+    /// 새로 열린 스킬 이름을 돌려준다 (없으면 null).
+    /// </summary>
+    private string RebuildLoadout()
+    {
+        string unlocked = null;
+        for (int i = 0; i < _loadout.Length; i++)
+        {
+            string id = null;
+            if (i < _job.Skills.Count && _level >= _job.Skills[i].Level && SkillDef.All.ContainsKey(_job.Skills[i].Id))
+            {
+                id = _job.Skills[i].Id;
+                while (SkillDef.All[id].Mastery?.Evolution?.Into is string into && SkillDef.All.ContainsKey(into) && _mastery.Get(into) > 0f)
+                    id = into;
+            }
+            if (id != null && _loadout[i] == null && SkillDef.All.TryGetValue(id, out var def))
+                unlocked = def.Name;
+            _loadout[i] = id;
+        }
+        return unlocked;
     }
 
     // ── 매 물리 프레임 ─────────────────────────────────────
@@ -284,7 +393,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
                 {
                     // 회피 중 누른 공격 → 착지 없이 바로 반격
                     if (_attackBuffer > 0f)
-                        StartAttack(1, wish, counter: true);
+                        StartAttack(Mathf.Min(1, _job.Attack.Count - 1), wish, counter: true);
                     else
                         Enter(State.DashRecover);
                 }
@@ -293,7 +402,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             case State.DashRecover:
                 _vel = _vel.MoveToward(Vector3.Zero, T.RunSpeed / T.DecelTime * dt);
                 if (TryStartSkill(wish)) break;
-                if (_attackBuffer > 0f) { StartAttack(1, wish, counter: true); break; }
+                if (_attackBuffer > 0f) { StartAttack(Mathf.Min(1, _job.Attack.Count - 1), wish, counter: true); break; }
                 if (_stateTime >= T.DashRecovery)
                     Enter(State.Move);
                 break;
@@ -396,10 +505,11 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         _combo = step;
         _counter = counter;
         _hitDone = _slashDone = false;
-        var s = T.Combo[step];
+        var s = _job.Attack[step];
         // 방향: 입력 쪽, 없으면 가까운 적 쪽 (8방향이라 정확히 겨누기 어렵다 — 살짝 도와준다)
         Vector3 aim = wish.LengthSquared() > 0.01f ? wish.Normalized() : FacingVector();
-        var target = NearestEnemy(aim, s.Reach + 1.2f, 70f);
+        // 투사체는 사거리 안 앞쪽 적을 겨눈다 (좁은 원뿔), 근접은 칼이 닿을 만큼만
+        var target = s.Projectile != null ? NearestEnemy(aim, s.Projectile.Range, 35f) : NearestEnemy(aim, s.Reach + 1.2f, 70f);
         if (target != null)
             aim = Flat(target.GlobalPosition - GlobalPosition).Normalized();
         Face(aim, snap: true);
@@ -409,13 +519,13 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             _sprite.PlayKeyed(s.Anim, s.Duration, s.StartFrame, s.HitFrame, s.HitAt);
         else
             _sprite.PlayOnce("rot", s.Duration);
-        Sfx.Play(s.Heavy ? "swing_heavy" : "swing", -3f, step == 1 ? 1.12f : 1f, 0.06f, "Hero");
+        Sfx.Play(s.Sound, -3f, step % 2 == 1 ? 1.12f : 1f, 0.06f, "Hero");
         Sfx.Play("cloth", -12f, 1f, 0.1f, "Hero");
     }
 
     private void UpdateAttack(Vector3 wish, float dt)
     {
-        var s = T.Combo[_combo];
+        var s = _job.Attack[_combo];
         float t = _stateTime;
         // 판정 전까지 앞으로 내딛고, 이어받은 달리기 속도는 금방 잦아든다
         const float LungeFrom = 0.04f;
@@ -433,13 +543,16 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         if (!_hitDone && t >= s.HitAt)
         {
             _hitDone = true;
-            ResolveHits(s);
+            if (s.Projectile != null)
+                Shoot(s);
+            else
+                ResolveHits(s);
         }
         if (t >= s.CancelAt)
         {
             if (_dodgeBuffer > 0f && _dashCooldown <= 0f) { StartDash(wish); return; }
             if (TryStartSkill(wish)) return;
-            if (_attackBuffer > 0f && _combo < T.Combo.Length - 1 && t / s.Duration >= T.ComboBufferFrom)
+            if (_attackBuffer > 0f && _combo < _job.Attack.Count - 1 && t / s.Duration >= T.ComboBufferFrom)
             {
                 StartAttack(_combo + 1, wish, counter: false);
                 return;
@@ -449,33 +562,45 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             Enter(State.Move);
     }
 
-    private static float SlashLead(AttackStep s) => s.Heavy ? 0.1f : 0.05f;
+    private static float SlashLead(JobDef.StepDef s) => s.Heavy ? 0.1f : 0.05f;
 
-    private void DrawSlash(AttackStep s)
+    private void DrawSlash(JobDef.StepDef s)
     {
         Vector3 f = FacingVector();
         Vector3 left = Vector3.Up.Cross(f);
         Vector3 chest = GlobalPosition + Vector3.Up * 0.85f + f * 0.2f;
-        float thick = _counter ? 1.45f : 1f;
-        switch (_combo)
+        float thick = (_counter ? 1.45f : 1f) * s.SlashScale;
+        float r = s.Reach * Mathf.Min(s.SlashScale, 1.1f);
+        var pal = CombatFx.PaletteOf(_job.Palette);
+        switch (s.Slash)
         {
-            case 0: // 오른쪽 → 왼쪽, 왼쪽이 살짝 올라가는 사선
-                CombatFx.Slash(chest, f, (left + Vector3.Up * 0.35f).Normalized(), s.Reach, 200f, 0.22f, false, thick);
+            case "horizontal": // 오른쪽 → 왼쪽, 왼쪽이 살짝 올라가는 사선
+                CombatFx.Slash(chest, f, (left + Vector3.Up * 0.35f).Normalized(), r, 200f, 0.22f, false, thick, pal);
                 break;
-            case 1: // 왼쪽 → 오른쪽 역베기
-                CombatFx.Slash(chest, f, (left - Vector3.Up * 0.3f).Normalized(), s.Reach, 200f, 0.22f, true, thick);
+            case "reverse": // 왼쪽 → 오른쪽 역베기
+                CombatFx.Slash(chest, f, (left - Vector3.Up * 0.3f).Normalized(), r, 200f, 0.22f, true, thick, pal);
                 break;
-            default: // 머리 위에서 앞 땅으로 내려찍기
+            case "vertical": // 머리 위에서 앞 땅으로 내려찍기
                 CombatFx.Slash(GlobalPosition + Vector3.Up * 0.5f, (f + Vector3.Down * 0.2f).Normalized(), Vector3.Up,
-                    s.Reach, 170f, 0.26f, true, 1.35f);
+                    r, 170f, 0.26f, true, 1.35f * s.SlashScale, pal);
+                break;
+            case "stab": // 앞으로 찌르기: 좁은 호를 길게
+                CombatFx.Slash(chest, f, (left + Vector3.Up * 0.1f).Normalized(), r, 40f, 0.16f, false, 1.6f, pal);
                 break;
         }
     }
 
-    private void ResolveHits(AttackStep s)
+    private float StepDamage(JobDef.StepDef s) =>
+        s.Damage * Power * (_counter ? T.CounterDamage : 1f) * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
+
+    /// <summary>투사체 평타: 가슴께에서 바라보는 쪽으로 (가까운 적을 이미 향해 섰다)</summary>
+    private void Shoot(JobDef.StepDef s) =>
+        Projectile.Fire(GlobalPosition, FacingVector(), s.Projectile, StepDamage(s), s.Heavy || _counter, CombatFx.PaletteOf(_job.Palette));
+
+    private void ResolveHits(JobDef.StepDef s)
     {
         Vector3 f = FacingVector();
-        float damage = s.Damage * (_counter ? T.CounterDamage : 1f) * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
+        float damage = StepDamage(s);
         bool heavy = s.Heavy || _counter;
         int hits = 0;
         foreach (var e in Enemy.All.ToArray())
@@ -719,7 +844,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
     private void Respawn()
     {
-        _hp = T.HeroMaxHp;
+        _hp = MaxHp;
         _iframes = T.HurtIFrames;
         Teleport(_spawn);
         Enter(State.Move);

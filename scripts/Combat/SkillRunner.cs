@@ -119,16 +119,36 @@ public sealed class SkillRunner
             case "spin":
                 _hero.Spin(e.Anim, e.Frame, e.Time);
                 break;
+            case "projectile":
+                Projectile.Fire(feet + f * e.Forward, f.Rotated(Vector3.Up, -Mathf.DegToRad(e.Angle)), e.Projectile, SkillDamage(e),
+                    e.Impact == "heavy", _pal, Credit);
+                break;
+            case "rain":
+                // 앞쪽 자리 둘레에 화살(이 든 것)이 하늘에서 쏟아진다 — Time 동안 Count 개
+                Projectile.Rain(at, e.Radius, e.Count, e.Time, e.Projectile, SkillDamage(e), _pal, Credit);
+                break;
             default:
                 GD.PushWarning($"[Skill] {_def.Id}: 모르는 이벤트 {e.Fx}");
                 break;
         }
     }
 
+    private float SkillDamage(SkillDef.SkillEvent e) =>
+        e.Damage * _hero.SkillDamageScale(_def) * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
+
+    /// <summary>투사체가 산 적에게 처음 맞았다 — 이 시전의 숙련 (규칙 3: 한 시전에 한 번)</summary>
+    private void Credit(Enemy enemy)
+    {
+        if (_credited)
+            return;
+        _credited = true;
+        _hero.CreditSkill(_def, enemy);
+    }
+
     private void Hit(SkillDef.SkillEvent e, Vector3 f, Vector3 at)
     {
         bool heavy = e.Impact == "heavy";
-        float damage = e.Damage * _hero.SkillDamageScale(_def) * (GameRoot.Instance.WorldSlowed ? T.WitchDamage : 1f);
+        float damage = SkillDamage(e);
         int hits = 0;
         foreach (var enemy in Enemy.All.ToArray())
         {

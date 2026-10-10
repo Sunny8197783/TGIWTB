@@ -1,0 +1,14 @@
+{
+  "id": "sk_throwing_knives",
+  "name": "단검 투척",
+  "cooldown": 5.0, "duration": 0.4, "cancel_at": 0.3,
+  "anim": "attack2", "anim_hit_frame": 6, "anim_hit_at": 0.16,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "shadow",
+  // 소매에서 단검 다섯 자루를 부채꼴로 던진다
+  "events": [
+    { "t": 0.16, "fx": "projectile", "damage": 11, "projectile": { "kind": "arrow", "speed": 30, "range": 11, "radius": 0.4, "count": 5, "spread_deg": 30 } },
+    { "t": 0.16, "fx": "sfx", "sound": "knifeSlice", "pitch": 1.4, "db": -2 },
+    { "t": 0.18, "fx": "sparkle", "count": 8, "radius": 0.5, "forward": 0.6 }
+  ]
+}

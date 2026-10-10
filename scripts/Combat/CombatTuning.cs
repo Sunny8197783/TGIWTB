@@ -52,15 +52,8 @@ public static class CombatTuning
     /// <summary>입력이 대각선 경계에서 떨릴 때 방향이 깜빡이지 않게 (도).</summary>
     public const float FacingHysteresisDeg = 8f;
 
-    // ── 공격 (3연타) ─────────────────────────────────────
-    // 각 타: 전체 길이 / 판정 순간 / 다음 타·회피로 넘어갈 수 있는 시점 / 앞으로 내딛는 거리 / 피해 / 사거리 / 부채꼴 반각 / 강타
-    //        / 그림 시작 칸 / 칼이 닿는 칸 — 원화는 준비 동작이 길다. 준비 칸은 빨리 넘기고 닿는 칸이 판정 순간에 오게 재생을 휜다.
-    public static readonly AttackStep[] Combo =
-    {
-        new("attack1", 0.36f, 0.14f, 0.20f, 0.9f, 10f, 1.9f, 75f, false, 2, 6), // 22f, 판정 8f
-        new("attack2", 0.36f, 0.13f, 0.20f, 1.0f, 11f, 1.9f, 75f, false, 2, 5), // 22f, 판정 8f
-        new("attack3", 0.62f, 0.36f, 0.46f, 1.3f, 24f, 2.3f, 55f, true, 1, 7),  // 37f, 판정 22f — 내려찍기
-    };
+    // ── 공격 ──────────────────────────────────────────
+    // 연속기 한 벌(타마다 길이·판정·사거리·피해·투사체)은 직업이 정한다: data/jobs/*.json (규칙 1)
     /// <summary>공격 중 다음 타 입력을 받기 시작하는 진행도. 이보다 이르면 연타가 씹히지 않고 버퍼에 남는다.</summary>
     public const float ComboBufferFrom = 0.35f;
     /// <summary>달리다 공격하면 달리던 속도를 이만큼 이어받는다 (질주 공격 — 멈추면 답답하다).</summary>
@@ -99,7 +92,7 @@ public static class CombatTuning
     public const float WitchGhostLife = 0.6f;
 
     // ── 피격 ────────────────────────────────────────────
-    public const float HeroMaxHp = 100f;
+    // 최대 체력은 직업·레벨이 정한다 (JobDef.MaxHp)
     /// <summary>맞고 굳는 시간 (18f).</summary>
     public const float HurtTime = 0.3f;
     public const float HurtPush = 6f;
@@ -114,6 +107,10 @@ public static class CombatTuning
     /// <summary>사라지기 전 깜빡임: 모두 (24f), 한 번 (4f).</summary>
     public const float CorpseBlinkTime = 0.4f;
     public const float CorpseBlinkStep = 0.067f;
+
+    // ── 레벨 ────────────────────────────────────────────
+    /// <summary>레벨이 오르는 순간 무적 (30f) — 연출 동안 맞지 않게</summary>
+    public const float LevelUpIFrames = 0.5f;
 
     // ── 숙련 (규칙 3: 산 적에게 맞은 시전만 센다 — Combat/Mastery) ──
     /// <summary>유효한 시전 1회의 숙련.</summary>
@@ -132,13 +129,11 @@ public static class CombatTuning
     public static readonly Impact HitNormal = new(0.05f, 1.6f, 0.18f);   // 3f
     public static readonly Impact HitHeavy = new(0.095f, 3.2f, 0.42f);   // 6f
     public static readonly Impact HitCounter = new(0.075f, 2.4f, 0.3f);  // 5f
+    public static readonly Impact HitProjectile = new(0.03f, 0.8f, 0.08f); // 2f — 화살·마법탄 (멀리서 맞아 덜 묵직하게)
     public static readonly Impact Blocked = new(0.04f, 1.0f, 0.12f);     // 2f
     public static readonly Impact Parried = new(0.13f, 2.2f, 0.36f);     // 8f
     public static readonly Impact PerfectDodge = new(0.07f, 0f, 0.1f);   // 4f 멈칫 → 슬로우
     public static readonly Impact HeroHurt = new(0.08f, 2.6f, 0.5f);     // 5f
 }
-
-public readonly record struct AttackStep(string Anim, float Duration, float HitAt, float CancelAt, float Lunge,
-    float Damage, float Reach, float HalfArcDeg, bool Heavy, int StartFrame, int HitFrame);
 
 public readonly record struct Impact(float HitStop, float Kick, float Trauma);

@@ -1135,5 +1135,317 @@
   "dest": "art_src/world_tree/crown_b.png",
   "object": "f13c1e30-08e5-41dc-957c-0baf3ae643b3",
   "note": "세계수 조각 (Pro Flash, 고목을 화풍 참고로) → tools/compose_world_tree.py 가 art/env/tree_world_0.png 로 합성"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/rot.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/idle.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_idle"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/run.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_run",
+  "skip_first": true
+ },
+ {
+  "sheet": "art/characters/job_archer_f/dash.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_dash"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/guard.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_guard"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/hurt.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_hurt"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/attack1.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_attack1"
+ },
+ {
+  "sheet": "art/characters/job_archer_f/attack3.png",
+  "char": "7c4a9535-bda6-49a2-a50a-024980f37bf5",
+  "anim": "ar_attack3"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/rot.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/idle.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_idle"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/run.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_run"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/dash.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_dash"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/guard.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_guard"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/hurt.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_hurt"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/attack1.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_attack1"
+ },
+ {
+  "sheet": "art/characters/job_archer_m/attack3.png",
+  "char": "3e484ba5-b462-41e1-b016-4d320bc40d57",
+  "anim": "ar_attack3"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/rot.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/idle.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_idle"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/run.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_run"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/dash.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_dash"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/guard.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_guard"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/hurt.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_hurt"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/attack1.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_attack1"
+ },
+ {
+  "sheet": "art/characters/job_mage_m/attack3.png",
+  "char": "031d2155-2be8-44f2-bacb-c1df3d8bbc27",
+  "anim": "mg_attack3b"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/rot.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/idle.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_idle"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/run.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_run"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/dash.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_dash"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/guard.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_guard"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/hurt.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_hurt"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/attack1.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_attack1"
+ },
+ {
+  "sheet": "art/characters/job_mage_f/attack3.png",
+  "char": "e5ea3ef3-cb65-4239-ab99-bcbce219b1a0",
+  "anim": "mg_attack3b"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/rot.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/idle.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_idle"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/run.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_run"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/dash.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_dash"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/guard.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_guard"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/hurt.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_hurt"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/attack1.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_attack1"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/attack2.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_attack2"
+ },
+ {
+  "sheet": "art/characters/job_rogue_m/attack3.png",
+  "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
+  "anim": "rg_attack3"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/rot.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "rotations": true,
+  "note": "직업 원화 (M8)"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/idle.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_idle"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/run.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_run"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/dash.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_dash"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/guard.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_guard"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/hurt.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_hurt"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/attack1.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_attack1"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/attack2.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_attack2"
+ },
+ {
+  "sheet": "art/characters/job_rogue_f/attack3.png",
+  "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
+  "anim": "rg_attack3"
+ },
+ {
+  "sheet": "art/characters/npc_guide/rot.png",
+  "char": "39995271-677b-48ec-bf65-bc563ba5229b",
+  "rotations": true,
+  "note": "마을 NPC (M8)"
+ },
+ {
+  "sheet": "art/characters/npc_guide/idle.png",
+  "char": "39995271-677b-48ec-bf65-bc563ba5229b",
+  "anim": "npc_idle"
+ },
+ {
+  "sheet": "art/characters/npc_warrior/rot.png",
+  "char": "6c409a6e-9a18-4bea-89b7-c45a054420cc",
+  "rotations": true,
+  "note": "마을 NPC (M8)"
+ },
+ {
+  "sheet": "art/characters/npc_warrior/idle.png",
+  "char": "6c409a6e-9a18-4bea-89b7-c45a054420cc",
+  "anim": "npc_idle"
+ },
+ {
+  "sheet": "art/characters/npc_archer/rot.png",
+  "char": "b39df277-c5f4-43c1-bf51-525ff4afdda7",
+  "rotations": true,
+  "note": "마을 NPC (M8)"
+ },
+ {
+  "sheet": "art/characters/npc_archer/idle.png",
+  "char": "b39df277-c5f4-43c1-bf51-525ff4afdda7",
+  "anim": "npc_idle"
+ },
+ {
+  "sheet": "art/characters/npc_mage/rot.png",
+  "char": "cfcaa900-6208-4108-bc14-a83609202fbd",
+  "rotations": true,
+  "note": "마을 NPC (M8)"
+ },
+ {
+  "sheet": "art/characters/npc_mage/idle.png",
+  "char": "cfcaa900-6208-4108-bc14-a83609202fbd",
+  "anim": "npc_idle"
+ },
+ {
+  "sheet": "art/characters/npc_rogue/rot.png",
+  "char": "fbede50e-0c25-46a3-89c5-8b29bd6104b1",
+  "rotations": true,
+  "note": "마을 NPC (M8)"
+ },
+ {
+  "sheet": "art/characters/npc_rogue/idle.png",
+  "char": "fbede50e-0c25-46a3-89c5-8b29bd6104b1",
+  "anim": "npc_idle"
  }
 ]

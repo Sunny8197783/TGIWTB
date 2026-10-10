@@ -19,6 +19,8 @@ public sealed class MonsterDef
     public float Radius { get; set; }
     /// <summary>맞을 때 밀리는 정도 배율 (가벼울수록 큼).</summary>
     public float Knockback { get; set; } = 1f;
+    /// <summary>쓰러뜨리면 주는 경험치 (data/player/levels.json 곡선과 함께 본다)</summary>
+    public int Exp { get; set; }
     public AttackDef Attack { get; set; }
     public SoundDef Sounds { get; set; }
 

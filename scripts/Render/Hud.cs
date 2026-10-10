@@ -14,6 +14,8 @@ public partial class Hud : Control
     private IPlayerContext _player;
     private float _chip = 1f;      // 깎인 만큼 늦게 따라오는 흰 잔상
     private readonly List<(Vector3 at, int value, bool heavy, float age)> _numbers = new();
+    private readonly List<(Vector3 at, int value, float age)> _exps = new();
+    private float _expShown;   // 경험치 막대가 차오르는 중간값 (0..1)
     private string _announce, _announceSub;
     private Color _announceColor;
     private float _announceAge = 99f;
@@ -21,12 +23,16 @@ public partial class Hud : Control
     private const float EnemyBarShow = 3f;   // 맞은 뒤 체력바를 띄워 두는 시간 (초)
     private const float NumberLife = 0.7f;
     private const float AnnounceLife = 3.5f;
+    private const float ExpLife = 1.1f;
 
     private static readonly Color Outline = new(0.08f, 0.06f, 0.1f);
     private static readonly Color Back = new(0.22f, 0.16f, 0.2f);
     private static readonly Color HpHi = new(1f, 0.42f, 0.36f);
     private static readonly Color HpLo = new(0.78f, 0.18f, 0.22f);
     private static readonly Color Chip = new(1f, 0.93f, 0.8f);
+    private static readonly Color ExpHi = new(0.62f, 0.9f, 1f);
+    private static readonly Color ExpLo = new(0.25f, 0.55f, 0.85f);
+    private static readonly Color ExpText = new(0.75f, 0.95f, 0.55f);
 
     // 3x5 숫자 (위에서 아래로 한 줄씩, 1 = 칠함)
     // 스킬 칸 키 글자 (같은 3x5)
@@ -47,6 +53,13 @@ public partial class Hud : Control
     {
         if (_i != null)
             _i._numbers.Add((at, Mathf.RoundToInt(value), heavy, 0f));
+    }
+
+    /// <summary>쓰러뜨린 적 머리 위로 떠오르는 경험치 (연두 '+8')</summary>
+    public static void Exp(Vector3 at, int value)
+    {
+        if (_i != null)
+            _i._exps.Add((at, value, 0f));
     }
 
     /// <summary>화면 위쪽 가운데 한 줄 알림 (진화·히든 습득). 조건은 절대 쓰지 않는다 (규칙 4).</summary>
@@ -78,6 +91,20 @@ public partial class Hud : Control
         _announceAge += dt;
         if (_player != null)
             _chip = Mathf.MoveToward(_chip, _player.Hp / _player.MaxHp, dt * (_chip > _player.Hp / _player.MaxHp ? 0.6f : 5f));
+        for (int i = _exps.Count - 1; i >= 0; i--)
+        {
+            var n = _exps[i];
+            n.age += dt;
+            if (n.age > ExpLife)
+                _exps.RemoveAt(i);
+            else
+                _exps[i] = n;
+        }
+        if (_player != null)
+        {
+            float want = _player.ExpToNext > 0 ? _player.Exp / (float)_player.ExpToNext : 1f;
+            _expShown = want < _expShown ? want : Mathf.MoveToward(_expShown, want, dt * 1.5f); // 레벨이 오르면 0 부터 다시
+        }
         for (int i = _numbers.Count - 1; i >= 0; i--)
         {
             var n = _numbers[i];
@@ -98,6 +125,7 @@ public partial class Hud : Control
         if (_player != null)
         {
             Bar(new Vector2(8, 8) * px, 72, 5, _player.Hp / _player.MaxHp, _chip, px);
+            ExpBar(new Vector2(8, 16) * px, 72, px);
             SkillSlots(px);
         }
         if (_announceAge < AnnounceLife)
@@ -110,6 +138,15 @@ public partial class Hud : Control
                 continue;
             Vector2 head = view.WorldToScreen(e.GlobalPosition + Vector3.Up * (e.Radius * 3.2f + 0.35f));
             Bar(Snap(head - new Vector2(9, 0) * px, px), 18, 2, e.HpRatio, e.HpRatio, px);
+        }
+
+        foreach (var (at, value, age) in _exps)
+        {
+            float k = age / ExpLife;
+            Vector2 p = view.WorldToScreen(at) / px - new Vector2(0, 10f * k + 4f);
+            DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
+            PixelText.DrawCentered(this, $"+{value} EXP", p.Round(), ExpText, Mathf.Clamp((1f - k) * 2.5f, 0f, 1f));
+            DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
         }
 
         foreach (var (at, value, heavy, age) in _numbers)
@@ -200,6 +237,24 @@ public partial class Hud : Control
             for (int x = 0; x < 3; x++)
                 if (g[y * 3 + x] == '1')
                     DrawRect(new Rect2(topLeft + new Vector2(x, y) * px, Vector2.One * px), c);
+    }
+
+    /// <summary>체력 아래: 얇은 경험치 막대 + 'Lv 5  견습생'</summary>
+    private void ExpBar(Vector2 pos, int w, float px)
+    {
+        DrawRect(new Rect2(pos - Vector2.One * px, new Vector2(w + 2, 4) * px), Outline);
+        DrawRect(new Rect2(pos, new Vector2(w, 2) * px), Back);
+        int fill = Mathf.RoundToInt(w * Mathf.Clamp(_expShown, 0f, 1f));
+        if (fill > 0)
+        {
+            DrawRect(new Rect2(pos, new Vector2(fill, 2) * px), ExpLo);
+            DrawRect(new Rect2(pos, new Vector2(fill, 1) * px), ExpHi);
+        }
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
+        Vector2 lo = pos / px + new Vector2(0, 14);
+        string text = $"Lv {_player.Level}  {_player.JobName}";
+        PixelText.Draw(this, text, lo, Colors.White);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 
     private void Bar(Vector2 pos, int w, int h, float ratio, float chip, float px)

@@ -1,0 +1,23 @@
+{
+  "id": "sk_thunder_call",
+  "name": "낙뢰",
+  "cooldown": 12.0, "duration": 0.95, "cancel_at": 0.8,
+  "anim": "attack3", "anim_hit_frame": 7, "anim_hit_at": 0.42,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "thunder",
+  // 앞쪽 4~6m 에 번개 세 줄기가 차례로 — 멀리 모인 적을 친다
+  "events": [
+    { "t": 0.0,  "fx": "sparkle", "count": 14, "radius": 0.6 },
+    { "t": 0.15, "fx": "sfx", "sound": "impactMetal_light", "pitch": 2.2, "db": -9 },
+    { "t": 0.42, "fx": "lightning", "forward": 4, "life": 0.28 },
+    { "t": 0.42, "fx": "hit", "shape": "circle", "forward": 4, "radius": 2.2, "damage": 30, "impact": "heavy" },
+    { "t": 0.42, "fx": "ring", "forward": 4, "radius": 3.0, "life": 0.4 },
+    { "t": 0.42, "fx": "sfx", "sound": "impactPlate_heavy", "pitch": 0.55, "db": 0 },
+    { "t": 0.56, "fx": "lightning", "forward": 5.5, "side": 1.6, "life": 0.24 },
+    { "t": 0.56, "fx": "hit", "shape": "circle", "forward": 5.5, "side": 1.6, "radius": 2.0, "damage": 22 },
+    { "t": 0.68, "fx": "lightning", "forward": 5.5, "side": -1.6, "life": 0.24 },
+    { "t": 0.68, "fx": "hit", "shape": "circle", "forward": 5.5, "side": -1.6, "radius": 2.0, "damage": 22 },
+    { "t": 0.68, "fx": "flash", "amount": 0.3 },
+    { "t": 0.68, "fx": "shake", "amount": 0.4 }
+  ]
+}

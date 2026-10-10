@@ -8,6 +8,7 @@
   "sight": 9,
   "radius": 0.4,
   "knockback": 0.8,
+  "exp": 18,
   "attack": {
     "damage": 20,
     "reach": 1.9,

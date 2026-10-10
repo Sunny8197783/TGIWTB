@@ -198,6 +198,9 @@ public partial class GameRoot : Node
             hud.Bind(Hero.Instance);
             ui.AddChild(statues);
             statues.Bind(Hero.Instance);
+            var npcs = new Npcs(World);
+            ui.AddChild(npcs);
+            npcs.Bind(Hero.Instance);
             var creator = new CharacterCreator();
             ui.AddChild(creator);
             creator.Bind(Hero.Instance);

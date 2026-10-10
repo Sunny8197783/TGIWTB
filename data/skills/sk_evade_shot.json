@@ -1,0 +1,16 @@
+{
+  "id": "sk_evade_shot",
+  "name": "회피 사격",
+  "cooldown": 6.0, "duration": 0.5, "cancel_at": 0.4,
+  "anim": "attack1", "anim_hit_frame": 5, "anim_hit_at": 0.24,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "leaf",
+  // 뒤로 훌쩍 물러나며(그동안 맞지 않는다) 세 발을 쏜다 — 붙은 적을 떼어 낸다
+  "events": [
+    { "t": 0.0,  "fx": "dash", "distance": -4.2, "time": 0.2 },
+    { "t": 0.0,  "fx": "sfx", "sound": "dash", "pitch": 0.9, "db": -3 },
+    { "t": 0.24, "fx": "projectile", "damage": 14, "projectile": { "kind": "arrow", "speed": 30, "range": 15, "radius": 0.4, "count": 3, "spread_deg": 10 } },
+    { "t": 0.24, "fx": "sfx", "sound": "dash", "pitch": 1.4, "db": -4 },
+    { "t": 0.26, "fx": "sparkle", "count": 10, "radius": 0.5, "forward": 0.6 }
+  ]
+}

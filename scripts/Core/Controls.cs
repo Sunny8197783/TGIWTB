@@ -11,7 +11,7 @@ public static class Controls
 {
     public static readonly StringName Left = "move_left", Right = "move_right", Up = "move_up", Down = "move_down";
     public static readonly StringName Attack = "attack", Guard = "guard", Dodge = "dodge";
-    /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 들었는지는 data/player/loadout.json.</summary>
+    /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 드는지는 직업이 정한다 (data/jobs, 레벨이 차면 열린다).</summary>
     public static readonly StringName[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
     /// <summary>모습 고르기 열기/닫기 (C · 패드 Back)</summary>
     public static readonly StringName Look = "appearance";

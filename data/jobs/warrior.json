@@ -1,0 +1,20 @@
+{
+  // 전사: 검과 갑옷. 견습생 검술 그대로 더 묵직하게 — 체력이 가장 높고 막기·패링이 주무기
+  "id": "warrior",
+  "name": "전사",
+  "tier": 1,
+  "description": "가장 먼저 손에 잡히는 길. 검을 들고 앞으로 나간다.",
+  "required_level": 10, "from": ["novice"], "trainer": "npc_warrior",
+  "art": {
+    "m": { "art": "res://art/characters/hero_warrior", "accent_hue": [70, 150], "accent_sat": 0.25 },
+    "f": { "art": "res://art/characters/hero_swordswoman", "accent_hue": [212, 246], "accent_sat": 0.2, "accent_val": 0.2 }
+  },
+  "hp": 140, "hp_per_level": 11, "power_per_level": 0.05,
+  "palette": "teal",
+  "attack": [
+    { "anim": "attack1", "duration": 0.36, "hit_at": 0.14, "cancel_at": 0.20, "lunge": 1.0, "damage": 13, "reach": 2.0, "half_arc_deg": 80, "start_frame": 2, "hit_frame": 6, "slash": "horizontal", "slash_scale": 1.1 },
+    { "anim": "attack2", "duration": 0.36, "hit_at": 0.13, "cancel_at": 0.20, "lunge": 1.1, "damage": 14, "reach": 2.0, "half_arc_deg": 80, "start_frame": 2, "hit_frame": 5, "slash": "reverse", "slash_scale": 1.1 },
+    { "anim": "attack3", "duration": 0.62, "hit_at": 0.36, "cancel_at": 0.46, "lunge": 1.4, "damage": 32, "reach": 2.5, "half_arc_deg": 60, "heavy": true, "start_frame": 1, "hit_frame": 7, "slash": "vertical", "slash_scale": 1.2, "sound": "swing_heavy" }
+  ],
+  "skills": [ { "id": "sk_moon_crescent", "level": 3 }, { "id": "sk_sakura_flurry", "level": 10 }, { "id": "sk_thunder_strike", "level": 14 } ]
+}

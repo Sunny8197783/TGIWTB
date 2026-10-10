@@ -31,4 +31,14 @@ public interface IPlayerContext
     bool Pray(string statueId, Vector3 respawnFeet);
     /// <summary>빠른 이동 (발 위치)</summary>
     void TravelTo(Vector3 feet);
+    int Level { get; }
+    /// <summary>이번 레벨에서 모은 경험치와 다음 레벨까지 필요한 양 (최고 레벨이면 0)</summary>
+    int Exp { get; }
+    int ExpToNext { get; }
+    string JobId { get; }
+    string JobName { get; }
+    void GrantExp(int amount);
+    /// <summary>전직할 수 있나 (레벨·지금 직업). 교관 대화가 묻는다</summary>
+    bool CanBecome(Data.JobDef job);
+    void ChangeJob(string jobId);
 }
