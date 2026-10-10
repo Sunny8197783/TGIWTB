@@ -1,0 +1,28 @@
+{
+  "id": "sk_blade_flurry",
+  "name": "칼날 난무",
+  "cooldown": 10.0, "duration": 0.95, "cancel_at": 0.8,
+  "anim": "attack1", "anim_hit_frame": 5, "anim_hit_at": 0.1,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "shadow",
+  // 제자리에서 네 바퀴 — 둘러싼 적을 모두 벤다
+  "events": [
+    { "t": 0.05, "fx": "spin", "anim": "attack1", "frame": 5, "time": 0.18 },
+    { "t": 0.05, "fx": "slash", "shape": "spin", "radius": 2.4, "life": 0.20, "thickness": 1.0 },
+    { "t": 0.10, "fx": "hit", "shape": "circle", "radius": 2.5, "damage": 11 },
+    { "t": 0.10, "fx": "sfx", "sound": "knifeSlice", "pitch": 1.1, "db": -3 },
+    { "t": 0.25, "fx": "spin", "anim": "attack1", "frame": 5, "time": 0.18 },
+    { "t": 0.25, "fx": "slash", "shape": "spin", "radius": 2.4, "life": 0.20, "thickness": 1.0 },
+    { "t": 0.30, "fx": "hit", "shape": "circle", "radius": 2.5, "damage": 11 },
+    { "t": 0.30, "fx": "sfx", "sound": "knifeSlice", "pitch": 1.2, "db": -3 },
+    { "t": 0.45, "fx": "spin", "anim": "attack1", "frame": 5, "time": 0.18 },
+    { "t": 0.45, "fx": "slash", "shape": "spin", "radius": 2.4, "life": 0.20, "thickness": 1.0 },
+    { "t": 0.50, "fx": "hit", "shape": "circle", "radius": 2.5, "damage": 11 },
+    { "t": 0.50, "fx": "sfx", "sound": "knifeSlice", "pitch": 1.3, "db": -3 },
+    { "t": 0.65, "fx": "spin", "anim": "attack1", "frame": 5, "time": 0.18 },
+    { "t": 0.65, "fx": "slash", "shape": "spin", "radius": 2.8, "life": 0.24, "thickness": 1.4 },
+    { "t": 0.70, "fx": "hit", "shape": "circle", "radius": 2.9, "damage": 20, "impact": "heavy" },
+    { "t": 0.70, "fx": "sfx", "sound": "swing_heavy", "pitch": 1.4, "db": -3 },
+    { "t": 0.70, "fx": "sparkle", "count": 26, "radius": 2.0 }
+  ]
+}

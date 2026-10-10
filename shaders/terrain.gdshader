@@ -36,6 +36,8 @@ const int STONE = 15;
 const int GINKGO = 16;
 const int WHEAT = 17;
 const int ICE = 18;
+const int FROSTGRASS = 19;
+const int GOLDGRASS = 20;
 const float ROW_W = 1.6; // 꽃밭·밀밭 한 줄 (m) — World/GrassBuilder.RowWidth 와 같다
 
 global uniform sampler2D height_map : filter_linear;
@@ -49,12 +51,30 @@ void vertex() {
 	wnorm = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 }
 
+int ground_fetch(ivec2 c) {
+	return int(texelFetch(ground_map, clamp(c, ivec2(0), ivec2(map_size) - 1), 0).r * 255.0 + 0.5);
+}
+
+// 칸 가운데 넷의 종류를 겹선형 가중치로 겨룬다 — 경계가 1m 계단·손가락이 아니라 둥근 곡선이 된다.
+// 흔드는 잡음은 2m 넘는 파장만 (짧은 파장으로 흔들면 경계가 불꽃·톱니처럼 뾰족해졌다). 텍셀 가운데서 재서 경계도 픽셀 격자에 선다.
 int ground_at(vec2 xz, vec2 tp) {
-	// 칸 경계를 잡음으로 흔들어 1m 계단이 보이지 않게 한다. 흔드는 양도 픽셀 격자에 맞춘다.
-	vec2 jit = (vec2(vnoise(tp * 0.09), vnoise(tp * 0.09 + 17.3)) - 0.5) * 1.3;
-	ivec2 cell = ivec2(floor(xz + jit));
-	cell = clamp(cell, ivec2(0), ivec2(map_size) - 1);
-	return int(texelFetch(ground_map, cell, 0).r * 255.0 + 0.5);
+	vec2 p = (tp + 0.5) / vec2(PPM, PPM_Z);
+	p += (vec2(vnoise(p * 0.42), vnoise(p * 0.42 + 17.3)) - 0.5) * 0.8;
+	vec2 c = p - 0.5;
+	ivec2 b = ivec2(floor(c));
+	vec2 f = fract(c);
+	int t00 = ground_fetch(b), t10 = ground_fetch(b + ivec2(1, 0));
+	int t01 = ground_fetch(b + ivec2(0, 1)), t11 = ground_fetch(b + ivec2(1, 1));
+	if (t00 == t10 && t00 == t01 && t00 == t11) return t00;
+	vec4 w = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y);
+	ivec4 t = ivec4(t00, t10, t01, t11);
+	int best = t00;
+	float bw = -1.0;
+	for (int i = 0; i < 4; i++) {
+		float s = dot(w, vec4(equal(t, ivec4(t[i]))));
+		if (s > bw) { bw = s; best = t[i]; }
+	}
+	return best;
 }
 
 vec3 grass_color(vec2 tp, float big, vec3 base) {
@@ -71,7 +91,7 @@ vec3 grass_color(vec2 tp, float big, vec3 base) {
 // 튤립 줄 색 — GrassBuilder 의 꽃송이와 같은 계산이라 풀이 끝나는 거리에서 색이 바뀌지 않는다
 vec3 tulip_color(vec2 xz) {
 	int row = int(floor(xz.y / ROW_W));
-	int block = int(floor(xz.x / 48.0)) * 31 + int(floor(xz.y / 40.0)) * 17;
+	int block = int(floor((xz.x + 14.0 * sin(float(row) * 0.9)) / 44.0)) * 31 + int(floor(xz.y / 40.0)) * 17;
 	uint idx = (uint(row) * 2654435761u + uint(block) * 40503u) % 6u;
 	if (idx == 0u) return vec3(0.95, 0.25, 0.3);
 	if (idx == 1u) return vec3(0.98, 0.85, 0.25);
@@ -90,16 +110,18 @@ vec3 ground_mean(int t, vec2 xz) {
 	if (t == COBBLE) return vec3(0.58, 0.56, 0.53);
 	if (t == SAND) return vec3(0.92, 0.85, 0.64);
 	if (t == SAKURA) return vec3(0.62, 0.62, 0.42);
-	if (t == AUTUMN) return vec3(0.72, 0.42, 0.18);
+	if (t == AUTUMN) return vec3(0.64, 0.48, 0.22);
 	if (t == SNOW) return vec3(0.9, 0.93, 0.98);
 	if (t == TULIP) return mix(vec3(0.26, 0.5, 0.22), tulip_color(xz), 0.6);
 	if (t == LAVENDER) return vec3(0.5, 0.42, 0.72);
 	if (t == MOSS) return vec3(0.2, 0.4, 0.2);
 	if (t == ROCKY) return vec3(0.5, 0.5, 0.52);
 	if (t == STONE) return vec3(0.66, 0.64, 0.6);
-	if (t == GINKGO) return vec3(0.82, 0.7, 0.26);
+	if (t == GINKGO) return vec3(0.68, 0.64, 0.24);
 	if (t == WHEAT) return vec3(0.84, 0.7, 0.34);
 	if (t == ICE) return vec3(0.7, 0.84, 0.92);
+	if (t == FROSTGRASS) return vec3(0.8, 0.81, 0.76);
+	if (t == GOLDGRASS) return vec3(0.6, 0.58, 0.25);
 	return vec3(0.58, 0.55, 0.5);
 }
 
@@ -166,8 +188,10 @@ vec3 ground_color(int t, vec2 tp, float big) {
 	}
 	if (t == AUTUMN) {
 		vec3 c = grass_color(tp, big, vec3(0.5, 0.52, 0.24));
+		// 낙엽도 바람에 몰려 무더기로 쌓인다 (고르게 깔면 넓은 땅이 한 색 판이 됐다)
+		float drift = vnoise(tp * 0.04 + 23.0);
 		float p = hash21(floor(tp * 0.5) + 5.0);
-		if (p > 0.55) {
+		if (p > mix(0.85, 0.2, smoothstep(0.3, 0.75, drift))) {
 			float k = hash21(floor(tp * 0.5) + 13.0);
 			c = k < 0.4 ? vec3(0.9, 0.42, 0.14) : k < 0.75 ? vec3(0.78, 0.2, 0.12) : vec3(0.95, 0.72, 0.2);
 		}
@@ -182,6 +206,20 @@ vec3 ground_color(int t, vec2 tp, float big) {
 		if (h > 0.993) c = vec3(1.0);
 		else if (h < 0.03) c *= 0.93;
 		return c;
+	}
+	if (t == GOLDGRASS) {
+		// 가을 빈터: 누렇게 익은 풀, 바람에 날려 온 단풍잎이 드문드문
+		vec3 c = grass_color(tp, big, vec3(0.6, 0.58, 0.25));
+		if (hash21(floor(tp * 0.5) + 27.0) > 0.975)
+			c = hash21(floor(tp * 0.5) + 28.0) < 0.5 ? vec3(0.88, 0.36, 0.14) : vec3(0.95, 0.7, 0.2);
+		return c;
+	}
+	if (t == FROSTGRASS) {
+		// 눈 사이로 마른 풀이 비죽 나온 땅: 풀 얼룩은 무더기로, 가장자리는 듬성듬성
+		float patch = vnoise(tp * 0.05 + 31.0);
+		vec3 snow = mix(vec3(0.78, 0.84, 0.94), vec3(0.96, 0.97, 1.0), step(0.45, vnoise(tp * 0.11)));
+		vec3 straw = grass_color(tp, big, vec3(0.64, 0.6, 0.4));
+		return hash21(floor(tp * 0.5) + 19.0) > mix(0.9, 0.25, smoothstep(0.35, 0.7, patch)) ? straw : snow;
 	}
 	if (t == ICE) {
 		// 얼음: 맑은 하늘색, 흰 금이 몇 줄
@@ -249,16 +287,25 @@ vec3 rock_color(vec3 p, vec3 n) {
 	// 절벽은 세로면이라 xz 로 무늬를 그리면 늘어난다. 수평 방향 + 높이로 그린다.
 	float horiz = abs(n.x) > abs(n.z) ? p.z : p.x;
 	vec2 tp = floor(vec2(horiz, -p.y) * PPM);
-	// 지층: 층마다 색(차갑고 따뜻하게 번갈아), 윗변은 볕 받는 턱, 아랫변은 그늘
-	float layer = p.y * 0.7 + vnoise(vec2(horiz * 0.35, 3.0)) * 1.2;
+	// 지역마다 바위 결이 다르다 — 층 두께·기울기·색. 한 가지 줄무늬가 지도 전체 절벽에 되풀이되지 않게
+	float region = vnoise(p.xz * 0.006);
+	float region2 = vnoise(p.xz * 0.011 + 23.0);
+	float thick = mix(0.42, 1.3, region);
+	float dip = (region2 - 0.5) * 0.4;
+	float layer = p.y * thick + horiz * dip + vnoise(vec2(horiz * 0.35, 3.0)) * 1.2;
 	float band = floor(layer);
 	float f = fract(layer);
-	vec3 c = mix(vec3(0.36, 0.36, 0.42), vec3(0.52, 0.5, 0.52), hash21(vec2(band, 7.0)));
+	// 층마다 색: 차가운 화강암 ↔ 따뜻한 사암 (지역 따라)
+	vec3 lo = mix(vec3(0.36, 0.36, 0.42), vec3(0.46, 0.4, 0.36), region2);
+	vec3 hi = mix(vec3(0.52, 0.5, 0.52), vec3(0.64, 0.56, 0.46), region2);
+	vec3 c = mix(lo, hi, hash21(vec2(band, 7.0)));
 	c *= mix(vec3(1.0), vec3(1.07, 1.0, 0.9), hash21(vec2(band, 9.0)));
 	if (f > 0.9) c *= 1.2;
 	else if (f < 0.12) c *= 0.68;
-	// 세로 틈 (3픽셀 칸마다 드문드문)
-	if (hash21(vec2(floor(tp.x / 3.0), band)) > 0.8 && mod(tp.x, 3.0) < 1.0) c *= 0.64;
+	// 세로 틈: 층마다 간격이 다르다 (얇은 층은 잘게, 두꺼운 층은 큰 덩어리로 갈라진다)
+	float gap = floor(mix(3.0, 9.0, hash21(vec2(band, 4.0))) * mix(0.7, 1.3, region));
+	float col_id = floor((tp.x + hash21(vec2(band, 2.0)) * 20.0) / gap);
+	if (hash21(vec2(col_id, band)) > 0.62 && mod(tp.x + floor(hash21(vec2(band, 2.0)) * 20.0), gap) < 1.0) c *= 0.64;
 	float h = hash21(tp);
 	if (h > 0.97) c *= 1.12;
 	else if (h < 0.04) c *= 0.85;
@@ -278,6 +325,8 @@ void fragment() {
 		float big = fbm3(wpos.xz * 0.06);
 		col = mix(ground_color(t, tp, big), col, smoothstep(1.4, 3.0, fp));
 	}
+	if (t == GRASS || t == FOREST || t == MEADOW || t == SAKURA || t == MOSS || t == AUTUMN || t == GINKGO || t == GOLDGRASS)
+		col *= macro_tint(wpos.xz);
 
 	// 가파른 면은 암벽
 	float slope = 1.0 - wnorm.y;
@@ -293,7 +342,9 @@ void fragment() {
 	if (!far && rock > 0.0) {
 		vec2 uphill = -normalize(wnorm.xz + vec2(1e-4));
 		float h_up = texture(height_map, huv + uphill * 0.7 / (map_size + 1.0)).r;
-		lip = step(h_up - wpos.y, 0.22 + 0.25 * hash21(vec2(tp.x, 5.0)));
+		// 넘어오는 풀의 길이는 벽을 따라 부드럽게 (텍셀 열마다 따로 뽑으면 성벽 이빨처럼 됐다)
+		float along = abs(wnorm.x) > abs(wnorm.z) ? wpos.z : wpos.x;
+		lip = step(h_up - wpos.y, 0.18 + 0.42 * vnoise(vec2(floor(along * PPM / 3.0) * 0.09, 5.0)));
 	}
 	col = mix(col, rc, rock * (1.0 - lip * 0.85));
 	// 절벽 밑동 그늘: 바로 북쪽이 훌쩍 높으면 땅을 어둡게 (3단)

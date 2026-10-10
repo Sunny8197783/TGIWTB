@@ -1,0 +1,20 @@
+{
+  "id": "sk_flame_wave",
+  "name": "화염 파동",
+  "cooldown": 9.0, "duration": 0.85, "cancel_at": 0.7,
+  "anim": "attack3", "anim_hit_frame": 7, "anim_hit_at": 0.4,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "fire",
+  // 지팡이를 내리꽂아 둘레로 불길 두 겹 — 둘러싸였을 때 빠져나오는 기술
+  "events": [
+    { "t": 0.0,  "fx": "sparkle", "count": 12, "radius": 0.6 },
+    { "t": 0.2,  "fx": "sfx", "sound": "swing_heavy", "pitch": 0.7, "db": -4 },
+    { "t": 0.4,  "fx": "ring", "radius": 4.2, "life": 0.45 },
+    { "t": 0.4,  "fx": "hit", "shape": "circle", "radius": 3.4, "damage": 26, "impact": "heavy" },
+    { "t": 0.4,  "fx": "flash", "amount": 0.25 },
+    { "t": 0.4,  "fx": "sfx", "sound": "impactPlate_heavy", "pitch": 0.6, "db": -2 },
+    { "t": 0.42, "fx": "sparkle", "count": 34, "radius": 2.6 },
+    { "t": 0.58, "fx": "ring", "radius": 5.4, "life": 0.4 },
+    { "t": 0.58, "fx": "hit", "shape": "circle", "radius": 4.6, "damage": 12 }
+  ]
+}

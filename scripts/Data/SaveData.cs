@@ -15,10 +15,17 @@ public sealed class SaveData
     public Dictionary<string, float> Mastery { get; set; } = new();
     public Dictionary<string, int> Counters { get; set; } = new();
     public List<string> Learned { get; set; } = new();
-    public List<string> Loadout { get; set; }
     /// <summary>모습 (AppearanceDef). null 이면 아직 고르지 않았다 → 처음 켤 때 모습 고르기가 열린다</summary>
     public string LookBase { get; set; }
     public int LookAccent { get; set; }
+    /// <summary>깨운 여신상 id (meta.statues). 빠른 이동 목록</summary>
+    public List<string> Statues { get; set; } = new();
+    /// <summary>마지막으로 기도한 여신상 — 쓰러지면, 다시 켜면 여기서 시작한다</summary>
+    public string RespawnStatue { get; set; }
+    /// <summary>레벨·경험치(다음 레벨까지 모은 것)·직업 id (data/jobs)</summary>
+    public int Level { get; set; } = 1;
+    public int Exp { get; set; }
+    public string Job { get; set; } = "novice";
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 

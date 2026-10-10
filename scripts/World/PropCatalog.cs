@@ -60,6 +60,8 @@ public static class PropCatalog
         Tree("tree_lone", 192, 224, new Color(0.3f, 0.58f, 0.24f), 0.8f);
         Tree("tree_sakura_giant", 256, 256, new Color(0.97f, 0.7f, 0.82f), 1.0f);
         Tree("tree_giant", 256, 256, new Color(0.22f, 0.45f, 0.24f), 1.4f);
+        // 세계수: 줄기 + 수관 셋을 겹친 한 장 (tools/compose_world_tree.py)
+        Tree("tree_world", 404, 424, new Color(0.2f, 0.45f, 0.26f), 1.8f);
 
         Bush("bush", new Color(0.3f, 0.56f, 0.24f));
         Bush("bush_pink", new Color(0.94f, 0.62f, 0.74f));
@@ -180,11 +182,11 @@ public static class PropCatalog
         House("boathouse", new Color(0.4f, 0.55f, 0.8f), 224, 192, 7f);
         House("house_tower", new Color(0.3f, 0.6f, 0.4f));
         Add(new PropKind { Id = "moon_deck", Size = new(224, 208), Color = new Color(0.7f, 0.2f, 0.15f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(6f, 4f), Glow = 0.8f, ShadowCaster = PropKind.Caster.Box });
-        Add(new PropKind { Id = "pass_gate", Size = new(224, 224), Color = new Color(0.6f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Box, Flip = false });
+        Add(new PropKind { Id = "pass_gate", Size = new(224, 224), Color = new Color(0.6f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Box, Flip = false, Trunk = 0.4f });
         Add(new PropKind { Id = "fairy_ring", Size = new(160, 160), Color = new Color(0.8f, 0.3f, 0.3f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });
         Add(new PropKind { Id = "goddess", Size = new(192, 208), Color = new Color(0.9f, 0.9f, 0.88f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(2.6f, 2.2f), ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "gazebo", Size = new(192, 192), Color = new Color(0.9f, 0.9f, 0.92f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(4.5f, 4f), ShadowCaster = PropKind.Caster.Box });
-        Add(new PropKind { Id = "rose_arch", Size = new(192, 192), Color = new Color(0.9f, 0.4f, 0.5f), Placeholder = PropKind.Shape.Box, Flip = false, Sway = 0.01f });
+        Add(new PropKind { Id = "rose_arch", Size = new(192, 192), Color = new Color(0.9f, 0.4f, 0.5f), Placeholder = PropKind.Shape.Box, Flip = false, Sway = 0.01f, Trunk = 0.2f });
         Add(new PropKind { Id = "boulder", Size = new(128, 160), Color = new Color(0.5f, 0.55f, 0.5f), Placeholder = PropKind.Shape.Rock, Footprint = new(3f, 2f), ShadowCaster = PropKind.Caster.Blob });
         Add(new PropKind { Id = "clocktower", Size = new(192, 256), Color = new Color(0.4f, 0.5f, 0.75f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(6f, 5f), Sink = 1, ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "observatory", Size = new(192, 224), Color = new Color(0.75f, 0.78f, 0.82f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(5f, 5f), Sink = 1, Glow = 0.6f, ShadowCaster = PropKind.Caster.Box });
@@ -199,7 +201,7 @@ public static class PropCatalog
 
         Add(new PropKind { Id = "lighthouse", Size = new(96, 256), Color = new Color(0.95f, 0.95f, 0.92f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(3f, 3f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "windmill", Size = new(192, 256), Color = new Color(0.9f, 0.85f, 0.75f), Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(4f, 4f) , ShadowCaster = PropKind.Caster.Box });
-        Add(new PropKind { Id = "torii", Size = new(128, 128), Color = new Color(0.86f, 0.22f, 0.16f), Placeholder = PropKind.Shape.Box, Flip = false });
+        Add(new PropKind { Id = "torii", Size = new(128, 128), Color = new Color(0.86f, 0.22f, 0.16f), Placeholder = PropKind.Shape.Box, Flip = false, Trunk = 0.3f });
         Add(new PropKind { Id = "shrine", Size = new(192, 176), Color = new Color(0.7f, 0.3f, 0.2f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(5f, 4f) , ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "pavilion", Size = new(160, 160), Color = new Color(0.75f, 0.3f, 0.25f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(4f, 4f) , ShadowCaster = PropKind.Caster.Box });
     }

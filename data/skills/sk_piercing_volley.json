@@ -1,0 +1,16 @@
+{
+  "id": "sk_piercing_volley",
+  "name": "관통 일제 사격",
+  "cooldown": 7.0, "duration": 0.7, "cancel_at": 0.55,
+  "anim": "attack3", "anim_hit_frame": 9, "anim_hit_at": 0.36,
+  "mastery": { "damage_bonus_per100": 0.3 },
+  "palette": "leaf",
+  // 시위를 끝까지 당겨(반짝이 모임) 다섯 발을 부채꼴로 — 한 발이 둘씩 꿰뚫는다
+  "events": [
+    { "t": 0.0,  "fx": "sfx", "sound": "cloth", "pitch": 0.8, "db": -6 },
+    { "t": 0.1,  "fx": "sparkle", "count": 8, "radius": 0.4, "forward": 0.4 },
+    { "t": 0.36, "fx": "projectile", "damage": 16, "projectile": { "kind": "arrow", "speed": 34, "range": 17, "radius": 0.4, "pierce": 2, "count": 5, "spread_deg": 24 } },
+    { "t": 0.36, "fx": "sfx", "sound": "dash", "pitch": 1.3, "db": -2 },
+    { "t": 0.36, "fx": "shake", "amount": 0.18 }
+  ]
+}

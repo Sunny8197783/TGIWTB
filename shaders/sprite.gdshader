@@ -1,4 +1,7 @@
 // 픽셀 스프라이트 — 소품·나무·건물·캐릭터 공통.
+// 부피(relief): 나무·덤불·바위 판은 잘게 나눈 격자이고, 꼭짓점을 법선 지도 B(그림의 둥근 깊이)만큼 '카메라 쪽 시선 방향'으로 민다.
+// 시선 방향으로만 밀어서 화면 픽셀은 한 칸도 안 움직이는데, 깊이·그림자·자기 그늘은 둥근 덩어리처럼 나온다.
+// 그림자 전용 뒷판(relief_sign = -1)이 뒤로 부풀어, 옆에서 해가 비쳐도 그림자가 선 하나가 아니라 수관만큼 두툼하다.
 // 판은 카메라를 향해 서 있지만 빛은 판의 법선이 아니라 그림의 '부피'로 받는다:
 // tools/normals.py 가 외곽선에서 잰 거리로 둥근 법선 지도(_n.png)를 굽는다. 해 쪽이 밝고 반대쪽이 어둡고,
 // 해를 등진 가장자리는 테두리 빛으로 빛난다(역광 실루엣). 법선 지도가 없으면 '위로 비스듬한 면' 하나.
@@ -18,11 +21,14 @@ global uniform float upright_fix;
 // 땅 그늘 지도 (World/PropBuilder.BakeAo) — 풀포기·캐릭터가 나무 밑에 들어가면 같이 어두워진다
 global uniform sampler2D ao_map : filter_linear;
 global uniform vec2 map_size;
+// 카메라 뒤쪽 단위 벡터 (Render/CameraRig) — 부피를 부풀리는 방향. 본 화면·그림자 화면이 같은 값을 써서 둘이 어긋나지 않는다
+global uniform vec3 view_back;
 const vec2 SEE_THROUGH = vec2(15.0, 27.0); // 비우는 타원 반지름 (픽셀). 주인공 그림이 약 30x56
 
 // 밉맵: 가까이(1텍셀 = 1픽셀)는 0단 그대로, 멀리서만 흐린 단으로 — 먼 숲이 지글거리지 않게
 uniform sampler2D albedo_tex : source_color, filter_nearest_mipmap, repeat_disable;
-uniform sampler2D normal_tex : hint_normal, filter_nearest_mipmap, repeat_disable;
+// RG = 법선 xy, B = 부피 깊이 (tools/normals.py). 자료라서 색 공간 변환 없이 읽는다
+uniform sampler2D normal_tex : hint_default_black, filter_nearest_mipmap, repeat_disable;
 uniform bool has_normal = false;
 uniform float sway = 0.0;         // 바람 흔들림 (m). 나무 0.04, 풀 0.03
 uniform float glow_at_night = 0.0; // 밝은 난색 픽셀을 밤에 빛나게 (등불)
@@ -40,6 +46,10 @@ uniform float depth_pull = 0.0;
 uniform bool slow_exempt = false; // 주인공: 슬로우 중에도 제 색
 // 그림 아래쪽을 땅 그늘로 살짝 어둡게 (판이 땅에 '붙어' 보이게). 캐릭터·풀은 0
 uniform float contact_ao = 0.0;
+// 부피 깊이 (m, B = 1 일 때). 0 이면 납작한 판. 1 = 판에서 4m 앞 (normals.py DEPTH_PX 128)
+uniform float relief = 0.0;
+uniform float relief_sign = 1.0;
+const float DEPTH_M = 4.0;
 
 varying vec3 wpos;
 varying float cloud;
@@ -51,6 +61,7 @@ varying float mirror;
 varying float rim_mask;
 varying float base_h;
 varying float ground_ao;
+varying float anchor_z;
 
 const float MIP_BIAS = -1.0;
 
@@ -71,8 +82,14 @@ void vertex() {
 	float w = sin(t * 1.7 + phase * 6.28) * 0.6 + sin(t * 3.1 + phase * 11.0) * 0.4;
 	VERTEX.x += w * amount * top * top * (wind.x + 0.4);
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	anchor_z = MODEL_MATRIX[3].z;
+	if (relief > 0.0) {
+		vec2 auv = atlas ? vec2(mix(irect.x, irect.y, UV.x), mix(irect.z, 1.0, UV.y)) : UV;
+		// 흐린 밉 단에서 읽는다 — 격자 칸(10~20px)보다 잘게 바뀌는 깊이는 꼭짓점에서 계단이 된다
+		wpos += view_back * (textureLod(normal_tex, auv, 2.0).b * DEPTH_M * relief * relief_sign);
+	}
 	// POSITION 은 조건 없이 써야 한다 — 한 갈래라도 안 쓰면 그 갈래는 초기화 안 된 값으로 그려진다
-	vec3 vp = (MODELVIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	vec3 vp = (VIEW_MATRIX * vec4(wpos, 1.0)).xyz;
 	vp *= 1.0 - depth_pull / length(vp);
 	POSITION = PROJECTION_MATRIX * vec4(vp, 1.0);
 }
@@ -89,7 +106,9 @@ void fragment() {
 	vec4 tex = texture(albedo_tex, uv, MIP_BIAS) * tint * itint;
 	if (tex.a < 0.5) discard;
 	// 소품(캐릭터·풀포기 아님)이 주인공보다 앞(남쪽)에 서서 겹치면 한 칸 걸러 비운다 — 픽셀 게임식 투시
-	if (depth_pull == 0.0 && !instance_tint && wpos.z > hero_z + 0.3) {
+	// (그림자 화면은 직교 투영 — 거기선 비우지 않는다. 그림자에 바둑판 구멍이 났다)
+	bool shadow_pass = PROJECTION_MATRIX[3][3] > 0.5;
+	if (depth_pull == 0.0 && !instance_tint && !shadow_pass && anchor_z > hero_z + 0.3) {
 		vec2 d = (FRAGCOORD.xy - hero_screen) / SEE_THROUGH;
 		float r = dot(d, d);
 		vec2 px = mod(floor(FRAGCOORD.xy), 2.0);
@@ -99,6 +118,7 @@ void fragment() {
 	}
 
 	vec3 col = mix(tex.rgb, flash_color.rgb, flash);
+	if (instance_tint) col *= macro_tint(wpos.xz); // 풀포기는 땅과 같은 색 얼룩을 따른다
 	// 땅에 닿은 아래쪽 0.5m 남짓을 어둡게 (3단으로 끊어 픽셀아트식)
 	if (contact_ao > 0.0) {
 		float k = floor(clamp(base_h / 0.6, 0.0, 1.0) * 3.0) / 3.0;
@@ -109,7 +129,11 @@ void fragment() {
 	ROUGHNESS = 1.0;
 
 	// 법선: 그림 공간(오른쪽 x, 위 y, 앞 z) → 월드. 평평한 속(0,0,1)은 '위로 37° 든 면' — 해가 북쪽에 있어도 새카맣지 않게
-	vec3 ns = has_normal ? normalize(texture(normal_tex, uv, MIP_BIAS).xyz * 2.0 - 1.0) : vec3(0.0, 0.0, 1.0);
+	vec3 ns = vec3(0.0, 0.0, 1.0);
+	if (has_normal) {
+		ns.xy = texture(normal_tex, uv, MIP_BIAS).rg * 2.0 - 1.0;
+		ns.z = sqrt(max(0.0, 1.0 - dot(ns.xy, ns.xy)));
+	}
 	vec3 T = vec3(mirror, 0.0, 0.0);
 	vec3 B = vec3(0.0, 0.8, -0.6);
 	vec3 N0 = vec3(0.0, 0.6, 0.8);

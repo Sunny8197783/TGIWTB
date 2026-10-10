@@ -19,6 +19,8 @@ public sealed class AppearanceDef
     {
         public string Id { get; set; }
         public string Name { get; set; }
+        /// <summary>m·f — 전직하면 그 직업 원화 중 같은 성별을 입는다 (JobDef.Art)</summary>
+        public string Gender { get; set; } = "m";
         /// <summary>시트 폴더 (idle·run·attack1… 이름이 모두 같다)</summary>
         public string Art { get; set; }
         /// <summary>옷 색으로 바꿀 픽셀: 색상 범위(°)와 최소 채도. tools/palette.py --mark 로 확인한 값</summary>

@@ -1,0 +1,21 @@
+{
+  // 도적: 두 자루 단검. 짧고 빠른 4연타 — 한 타는 약하지만 끊기지 않는다. 회피가 빨리 돌아온다
+  "id": "rogue",
+  "name": "도적",
+  "tier": 1,
+  "description": "보이지 않는 곳에서 가장 먼저 닿는다.",
+  "required_level": 10, "from": ["novice"], "trainer": "npc_rogue",
+  "art": {
+    "m": { "art": "res://art/characters/job_rogue_m", "accent_hue": [260, 320], "accent_sat": 0.15 },
+    "f": { "art": "res://art/characters/job_rogue_f", "accent_hue": [260, 320], "accent_sat": 0.15 }
+  },
+  "hp": 100, "hp_per_level": 8, "power_per_level": 0.055,
+  "palette": "moon",
+  "attack": [
+    { "anim": "attack1", "duration": 0.24, "hit_at": 0.09, "cancel_at": 0.13, "lunge": 1.1, "damage": 7, "reach": 1.6, "half_arc_deg": 65, "start_frame": 2, "hit_frame": 5, "slash": "horizontal", "slash_scale": 0.75, "sound": "knifeSlice" },
+    { "anim": "attack2", "duration": 0.24, "hit_at": 0.09, "cancel_at": 0.13, "lunge": 1.1, "damage": 7, "reach": 1.6, "half_arc_deg": 65, "start_frame": 2, "hit_frame": 6, "slash": "reverse", "slash_scale": 0.75, "sound": "knifeSlice" },
+    { "anim": "attack1", "duration": 0.24, "hit_at": 0.09, "cancel_at": 0.13, "lunge": 1.2, "damage": 8, "reach": 1.6, "half_arc_deg": 65, "start_frame": 2, "hit_frame": 5, "slash": "horizontal", "slash_scale": 0.8, "sound": "knifeSlice" },
+    { "anim": "attack3", "duration": 0.44, "hit_at": 0.22, "cancel_at": 0.3, "lunge": 2.2, "damage": 20, "reach": 2.0, "half_arc_deg": 40, "heavy": true, "start_frame": 1, "hit_frame": 4, "slash": "stab", "sound": "swing_heavy" }
+  ],
+  "skills": [ { "id": "sk_shadow_step", "level": 10 }, { "id": "sk_throwing_knives", "level": 12 }, { "id": "sk_blade_flurry", "level": 15 } ]
+}

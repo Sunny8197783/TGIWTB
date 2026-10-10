@@ -279,6 +279,7 @@ public partial class Enemy : CharacterBody3D
     private void Die()
     {
         Enter(State.Dead);
+        Hero.Instance?.GrantExp(Def.Exp);
         Sfx.Play(Def.Sounds.Death, -2f, 0.7f);
         Dust.Puff(GlobalPosition, 10, Vector3.Zero);
         CollisionLayer = 0;

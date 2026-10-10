@@ -11,12 +11,14 @@ public static class Controls
 {
     public static readonly StringName Left = "move_left", Right = "move_right", Up = "move_up", Down = "move_down";
     public static readonly StringName Attack = "attack", Guard = "guard", Dodge = "dodge";
-    /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 들었는지는 data/player/loadout.json.</summary>
+    /// <summary>스킬 칸 (Q/U, E/I, R/O · 패드 Y, RB, RT). 칸에 무엇이 드는지는 직업이 정한다 (data/jobs, 레벨이 차면 열린다).</summary>
     public static readonly StringName[] SkillSlots = { "skill_1", "skill_2", "skill_3" };
     /// <summary>모습 고르기 열기/닫기 (C · 패드 Back)</summary>
     public static readonly StringName Look = "appearance";
     /// <summary>전망: 누르고 있는 동안 고개를 들어 멀리 본다, 이동 키로 둘러보기 (V · 패드 왼스틱 누르기)</summary>
     public static readonly StringName Vista = "vista";
+    /// <summary>상호작용: 여신상에 기도 (F · 패드 A)</summary>
+    public static readonly StringName Interact = "interact";
 
     public static void Register()
     {
@@ -32,6 +34,7 @@ public static class Controls
         Action(SkillSlots[2], Key.R, Key.O); Axis(SkillSlots[2], JoyAxis.TriggerRight, 1);
         Action(Look, Key.C); Pad(Look, JoyButton.Back);
         Action(Vista, Key.V); Pad(Vista, JoyButton.LeftStick);
+        Action(Interact, Key.F); Pad(Interact, JoyButton.A);
     }
 
     private static void Action(StringName name, params Key[] keys)

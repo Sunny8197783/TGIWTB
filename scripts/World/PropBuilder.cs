@@ -24,6 +24,20 @@ public static class PropBuilder
     /// <summary>그림 아래쪽(땅에 닿은 곳)을 이만큼 어둡게 — 판이 땅에 붙어 보이게</summary>
     private const float ContactAo = 0.28f;
 
+    /// <summary>
+    /// 부피(입체)로 그리는 종류: 둥근 것(나무·덤불·바위·그루터기). 판을 격자로 잘게 나눠 그림의 깊이만큼 부풀리고,
+    /// 판 스스로 그림자를 드리운다 (뒤로 부풀린 그림자 전용 뒷판까지) — 그림자가 그림 모양 그대로, 옆 해에도 두툼하다.
+    /// 건물은 앞 벽과 지붕을 그림에서 나눌 수 없어 판 + 상자 그림자 그대로.
+    /// </summary>
+    private static readonly bool ReliefOn = !Dev.DevCapture.Disabled().Contains("relief");   // A/B: --no=relief
+
+    private static bool Relief(PropKind k) =>
+        ReliefOn && !k.Flat && k.Shadow && k.ShadowCaster is PropKind.Caster.Canopy or PropKind.Caster.Cone or PropKind.Caster.Blob;
+
+    /// <summary>격자 칸 수 (가로, 세로). 나무 한 그루 7x9 꼭짓점 — 깊이가 10~20px 마다 바뀐다</summary>
+    private static Vector2I ReliefGrid(PropKind k) =>
+        k.ShadowCaster == PropKind.Caster.Blob ? new Vector2I(3, 3) : new Vector2I(6, 8);
+
     private sealed class Atlas
     {
         public Texture2D Texture;
@@ -31,6 +45,8 @@ public static class PropBuilder
         public Rect2[] Cells;      // 텍셀 단위
         public Vector2I[] Sizes;
         public float Width, Height;
+        /// <summary>그림마다 땅에 닿은 바닥 조각들 (Footprint.Read)</summary>
+        public List<Footprint.Part>[] Feet;
     }
 
     public static Node3D Build(WorldData world)
@@ -58,6 +74,14 @@ public static class PropBuilder
         }
 
         var quad = new QuadMesh { Size = Vector2.One, CenterOffset = new Vector3(0f, 0.5f, 0f) };
+        var grids = new Dictionary<Vector2I, QuadMesh>();
+        QuadMesh Grid(Vector2I n)
+        {
+            if (!grids.TryGetValue(n, out var m))
+                grids[n] = m = new QuadMesh { Size = Vector2.One, CenterOffset = new Vector3(0f, 0.5f, 0f), SubdivideWidth = n.X, SubdivideDepth = n.Y };
+            return m;
+        }
+        var backMats = new Dictionary<string, ShaderMaterial>();
         var flatQuad = new QuadMesh { Size = Vector2.One, Orientation = PlaneMesh.OrientationEnum.Y };
         var materials = new Dictionary<string, ShaderMaterial>();
         var bodies = new Dictionary<(int, int), StaticBody3D>();
@@ -82,7 +106,15 @@ public static class PropBuilder
                 mat.SetShaderParameter("atlas", true);
                 mat.SetShaderParameter("sway", kind.Sway);
                 mat.SetShaderParameter("glow_at_night", kind.Glow);
+                if (Relief(kind) && atlas.Normal != null)
+                {
+                    mat.SetShaderParameter("relief", 1f);
+                    var back = (ShaderMaterial)mat.Duplicate();
+                    back.SetShaderParameter("relief_sign", -1f);
+                    backMats[type] = back;
+                }
             }
+            bool relief = backMats.ContainsKey(type);
 
             // 인스턴스 하나 = 변환 12 + 색 4 + 사용자 4. 한 번에 통째로 넘긴다 (하나씩 넘기면 3만 개에 1초가 넘었다)
             var buf = new float[items.Count * 20];
@@ -95,6 +127,7 @@ public static class PropBuilder
                 float wM = size.X / Px.PerMeter;
                 float hM = size.Y / Px.PerMeter * Px.UprightStretch;
                 bool flip = kind.Flip && rng.Randf() < 0.5f;
+                bool collide = true;
                 float z = float.IsNaN(p.FrontZ) ? p.Z : p.FrontZ;
                 Transform3D xf;
                 if (kind.Flat)
@@ -109,7 +142,7 @@ public static class PropBuilder
                 {
                     float y = world.HeightAt(p.X, z) - kind.Sink / Px.PerMeter * Px.UprightStretch;
                     xf = new Transform3D(Basis.Identity.Scaled(new Vector3(flip ? -wM : wM, hM, 1f)), new Vector3(p.X, y, z));
-                    if (kind.ShadowCaster != PropKind.Caster.None && kind.Shadow)
+                    if (kind.ShadowCaster != PropKind.Caster.None && kind.Shadow && !relief)
                         AddCasters(casters, kind, new Vector2(wM, size.Y / Px.PerMeter * 0.8f), new Vector3(p.X, world.HeightAt(p.X, z), z));
                 }
                 var cell = atlas.Cells[v];
@@ -128,7 +161,8 @@ public static class PropBuilder
                 buf[o + 17] = 0.7f + rng.Randf() * 0.6f;
                 buf[o + 18] = 0f;
                 buf[o + 19] = 0f;
-                AddCollision(bodies, root, kind, p, world);
+                if (collide)
+                    AddCollision(bodies, root, kind, p, world, atlas, v, flip);
             }
 
             var mm = new MultiMesh
@@ -136,7 +170,7 @@ public static class PropBuilder
                 TransformFormat = MultiMesh.TransformFormatEnum.Transform3D,
                 UseColors = true,
                 UseCustomData = true,
-                Mesh = kind.Flat ? flatQuad : quad,
+                Mesh = kind.Flat ? flatQuad : relief ? Grid(ReliefGrid(kind)) : quad,
                 InstanceCount = items.Count,
                 Buffer = buf,
             };
@@ -147,13 +181,25 @@ public static class PropBuilder
                 Name = $"{type}_{cx}_{cz}",
                 Multimesh = mm,
                 MaterialOverride = mat,
-                // 판은 그림자를 드리우지 않는다 — 아래 입체가 대신한다
-                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+                // 부피 판은 제 모양대로 그림자를 드리운다. 납작한 판은 그림자를 드리우지 않는다 — 아래 입체가 대신한다
+                CastShadow = relief ? GeometryInstance3D.ShadowCastingSetting.On : GeometryInstance3D.ShadowCastingSetting.Off,
                 // 건물·랜드마크(바닥 있음)는 끝까지, 나무는 450m 까지 (전망에서 그리기 호출과 겹쳐 그리기를 줄인다)
                 VisibilityRangeEnd = small ? SmallRange : bush ? BushRange : kind.Footprint != Vector2.Zero ? 0f : TreeRange,
             });
             if (casters.Count > 0)
                 root.AddChild(CasterInstance(kind, casters, $"{type}_shadow_{cx}_{cz}"));
+            if (relief)
+            {
+                // 그림자 전용 뒷판: 같은 인스턴스를 뒤로 부풀려 그림자 화면에만 그린다
+                root.AddChild(new MultiMeshInstance3D
+                {
+                    Name = $"{type}_back_{cx}_{cz}",
+                    Multimesh = mm,
+                    MaterialOverride = backMats[type],
+                    CastShadow = GeometryInstance3D.ShadowCastingSetting.ShadowsOnly,
+                    VisibilityRangeEnd = CasterRange,
+                });
+            }
         }
 
         BakeAo(world, atlases);
@@ -287,37 +333,36 @@ public static class PropBuilder
         RenderingServer.GlobalShaderParameterSet("ao_map", ImageTexture.CreateFromImage(img));
     }
 
-    private static readonly Dictionary<string, Shape3D> Shapes = new();
+    private static readonly Dictionary<(string, int, bool, int), Shape3D> Shapes = new();
+    private const float WallHeight = 3f;   // 충돌 기둥 높이 (m) — 캐릭터 캡슐(1.5m)을 넉넉히 덮는다
 
-    /// <summary>줄기·건물 바닥 충돌. 노드 없이 덩어리마다 몸 하나에 모양만 붙인다 (모양은 종류마다 하나를 같이 쓴다).</summary>
-    private static void AddCollision(Dictionary<(int, int), StaticBody3D> bodies, Node3D root, PropKind kind, PropDef p, WorldData world)
+    /// <summary>
+    /// 충돌 = 그림이 땅에 닿은 모양 그대로 (Footprint). 그림의 아랫선에서 바닥 윤곽을 읽어
+    /// 조각마다 볼록 기둥 하나: 나무는 밑동·뿌리, 아치·도리이는 두 기둥(사이로 지나간다), 집은 그림마다 폭이 다르다.
+    /// 노드 없이 덩어리마다 몸 하나에 모양만 붙인다 (모양은 종류·그림·뒤집기마다 하나를 같이 쓴다).
+    /// </summary>
+    private static void AddCollision(Dictionary<(int, int), StaticBody3D> bodies, Node3D root, PropKind kind, PropDef p, WorldData world,
+                                     Atlas atlas, int variant, bool flip)
     {
-        Shape3D shape;
-        Vector3 pos;
-        if (kind.Footprint != Vector2.Zero)
-        {
-            float front = float.IsNaN(p.FrontZ) ? p.Z + kind.Footprint.Y * 0.5f : p.FrontZ;
-            pos = new Vector3(p.X, world.HeightAt(p.X, front) + 2f, front - kind.Footprint.Y * 0.5f);
-            if (!Shapes.TryGetValue(kind.Id, out shape))
-                Shapes[kind.Id] = shape = new BoxShape3D { Size = new Vector3(kind.Footprint.X, 4f, kind.Footprint.Y) };
-        }
-        else if (kind.Trunk > 0f)
-        {
-            pos = new Vector3(p.X, world.HeightAt(p.X, p.Z) + 1.5f, p.Z);
-            if (!Shapes.TryGetValue(kind.Id, out shape))
-                Shapes[kind.Id] = shape = new CylinderShape3D { Radius = kind.Trunk, Height = 3f };
-        }
-        else
+        if (kind.Footprint == Vector2.Zero && kind.Trunk <= 0f)
             return;
+        float front = float.IsNaN(p.FrontZ) ? p.Z : p.FrontZ;
+        var parts = atlas.Feet[variant];
         var key = ((int)(p.X / Chunk), (int)(p.Z / Chunk));
         if (!bodies.TryGetValue(key, out var body))
         {
             bodies[key] = body = new StaticBody3D { Name = $"PropCollision_{key.Item1}_{key.Item2}" };
             root.AddChild(body);
         }
-        uint owner = body.CreateShapeOwner(body);
-        body.ShapeOwnerAddShape(owner, shape);
-        body.ShapeOwnerSetTransform(owner, new Transform3D(Basis.Identity, pos));
+        var origin = new Vector3(p.X, world.HeightAt(p.X, front) - 0.5f, front);
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (!Shapes.TryGetValue((kind.Id, variant, flip, i), out var shape))
+                Shapes[(kind.Id, variant, flip, i)] = shape = Footprint.Prism(parts[i], kind, flip, WallHeight);
+            uint owner = body.CreateShapeOwner(body);
+            body.ShapeOwnerAddShape(owner, shape);
+            body.ShapeOwnerSetTransform(owner, new Transform3D(Basis.Identity, origin));
+        }
     }
 
     /// <summary>art/env/{종류}_{번호}.png 를 전부 읽어 가로로 이어 붙인다 (아래 맞춤). 하나도 없으면 임시 그림.
@@ -350,7 +395,10 @@ public static class PropBuilder
             w += img.GetWidth() + AtlasPad;
             h = Math.Max(h, img.GetHeight());
         }
-        var atlas = new Atlas { Cells = new Rect2[imgs.Count], Sizes = new Vector2I[imgs.Count], Width = w, Height = h };
+        var atlas = new Atlas { Cells = new Rect2[imgs.Count], Sizes = new Vector2I[imgs.Count], Width = w, Height = h,
+                                Feet = new List<Footprint.Part>[imgs.Count] };
+        for (int i = 0; i < imgs.Count; i++)
+            atlas.Feet[i] = Footprint.Read(imgs[i], kind);
         Image Pack(List<Image> src, bool record)
         {
             var dst = Image.CreateEmpty(w, h, false, Image.Format.Rgba8);

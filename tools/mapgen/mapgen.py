@@ -39,10 +39,11 @@ SEA = 0.0
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "data", "world")
 ZONE_CELL = 8
+ROAD_D = None   # 칸마다 가장 가까운 길 가장자리까지 거리 (main 이 채운다)
 
 # 지면 종류. shaders/terrain.gdshader·World/GrassBuilder.cs 의 번호와 같아야 한다.
 (GRASS, FOREST, MEADOW, DIRT, COBBLE, SAND, SAKURA, AUTUMN, GRAVEL, PEBBLE,
- SNOW, TULIP, LAVENDER, MOSS, ROCKY, STONE, GINKGO, WHEAT, ICE) = range(19)
+ SNOW, TULIP, LAVENDER, MOSS, ROCKY, STONE, GINKGO, WHEAT, ICE, FROSTGRASS, GOLDGRASS) = range(21)
 
 # 꼭짓점 격자 / 칸 격자 좌표
 VX, VZ = np.meshgrid(np.arange(W + 1, dtype=np.float64), np.arange(H + 1, dtype=np.float64))
@@ -53,10 +54,11 @@ VSHAPE, CSHAPE = VX.shape, CX.shape
 # --- 큰 윤곽: 해안선과 절벽선 --------------------------------------------------
 
 def wiggle(t, seed, big, mid, small=0.0):
-    """선을 크게·중간·잘게 흔든다 — 자로 그은 해안선·절벽선은 인공적으로 보인다."""
+    """선을 크게·중간·잘게 흔든다 — 자로 그은 해안선·절벽선은 인공적으로 보인다.
+    잘게(파장 12m) 흔들면 화면에서 톱니로 보였다: small 은 파장 30m 짜리로 조금만."""
     v = big * n1(t * 0.0045, seed) + mid * n1(t * 0.02, seed + 1)
     if small:
-        v = v + small * n1(t * 0.08, seed + 2)
+        v = v + small * n1(t * 0.035, seed + 2)
     return v
 
 
@@ -68,33 +70,51 @@ def pinned(base_fn, t, pins, width=26.0):
     return v
 
 
+def spline1d(pts):
+    """(t, 값) 점들을 지나는 매끈한 곡선 → t 배열을 받는 함수. 해안의 만·곶을 손으로 그린다."""
+    line = catmull(pts, 1.0)
+    ts = np.array([p[0] for p in line])
+    vs = np.array([p[1] for p in line])
+    return lambda t: np.interp(t, ts, vs)
+
+
+# 서쪽 해안 (z, x): 북쪽은 노을 만이 깊이 들어오고(노을 절벽 100,372 의 북북서가 바다),
+# 남쪽으로 신사 곶 → 작은 모래 만(z≈570) → 바위 곶 → 큰 모래 만(z≈772) → 남서 끝
+WEST_PTS = [(0, 232), (64, 212), (128, 190), (192, 182), (256, 195), (320, 166), (352, 104), (384, 50), (416, 34),
+            (450, 44), (490, 40), (522, 30), (548, 46), (566, 84), (578, 96), (592, 84), (606, 50), (640, 22),
+            (690, 14), (730, 24), (770, 58), (820, 70), (860, 52), (900, 34), (950, 40), (1000, 56), (1024, 64)]
+# 동쪽 해안 (z, x): 등대 곶(z≈420)이 튀어나오고, 북쪽엔 넓은 만, 남쪽엔 좁은 후미
+EAST_PTS = [(0, 990), (80, 1000), (160, 1002), (230, 1004), (270, 996), (300, 984), (330, 966), (352, 960), (380, 972),
+            (405, 1004), (420, 1018), (440, 1012), (470, 996), (520, 986), (580, 990), (640, 996), (680, 990), (700, 972),
+            (716, 960), (732, 970), (760, 994), (820, 996), (880, 984), (940, 978), (1024, 978)]
+_west, _east = spline1d(WEST_PTS), spline1d(EAST_PTS)
+
+
 def west_coast(z):
-    """서쪽 물가의 x. z<300 은 북서쪽 '노을 만'(바다)이 깊이 들어온다."""
-    bay = smoothstep(420, 280, z)
-    return 34 + wiggle(z, 101, 60, 18, 5) + bay * (156 + 30 * n1(z * 0.02, 105))
+    """서쪽 물가의 x."""
+    return _west(z) + wiggle(z, 101, 0, 10, 3)
 
 
 def east_coast(z):
-    """동쪽 물가의 x. z≈420 에 등대 곶이 튀어나온다."""
-    base = lambda t: 986 + wiggle(t, 106, 60, 18, 5)  # noqa: E731
-    return pinned(base, z, [(420, 996)], 40) + 22 * np.exp(-((z - 420) / 24) ** 2)
+    """동쪽 물가의 x. z≈420 에 등대 곶."""
+    return _east(z) + wiggle(z, 106, 0, 10, 3) * (1 - np.exp(-((z - 420) / 30) ** 2))
 
 
 def south_coast(x):
     """남쪽 물가의 z. 마을 앞(x≈500)은 항구 자리로 붙든다."""
-    base = lambda t: 938 + wiggle(t, 111, 80, 22, 5)  # noqa: E731
+    base = lambda t: 938 + wiggle(t, 111, 80, 22, 3)  # noqa: E731
     return pinned(base, x, [(505, 954)], 60)
 
 
 def cliff_a(x):
     """초원 → 절벽 위 고원. 폭포(x≈602·206)와 거울 호수 북쪽은 붙들어 둔다."""
-    base = lambda t: 438 + wiggle(t, 121, 110, 28, 6)  # noqa: E731
+    base = lambda t: 438 + wiggle(t, 121, 110, 28, 2.5)  # noqa: E731
     return pinned(base, x, [(206, 436), (602, 437), (650, 432), (1000, 448)], 34)
 
 
 def cliff_b(x):
     """고원 → 서리 고원. 북쪽 강 폭포(x≈606)·옛 성터·안개 호수 뒤는 붙들어 둔다."""
-    base = lambda t: 206 + wiggle(t, 131, 100, 26, 6)  # noqa: E731
+    base = lambda t: 206 + wiggle(t, 131, 100, 26, 2.5)  # noqa: E731
     return pinned(base, x, [(606, 212), (680, 216), (820, 204), (480, 232)], 34)
 
 
@@ -110,15 +130,26 @@ def ramp_mask(x, ramps):
     return m
 
 
-def tier_step(d, ramp, x, seed, half=5.0, ramp_half=34.0, steps=3):
+def tier_step(d, ramp, x, seed, half=5.0, ramp_half=34.0):
     """절벽 한 단: d = z - 절벽선(남쪽이 +). 0(아래) → 1(위).
-    절벽은 3단 바위턱 — 턱 위는 풀, 턱 사이는 바위 (평평한 회색 벽보다 입체로 읽힌다)."""
-    w = half + (ramp_half - half) * ramp
+    구간마다 생김새가 다르다 — 깎아지른 한 면 / 2·3·4단 바위턱, 너비도 3~8m.
+    같은 3단 턱이 지도 끝까지 이어지면 줄무늬가 되풀이되어 보였다."""
+    half_x = half * (0.6 + 0.95 * smoothstep(-0.5, 0.5, n1(x * 0.009, seed + 6)))
+    w = half_x + (ramp_half - half_x) * ramp
     t = smoothstep(w, -w, d)
     tj = np.clip(t + 0.1 * n1(x * 0.05, seed) * t * (1 - t) * 4, 0, 1)
-    f = tj * steps
-    q = (np.floor(f) + smoothstep(0.3, 0.7, f - np.floor(f))) / steps
-    q = np.where(tj >= 1, 1.0, q)
+
+    def steps(n):
+        f = tj * n
+        q = (np.floor(f) + smoothstep(0.3, 0.7, f - np.floor(f))) / n
+        return np.where(tj >= 1, 1.0, q)
+
+    sel = n1(x * 0.006, seed + 5)
+    k1 = smoothstep(-0.25, -0.4, sel)                       # 깎아지른 면
+    k4 = smoothstep(0.25, 0.4, sel)                         # 4단
+    k2 = smoothstep(-0.05, -0.2, sel) * (1 - k1)            # 2단
+    k3 = np.clip(1 - k1 - k2 - k4, 0, 1)                    # 3단
+    q = k1 * t + k2 * steps(2) + k3 * steps(3) + k4 * steps(4)
     return q * (1 - ramp) + t * ramp
 
 
@@ -155,10 +186,23 @@ BUMPS = [
     (250, 524, 18, 3.0),    # 천년 벚나무
 ]
 
+# 바위 언덕: (x, z, 반지름, 높이). 길·마을·강을 비켜서
+TORS = [(322, 540, 11, 5.5), (466, 760, 9, 4.5), (612, 708, 10, 5.0), (380, 900, 8, 4.0), (742, 880, 10, 5.0),
+        (902, 600, 8, 4.0), (104, 724, 10, 5.0), (68, 520, 9, 6.0), (336, 474, 8, 4.5), (440, 470, 10, 5.0),
+        (946, 470, 8, 5.0), (240, 840, 10, 4.5),
+        (400, 300, 10, 6.0), (560, 396, 9, 5.0), (760, 400, 10, 6.0), (150, 410, 8, 5.0),
+        (700, 70, 12, 7.0), (460, 80, 10, 6.0), (880, 120, 12, 8.0)]
+
 LAKES = {
     "mirror": dict(c=(598.0, 480.0), r=(66.0, 42.0), seed=31),  # 거울 호수: 큰 폭포가 떨어진다
     "misty": dict(c=(655.0, 298.0), r=(52.0, 32.0), seed=37),   # 안개 호수: 북쪽 절벽에서 폭포
     "pond": dict(c=(466.0, 584.0), r=(10.0, 7.0), seed=39),     # 야영지 연못
+    # 들판 곳곳의 작은 못 — 갈대·수련, 버드나무 (넓은 풀밭이 끝없이 같아 보이지 않게)
+    "pond_w": dict(c=(318.0, 690.0), r=(15.0, 9.0), seed=43),
+    "pond_e": dict(c=(764.0, 572.0), r=(12.0, 8.0), seed=45),
+    "pond_s": dict(c=(370.0, 852.0), r=(13.0, 8.0), seed=47),
+    "pond_k": dict(c=(124.0, 668.0), r=(11.0, 7.0), seed=49),
+    "tarn": dict(c=(420.0, 150.0), r=(20.0, 12.0), seed=51),    # 서리 고원 산정 호수
 }
 ISLET_C, ISLET_R = (612.0, 486.0), 5.0
 
@@ -175,7 +219,15 @@ RIVERS = [
                            (216, 398), (207, 432), (201, 462), (193, 520), (182, 590), (170, 668), (162, 748),
                            (157, 828), (151, 900), (146, 1012)],
          bed=2.4, bank=6.2),
+    # 초원을 비스듬히 가로지르는 개울 — 넓은 풀밭에 물줄기·징검다리·다리가 생겨 걸음의 박자가 바뀐다
+    dict(name="creek", pts=[(338, 566), (372, 588), (404, 606), (436, 628), (466, 652), (494, 672), (521, 690)],
+         bed=1.0, bank=3.4, meander=12.0, wave=70.0, to="south"),
+    # 꽃 들판 동쪽 실개울: 등대 곶 남쪽 바다로
+    dict(name="brook", pts=[(842, 548), (870, 590), (900, 628), (918, 690), (926, 760), (930, 830), (934, 900), (936, 992)],
+         bed=0.9, bank=3.0, meander=12.0, wave=70.0),
 ]
+# 강을 곧게 펴 두는 곳 (x, z, 반지름): 마을 한가운데·폭포 앞 — 굽이가 집·광장·폭포 자리를 덮치지 않게
+RIVER_CALM = [(PLAZA[0], PLAZA[1], 90), (222, 602, 60), (206, 436, 40), (602, 440, 40), (606, 212, 34), (300, 140, 30)]
 
 # 길: (이름, 점들, 반폭, 종류). street = 마을 안 포석, trail = 좁은 오솔길
 ROADS = [
@@ -221,12 +273,23 @@ ROADS = [
     ("s_snow", [(522, 112), (560, 112), (600, 110)], 1.4, "street"),
 ]
 
-# 꽃밭·밀밭: (x0, z0, x1, z1, 종류)
+# 꽃밭·밀밭: (가운데 x, z, 반폭, 반깊이, 종류, 기울기). 둥근 네모를 잡음으로 흔든 모양 — 자로 그은 네모 밭은 인공적이었다
 FIELDS = [
-    (742, 698, 806, 752, TULIP), (822, 690, 896, 736, TULIP), (764, 770, 846, 816, TULIP),
-    (884, 700, 940, 774, LAVENDER), (700, 600, 752, 636, LAVENDER),
-    (600, 794, 676, 836, WHEAT), (398, 806, 466, 848, WHEAT), (646, 720, 700, 756, WHEAT),
+    (774, 725, 34, 27, TULIP, 0.2), (859, 713, 38, 23, TULIP, -0.15), (805, 793, 42, 24, TULIP, 0.1),
+    (906, 737, 24, 34, LAVENDER, 0.3), (726, 618, 26, 18, LAVENDER, -0.25),
+    (638, 815, 38, 21, WHEAT, -0.1), (432, 827, 34, 21, WHEAT, 0.15), (673, 738, 27, 18, WHEAT, 0.25),
 ]
+
+
+def field_mask(X, Z, f, pad=0.0):
+    """밭 하나의 모양: 둥근 네모(초타원)를 비스듬히 돌리고 가장자리를 잡음으로 흔든다."""
+    cx, cz, rx, rz, kind, rot = f
+    c, sn = math.cos(rot), math.sin(rot)
+    dx, dz = X - cx, Z - cz
+    u, v = (dx * c + dz * sn) / (rx + pad), (-dx * sn + dz * c) / (rz + pad)
+    r = (np.abs(u) ** 3 + np.abs(v) ** 3) ** (1 / 3)
+    return r + 0.12 * fbm(X * 0.05, Z * 0.05, int(cx) + int(cz), 3) < 1.0
+
 
 ZONE_NAMES = ["", "바람의 초원", "하루미 마을", "남쪽 해변", "벚꽃 골짜기", "하나미 마을", "꽃 들판", "꽃 마을",
               "등대 곶", "거울 호수", "단풍 협곡", "고목의 숲", "안개 호수", "서리 고원", "눈꽃 마을"]
@@ -259,9 +322,17 @@ def build_height(river_lines):
     for bx, bz, br, bh in BUMPS:
         h += bh * gauss(X - bx, Z - bz, br)
     rng = random.Random(9)
-    for _ in range(70):
+    # 구릉은 크기를 섞는다: 큰 언덕 몇 + 작은 둔덕 여럿 (한 크기의 혹만 70개 뿌리면 고른 곰보 땅이 됐다)
+    for _ in range(14):
+        bx, bz = rng.uniform(80, 940), rng.uniform(480, 900)
+        h += rng.uniform(2.5, 6.0) * gauss(X - bx, Z - bz, rng.uniform(30, 60))
+    for _ in range(46):
         bx, bz = rng.uniform(60, 960), rng.uniform(470, 920)
-        h += rng.uniform(1.0, 2.6) * gauss(X - bx, Z - bz, rng.uniform(6, 14))
+        h += rng.uniform(0.8, 2.6) * gauss(X - bx, Z - bz, rng.uniform(5, 16))
+    # 바위 언덕(작은 메사): 비탈이 가팔라 바위가 드러나고 위는 풀밭 — 넓은 들판의 길잡이
+    for tx, tz, tr, th in TORS:
+        d = np.hypot(X - tx, Z - tz) + 3.5 * fbm(X * 0.08, Z * 0.08, int(tx), 2)
+        h += th * smoothstep(tr, tr * 0.55, d)
     # 벚꽃 골짜기: 서쪽 강을 따라 골이 진다
     dw = river_lines["west"][0]
     dwf = np.where(np.isinf(dw), 999.0, dw)
@@ -274,9 +345,12 @@ def build_height(river_lines):
     rise_a = 16 + 4 * n1(X * 0.01, 41)
     rise_b = 22 + 6 * n1(X * 0.008, 42)
     t2 = 5 * fbm(X * 0.01, Z * 0.01, 31) - 5 * np.exp(-(dwf / 18.0) ** 2)   # 단풍 협곡: 강이 골을 판다
-    rid = ridged(X * 0.011, Z * 0.011, 61)
+    # 설산: 능선 잡음의 잔 옥타브가 뾰족한 가시를 세웠다 — 옥타브를 줄이고 좌표를 비틀어 둥글고 긴 산줄기로
+    wx = X + 30 * fbm(X * 0.006, Z * 0.006, 65, 2)
+    wz = Z + 30 * fbm(X * 0.006, Z * 0.006, 66, 2)
+    rid = ridged(wx * 0.009, wz * 0.009, 61, octaves=2) ** 1.4
     north = smoothstep(185, 15, Z)
-    t3 = 6 * fbm(X * 0.02, Z * 0.02, 62) + north * (16 + 42 * rid)
+    t3 = 5 * fbm(X * 0.015, Z * 0.015, 62, 3) + north * (14 + 40 * rid)
     h = h + ta * (rise_a + t2) + tb * (rise_b + t3 - t2 * 0.5)
 
     # 평평한 자리
@@ -354,10 +428,44 @@ def flatten_roads(h, roads):
     return h
 
 
+STEP_M = 7.0   # 산속 강의 계단 높이 (m) = 폭포 하나의 높이
+
+
+def river_line(r):
+    """강 중심선. 사인 굽이(파장 110~190m, 진폭이 잡음으로 들쭉날쭉)를 옆으로 얹는다.
+    잡음만으로 흔들면 파장이 강 길이만큼 길어 강 전체가 옆으로 밀리기만 하고 곧게 보였다.
+    마을·폭포 앞은 곧게, 산속(z<195)은 조금만 굽는다."""
+    base = catmull(r["pts"], 1.0)
+    seed = zlib.crc32(r["name"].encode()) % 1000
+    amp = r.get("meander", 30.0)
+    out, cum, phase = [], 0.0, 0.0
+    for i, (bx, bz) in enumerate(base):
+        if i:
+            step = math.hypot(bx - base[i - 1][0], bz - base[i - 1][1])
+            cum += step
+            lam = r.get("wave", 150.0) * (1.0 + 0.27 * float(n1(np.array(cum / 300.0), seed + 3)))
+            phase += step / lam * math.tau
+        a, b = base[max(0, i - 1)], base[min(len(base) - 1, i + 1)]
+        dx, dz = b[0] - a[0], b[1] - a[1]
+        ln = math.hypot(dx, dz) or 1.0
+        k = 0.55 + 0.45 * float(n1(np.array(cum / 220.0), seed + 5))
+        for cx, cz, cr in RIVER_CALM:
+            k = min(k, float(smoothstep(cr * 0.5, cr, math.hypot(bx - cx, bz - cz))))
+        k *= float(smoothstep(0, 40, cum)) * (0.3 if bz < 195 else 1.0)
+        off = amp * k * math.sin(phase + seed)
+        out.append((bx - dz / ln * off, bz + dx / ln * off))
+    # 끝은 원래 자리로 (호수·바다·합류점)
+    n = len(out)
+    for i in range(max(0, n - 40), n):
+        t = (n - 1 - i) / 40.0
+        out[i] = (base[i][0] + (out[i][0] - base[i][0]) * t, base[i][1] + (out[i][1] - base[i][1]) * t)
+    return out
+
+
 def river_surfaces(h, lake_surf):
     rivers = []
     for r in RIVERS:
-        line = meander(catmull(r["pts"], 1.0), r.get("meander", 12.0), 110.0, zlib.crc32(r["name"].encode()) % 1000, keep_ends=40)
+        line = river_line(r)
         surf = []
         cur = None
         for i, (x, z) in enumerate(line):
@@ -373,7 +481,16 @@ def river_surfaces(h, lake_surf):
             else:
                 cur = max(min(cur - 0.0015, g), SEA + 0.05)
             surf.append(cur)
-        rivers.append(dict(r, line=line, surf=np.array(surf)))
+        surf = np.array(surf)
+        # 산속(서리 고원, z<195): 수면을 계단으로 — 소(평평한 물) + 짧고 곧은 폭포.
+        # 지형을 따라 내려가기만 하면 비탈 전체가 긴 폭포 하나로 늘어졌다. 계단 높이는 지형 아래로만 깎는다
+        zs = np.array([p[1] for p in line])
+        mount = zs < 195
+        if mount.any():
+            q = np.floor(surf / STEP_M) * STEP_M
+            # 계단 아래(산 밖)도 마지막 계단보다 높아지면 안 된다 — 물이 거슬러 올라 둑 위로 넘쳤다
+            surf = np.minimum.accumulate(np.where(mount, q, surf))
+        rivers.append(dict(r, line=line, surf=surf))
     return rivers
 
 
@@ -412,6 +529,11 @@ def carve_rivers(h, rivers, ta, tb):
         fr = np.linspace(0, 1, len(line))
         sl = np.interp(s, fr, surf)
         dd = np.where(has, d, 999.0)
+        # 폭: 흐름을 따라 0.75~1.3 배 (소에서 넓고 여울에서 좁다)
+        L = sum(math.hypot(b[0] - a[0], b[1] - a[1]) for a, b in zip(line[:-1], line[1:]))
+        wv = 1.0 + 0.3 * n1(s * L / 70.0, zlib.crc32(rv["name"].encode()) % 1000 + 7)
+        bed_w = bed_w * wv
+        bank = bank * (0.85 + 0.15 * wv)
         bed = sl - 0.8 - 0.5 * np.clip(1 - dd / bed_w, 0, 1)
         ch = smoothstep(bank, bed_w, dd)
         h = np.where(has & (dd < bank), lerp(h, np.minimum(h, bed), ch), h)
@@ -481,22 +603,26 @@ def build_ground(h, water, roads, bw, lake_surf):
     for i, k in enumerate(names):
         g[pick == i] = BIOME_GROUND[k]
     n = fbm(CX * 0.03, CZ * 0.03, 51, 3)
-    grove = smoothstep(0.05, 0.45, fbm(CX * 0.012, CZ * 0.012, 300, 3))
+    grove = grove_field()
+    grove2 = smoothstep(0.1, 0.5, fbm(CX * 0.015, CZ * 0.015, 301, 3))
     is_ = {k: pick == i for i, k in enumerate(names)}
     g[is_["grass"] & (n > 0.28)] = MEADOW
     g[is_["grass"] & (grove > 0.6)] = FOREST
     # 벚꽃 바닥(꽃잎)은 벚나무 숲 밑에만 — 골짜기 전체가 분홍이면 단조롭다
     g[is_["sakura"] & (grove < 0.3)] = GRASS
     g[is_["sakura"] & (grove < 0.3) & (n > 0.25)] = MEADOW
-    g[is_["autumn"] & (grove < 0.15) & (n < -0.15)] = GRASS
-    g[is_["autumn"] & (fbm(CX * 0.02, CZ * 0.02, 52, 3) > 0.25)] = GINKGO
+    # 단풍 협곡: 빈터는 누렇게 익은 풀밭, 낙엽 바닥은 단풍 숲 밑에만 (협곡 전체가 한 색 판이면 평평해 보였다)
+    g[is_["autumn"] & (grove < 0.3)] = GOLDGRASS
+    # 은행잎 바닥은 은행나무 숲 밑에만 (넓은 땅이 통째로 노랗게 칠해지면 평평한 판으로 보였다)
+    g[is_["autumn"] & (grove2 > 0.55) & (n > -0.2)] = GINKGO
     g[is_["ancient"] & (n > 0.2)] = FOREST
     g[is_["misty"] & (n > 0.3)] = MEADOW
-    g[is_["frost"] & ((slope > 1.3) | (hc > 92))] = ROCKY
-    for x0, z0, x1, z1, kind in FIELDS:
-        jx = 1.5 * fbm(CX * 0.2, CZ * 0.2, 61, 2)
-        m = (CX + jx > x0) & (CX + jx < x1) & (CZ - jx > z0) & (CZ - jx < z1)
-        g[m] = kind
+    # 서리 고원: 눈밭 사이로 마른 풀이 비죽 나온 언저리(절벽 B 가까이·바람받이 얼룩), 바람에 눈이 벗겨진 바위
+    fringe = smoothstep(cliff_b(CX) - 40, cliff_b(CX) - 4, CZ)
+    g[is_["frost"] & (fbm(CX * 0.02, CZ * 0.02, 53, 3) + fringe * 0.7 > 0.42)] = FROSTGRASS
+    g[is_["frost"] & ((slope > 1.3) | (hc > 92) | ((fbm(CX * 0.035, CZ * 0.035, 54, 3) > 0.48) & (slope > 0.45)))] = ROCKY
+    for f in FIELDS:
+        g[field_mask(CX, CZ, f)] = f[4]
     # 얼어붙은 호수
     g[np.hypot((CX - 790) / 40, (CZ - 126) / 26) + 0.1 * fbm(CX * 0.06, CZ * 0.06, 63, 2) < 1.0] = ICE
     # 해변·호숫가
@@ -580,7 +706,8 @@ class Scatter:
 #   grove: 숲 덩어리 안에 몰린다 / lone: 트인 곳에 외딴 나무 / edge: 숲 가장자리 / under: 나무 밑
 #   meadow: 꽃밭 얼룩 / water: 물가 / None: 고르게
 FLORA = {
-    "grass": [("tree_oak", 3.0, 0.010, "grove"), ("tree_birch", 2.2, 0.0008, "edge"), ("shrub", 1.0, 0.004, "edge"),
+    "grass": [("tree_oak", 3.0, 0.010, "grove", "oak"), ("tree_birch", 2.2, 0.010, "grove", "birch"), ("tree_pine", 2.4, 0.008, "grove", "pine"),
+              ("tree_apple", 2.4, 0.0015, "grove", "birch"), ("tree_birch", 2.2, 0.0008, "edge"), ("shrub", 1.0, 0.004, "edge"),
               ("wildflower_a", 0.45, 0.008, "meadow"), ("wildflower_b", 0.45, 0.008, "meadow"), ("tree_oak", 3.0, 0.0006, "lone"), ("tree_poplar", 2.2, 0.0010, "lone"),
               ("bush", 1.0, 0.010, "edge"), ("rock", 0.9, 0.0012, None), ("flowers_mix", 0.8, 0.008, "meadow"),
               ("flowers_yellow", 0.45, 0.010, "meadow"), ("dandelion", 0.45, 0.006, None), ("grass_tuft", 0.45, 0.02, None),
@@ -590,11 +717,12 @@ FLORA = {
     "sakura": [("tree_sakura", 3.0, 0.022, "grove"), ("wildflower_a", 0.45, 0.004, None), ("wildflower_b", 0.45, 0.004, None), ("tree_sakura", 3.0, 0.0015, "lone"), ("bush_pink", 1.0, 0.010, "edge"),
                ("flowers_white", 0.5, 0.010, None), ("petals", 0.45, 0.03, "under"), ("flowers_pink", 0.45, 0.008, None),
                ("grass_tuft", 0.45, 0.015, None), ("rock", 0.9, 0.001, None)],
-    "flower": [("tree_oak", 3.0, 0.0012, "lone"), ("wildflower_a", 0.45, 0.012, None), ("wildflower_b", 0.45, 0.012, None), ("tree_poplar", 2.2, 0.0008, "lone"), ("flowers_mix", 0.8, 0.02, None),
-               ("flowers_yellow", 0.45, 0.02, None), ("flowers_blue", 0.45, 0.014, None), ("flowers_pink", 0.45, 0.014, None),
-               ("lavender", 0.5, 0.01, None), ("dandelion", 0.45, 0.008, None), ("bush", 1.0, 0.003, None),
-               ("tulip", 0.45, 0.006, None), ("daisy", 0.45, 0.006, None), ("sunflower", 0.5, 0.003, "meadow"),
-               ("rose", 0.5, 0.002, None), ("bush_flower", 1.0, 0.003, "edge"), ("hydrangea", 0.5, 0.002, None)],
+    "flower": [("tree_oak", 3.0, 0.0012, "lone"), ("wildflower_a", 0.45, 0.006, "meadow"), ("wildflower_b", 0.45, 0.006, "meadow"), ("tree_poplar", 2.2, 0.0008, "lone"), ("flowers_mix", 0.8, 0.008, "meadow"),
+               ("flowers_yellow", 0.45, 0.008, "meadow"), ("flowers_blue", 0.45, 0.006, "meadow2"), ("flowers_pink", 0.45, 0.006, "meadow2"),
+               ("lavender", 0.5, 0.005, "meadow2"), ("dandelion", 0.45, 0.004, None), ("bush", 1.0, 0.002, None), ("grass_tall", 0.45, 0.006, None),
+               ("tulip", 0.45, 0.003, "meadow"), ("daisy", 0.45, 0.004, "meadow2"), ("sunflower", 0.5, 0.002, "meadow"),
+               ("rose", 0.5, 0.001, None), ("bush_flower", 1.0, 0.003, "edge"), ("hydrangea", 0.5, 0.0015, "meadow2"),
+               ("tree_apple", 2.4, 0.0006, "grove", "birch"), ("tree_birch", 2.2, 0.0008, "grove", "birch")],
     "coast": [("tree_pine", 2.4, 0.003, "grove"), ("tree_seapine", 3.0, 0.002, "lone"), ("rock", 0.9, 0.005, None), ("grass_tuft", 0.45, 0.03, None),
               ("bush", 1.0, 0.003, None), ("flowers_white", 0.45, 0.004, None)],
     "autumn": [("tree_maple", 3.0, 0.020, "grove"), ("tree_ginkgo", 2.6, 0.008, "grove2"), ("tree_birch_gold", 2.2, 0.004, "edge"), ("bush_orange", 1.0, 0.010, "edge"),
@@ -606,7 +734,7 @@ FLORA = {
                 ("bush", 1.0, 0.008, "edge"), ("sapling", 0.5, 0.003, None), ("log", 0.9, 0.002, "grove"),
                 ("mushroom_big", 0.7, 0.0015, "under"), ("mushroom_glow", 0.5, 0.0012, "under"), ("stump", 0.8, 0.002, "grove"),
                 ("fiddlehead", 0.45, 0.006, "under"), ("grass_tall", 0.45, 0.006, None)],
-    "misty": [("tree_willow", 3.0, 0.008, "water"), ("shrub", 1.0, 0.004, "edge"), ("wildflower_b", 0.45, 0.006, None), ("tree_oak", 3.0, 0.005, "grove"), ("tree_birch", 2.2, 0.005, "grove"), ("flowers_blue", 0.45, 0.010, None),
+    "misty": [("tree_willow", 3.0, 0.008, "water"), ("tree_pine", 2.4, 0.006, "grove", "pine"), ("shrub", 1.0, 0.004, "edge"), ("wildflower_b", 0.45, 0.006, None), ("tree_oak", 3.0, 0.005, "grove"), ("tree_birch", 2.2, 0.005, "grove"), ("flowers_blue", 0.45, 0.010, None),
               ("fern", 0.9, 0.005, None), ("grass_tuft", 0.45, 0.02, None), ("rock", 0.9, 0.0015, None),
               ("grass_tall", 0.45, 0.006, None), ("mushroom_glow", 0.5, 0.0005, None), ("log", 0.9, 0.0005, None)],
     "frost": [("tree_snowfir", 2.6, 0.016, "grove"), ("tree_snowfir", 2.6, 0.001, "lone"), ("tree_bare", 3.0, 0.0015, "lone"),
@@ -615,15 +743,29 @@ FLORA = {
 }
 
 
+def grove_field():
+    """숲 덩어리: 큰 숲(파장 ~80m) + 작은 덤불숲·빈터(~30m). 한 크기만 쓰면 숲이 다 같은 크기로 보였다."""
+    return smoothstep(0.05, 0.45, 0.72 * fbm(CX * 0.012, CZ * 0.012, 300, 3) + 0.28 * fbm(CX * 0.035, CZ * 0.035, 303, 2) * 1.6)
+
+
 def scatter_flora(sc, bw, hc, wc, slope, road_d, near_water, pads_mask, seed=7):
-    grove = smoothstep(0.05, 0.45, fbm(CX * 0.012, CZ * 0.012, 300, 3))
+    grove = grove_field()
     grove2 = smoothstep(0.1, 0.5, fbm(CX * 0.015, CZ * 0.015, 301, 3))
     meadow = smoothstep(0.1, 0.4, fbm(CX * 0.03, CZ * 0.03, 302, 3))
+    meadow2 = smoothstep(0.1, 0.4, fbm(CX * 0.025, CZ * 0.025, 304, 3))
     shape = {
         None: np.ones(CSHAPE), "grove": 0.05 + 1.6 * grove, "grove2": 0.05 + 1.6 * grove2, "lone": (1 - grove) ** 2,
         "edge": 0.2 + 3.2 * grove * (1 - grove), "under": 0.15 + 1.2 * grove, "meadow": 0.1 + 1.4 * meadow,
-        "water": 0.05 + 2.0 * near_water,
+        "meadow2": 0.1 + 1.4 * meadow2, "water": 0.05 + 2.0 * near_water,
     }
+    # 수종 띠: 숲마다 주인이 다르다
+    sp1 = fbm(CX * 0.006, CZ * 0.006, 410, 2)
+    sp2 = fbm(CX * 0.008, CZ * 0.008, 420, 2)
+    species = {
+        "birch": smoothstep(0.08, 0.22, sp1),
+        "pine": smoothstep(-0.18, -0.32, sp2) * smoothstep(0.22, 0.08, sp1),
+    }
+    species["oak"] = np.clip(1 - species["birch"] - species["pine"], 0, 1)
     dry = (wc < -999) & (hc > SEA + 0.4)
     ok = dry & (slope < 0.9)
     # 마을 자리엔 큰 나무를 뿌리지 않는다 (정원수는 집마다 따로). 풀꽃은 그대로
@@ -631,11 +773,14 @@ def scatter_flora(sc, bw, hc, wc, slope, road_d, near_water, pads_mask, seed=7):
     # 큰 나무 먼저 전부, 그다음 작은 것 (먼저 놓인 덤불이 나무 자리를 다 막지 않게)
     jobs = []
     for biome, rules in FLORA.items():
-        for i, (kind, r, dens, mode) in enumerate(rules):
-            jobs.append((r <= 2, biome, kind, r, dens, mode))
+        for rule in rules:
+            kind, r, dens, mode = rule[:4]
+            jobs.append((r <= 2, biome, kind, r, dens, mode, rule[4] if len(rule) > 4 else None))
     jobs.sort(key=lambda j: j[0])
-    for small, biome, kind, r, dens, mode in jobs:
+    for small, biome, kind, r, dens, mode, sp in jobs:
         field = bw[biome] * shape[mode] * (ok if small else ok & ~pads_mask)
+        if sp is not None:
+            field = field * species[sp]
         fmax = float(field.max())
         if fmax <= 0:
             continue
@@ -667,8 +812,8 @@ def add_landmarks(sc, rng, hcell):
     sc.add("observatory", 600, 158, 3.5, front_z=161)  # 서리 고원 언덕 위 별 관측소
     sc.add("ice_shrine", 790, 94, 3.5, front_z=97)     # 얼어붙은 호수 북쪽 얼음 사당
     sc.add("chapel", 840, 678, 3.5, front_z=681)       # 꽃 마을 종탑 예배당
-    # 여신상: 지역마다 갈림길 곁에 하나 (나중에 빠른 이동·부활 지점)
-    for x, z in ((576, 664), (252, 616), (858, 628), (276, 364), (496, 352), (720, 362), (548, 132), (980, 438)):
+    # 여신상: 지역마다 갈림길 곁에 하나 — 기도하면 부활 지점, 깨운 곳끼리 빠른 이동 (World/Statues)
+    for sid, name, x, z in STATUES:
         sc.add("goddess", x, z, 2.2, front_z=z + 1)
     sc.add("gazebo", 648, 338, 3.0, front_z=341)   # 안개 호수 남쪽 물가
     sc.add("shepherd_hut", 372, 690, 3.5, front_z=693)   # 초원 양치기 오두막 + 울타리·건초
@@ -726,9 +871,22 @@ def add_landmarks(sc, rng, hcell):
                 x, z = ox + i * 7 + rng.uniform(-1, 1), oz + j * 7 + rng.uniform(-1, 1)
                 if sc.free(x, z, 2.4):
                     sc.add("tree_apple", x, z, 2.4)
-    # 밭마다 허수아비 하나 (꽃밭·밀밭)
-    for x0, z0, x1, z1, kind in FIELDS:
-        sc.add("scarecrow", (x0 + x1) * 0.5 + rng.uniform(-8, 8), (z0 + z1) * 0.5 + rng.uniform(-5, 5), 0.6)
+    # 밭마다 허수아비 하나, 둘레엔 군데군데 끊긴 산울타리(덤불·작은 나무) — 밭과 밭 사이가 길로 읽힌다
+    for f in FIELDS:
+        cx, cz, rx, rz, kind, rot = f
+        sc.add("scarecrow", cx + rng.uniform(-rx, rx) * 0.4, cz + rng.uniform(-rz, rz) * 0.4, 0.6)
+        n = int((rx + rz) * 0.5)
+        for k in range(n):
+            a = k / n * math.tau + rng.uniform(-0.05, 0.05)
+            if math.sin(a * 3 + cx) > 0.55:      # 울타리가 끊긴 곳 = 밭 드나드는 길
+                continue
+            u, v = math.cos(a) * (rx + 2.5), math.sin(a) * (rz + 2.5)
+            x = cx + u * math.cos(rot) - v * math.sin(rot)
+            z = cz + u * math.sin(rot) + v * math.cos(rot)
+            kind2 = rng.choice(["bush", "bush", "shrub", "bush_flower"]) if rng.random() < 0.9 else "tree_poplar"
+            r = 2.2 if kind2.startswith("tree") else 0.9
+            if 0 <= int(x) < W and 0 <= int(z) < H and ROAD_D[int(z), int(x)] > r + 0.6 and sc.free(x, z, r):
+                sc.add(kind2, x, z, r, v=rng.randrange(8))
     # 산사 앞 석등 길과 감·호박
     for i in range(4):
         for side in (-1, 1):
@@ -754,7 +912,8 @@ def add_landmarks(sc, rng, hcell):
             sc.add("ruin_arch", rx + rng.uniform(-3, 3), rz + 14, 2.0)
     sc.add("tree_lone", 421, 718, 4.5)
     sc.add("tree_sakura_giant", 252, 524, 5.5)
-    sc.add("tree_giant", 480, 296, 7.0)
+    sc.add("tree_world", 480, 296, 9.0)      # 세계수 (고목의 숲 한가운데)
+    sc.add("tree_giant", 294, 674, 6.0)      # 초원 연못가의 큰 나무
     sc.add("temple", 224, 280, 4.5, front_z=283)
     sc.add("pagoda", 208, 300, 3.5)
     sc.add("torii", 226, 300, 2.2)
@@ -769,6 +928,11 @@ def add_landmarks(sc, rng, hcell):
     for x, z in ((424, 728), (664, 342), (560, 154), (114, 500)):
         sc.add("bench", x, z, 1.2, look="north")
 
+
+# 여신상 (id, 이름, x, z). meta.statues 로 나가 게임이 읽는다
+STATUES = [("harumi", "하루미 광장", 548, 898), ("meadow", "바람의 초원 쉼터", 576, 664), ("hanami", "하나미 마을", 252, 616),
+           ("flower", "꽃 마을", 858, 628), ("cape", "등대 곶", 980, 438), ("autumn", "단풍 산길", 276, 364),
+           ("ancient", "고목의 숲", 496, 352), ("misty", "안개 호숫가", 720, 362), ("snow", "눈꽃 마을", 548, 132)]
 
 VILLAGES = {
     "harumi": dict(streets=["s_harumi_n", "s_harumi_e", "s_harumi_w", "s_harumi_back"],
@@ -1007,16 +1171,18 @@ def main():
     zones = build_zones(bw)
 
     print("소품…")
+    global ROAD_D
+    road_d = np.full(CSHAPE, 999.0)
+    for name, line, half, kind in roads:
+        d, _ = poly_field(line, half + 6.0, CSHAPE, 0.5)
+        road_d = np.minimum(road_d, d - half)
+    ROAD_D = road_d
     sc = Scatter()
     rng = random.Random(3)
     add_landmarks(sc, rng, hcell)
     place_villages(sc, roads, wcell, hcell, slope)
     street_lamps(sc, roads, wcell, list(VILLAGES.keys()))
     n_bridges = bridges(sc, roads, wcell, hcell)
-    road_d = np.full(CSHAPE, 999.0)
-    for name, line, half, kind in roads:
-        d, _ = poly_field(line, half + 6.0, CSHAPE, 0.5)
-        road_d = np.minimum(road_d, d - half)
     near_water = np.zeros(CSHAPE)
     for name in ("mirror", "misty"):
         ld = lake_d(CX, CZ, LAKES[name])
@@ -1061,6 +1227,7 @@ def main():
             {"name": "안개 호숫가", "x": 662, "z": 340, "radius": 7, "pitch": 12, "distance": 26, "look_ahead": 10, "look_up": 8},
             {"name": "눈꽃 마을 언덕", "x": 560, "z": 154, "radius": 7, "pitch": 10, "distance": 28, "look_ahead": 10, "look_up": 12},
         ],
+        "statues": [{"id": sid, "name": name, "x": x, "z": z} for sid, name, x, z in STATUES],
         "zone_cell": ZONE_CELL,
         "zone_names": ZONE_NAMES,
     }
@@ -1095,7 +1262,8 @@ PALETTE = {
     COBBLE: (160, 156, 150), SAND: (232, 214, 160), SAKURA: (238, 176, 196), AUTUMN: (214, 120, 56),
     GRAVEL: (130, 124, 116), PEBBLE: (170, 162, 150), SNOW: (236, 240, 248), TULIP: (226, 88, 110),
     LAVENDER: (160, 120, 210), MOSS: (70, 120, 70), ROCKY: (128, 128, 136), STONE: (190, 186, 176),
-    GINKGO: (236, 196, 64), WHEAT: (222, 196, 110), ICE: (186, 220, 240),
+    GINKGO: (236, 196, 64), WHEAT: (222, 196, 110), ICE: (186, 220, 240), FROSTGRASS: (206, 210, 196),
+    GOLDGRASS: (176, 168, 70),
 }
 
 
@@ -1118,7 +1286,7 @@ def preview(h, water, ground, props, roads, falls):
     img = np.clip(col, 0, 255).astype(np.uint8)
     marks = {"tree": (30, 80, 30), "house": (200, 60, 50), "big": (255, 255, 255)}
     big = {"lighthouse", "windmill", "torii", "shrine", "pavilion", "fountain", "bridge", "dock", "temple", "pagoda",
-           "castle_ruin", "tree_giant", "tree_lone", "tree_sakura_giant", "watchtower_ruin", "onsen", "tent"}
+           "castle_ruin", "tree_giant", "tree_world", "tree_lone", "tree_sakura_giant", "watchtower_ruin", "onsen", "tent"}
     for p in props:
         t = p["type"]
         x, z = int(p["x"]), int(p["z"])

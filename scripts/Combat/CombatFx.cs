@@ -24,6 +24,10 @@ public partial class CombatFx : Node
         ["moon"] = new(Colors.White, new Color(0.75f, 0.9f, 1f), new Color(0.4f, 0.6f, 1f), new Color(0.2f, 0.22f, 0.6f)),
         ["sakura"] = new(Colors.White, new Color(1f, 0.82f, 0.9f), new Color(1f, 0.5f, 0.7f), new Color(0.6f, 0.18f, 0.42f)),
         ["thunder"] = new(Colors.White, new Color(1f, 0.97f, 0.6f), new Color(0.6f, 0.8f, 1f), new Color(0.3f, 0.3f, 0.9f)),
+        ["ice"] = new(Colors.White, new Color(0.85f, 0.97f, 1f), new Color(0.45f, 0.8f, 1f), new Color(0.2f, 0.4f, 0.8f)),
+        ["fire"] = new(Colors.White, new Color(1f, 0.9f, 0.5f), new Color(1f, 0.5f, 0.15f), new Color(0.6f, 0.12f, 0.08f)),
+        ["shadow"] = new(new Color(0.95f, 0.9f, 1f), new Color(0.72f, 0.58f, 1f), new Color(0.42f, 0.26f, 0.72f), new Color(0.16f, 0.08f, 0.3f)),
+        ["leaf"] = new(Colors.White, new Color(0.85f, 1f, 0.6f), new Color(0.45f, 0.8f, 0.3f), new Color(0.18f, 0.42f, 0.2f)),
     };
     public static Palette PaletteOf(string name) => name != null && Palettes.TryGetValue(name, out var p) ? p : Palettes["teal"];
 
@@ -145,10 +149,33 @@ public partial class CombatFx : Node
         warn.GlobalPosition = at + Vector3.Down * 3f;
         GetTree().CreateTimer(0.2).Timeout += warn.QueueFree;
         // 궤적 메시도 처음 쓰는 순간 만들면 그 프레임이 끊긴다 — 기본 공격·스킬에 나오는 모양을 전부 미리
-        foreach (var step in CombatTuning.Combo)
+        foreach (var job in Data.JobDef.All.Values)
         {
-            WarmArc(step.Reach, step.Heavy ? 170f : 200f, step.Heavy || step.Anim == "attack2");
-            WarmArc(step.Reach, 200f, false);
+            foreach (var step in job.Attack)
+            {
+                float r = step.Reach * Mathf.Min(step.SlashScale, 1.1f);
+                switch (step.Slash)
+                {
+                    case "horizontal": WarmArc(r, 200f, false); break;
+                    case "reverse": WarmArc(r, 200f, true); break;
+                    case "vertical": WarmArc(r, 170f, true); break;
+                    case "stab": WarmArc(r, 40f, false); break;
+                }
+            }
+        }
+        // 투사체 셰이더도 처음 그리는 순간 멈칫한다 — 화살·마법탄 판을 잠깐 세워 둔다
+        foreach (int kind in new[] { 0, 1 })
+        {
+            var shot = new MeshInstance3D
+            {
+                Mesh = new QuadMesh { Size = Vector2.One },
+                MaterialOverride = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/projectile.gdshader") },
+                CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            };
+            ((ShaderMaterial)shot.MaterialOverride).SetShaderParameter("kind", kind);
+            GameRoot.Instance.Stage.AddChild(shot);
+            shot.GlobalPosition = at + Vector3.Down * 3f;
+            GetTree().CreateTimer(0.2).Timeout += shot.QueueFree;
         }
         foreach (var def in Data.SkillDef.All.Values)
             foreach (var ev in def.Events)
