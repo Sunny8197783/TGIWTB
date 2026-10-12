@@ -1,7 +1,7 @@
 # PixelMMO
 
 Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프라이트** (A Short Hike / HD-2D 계열).
-2026-09-28 전면 재시작. 설계·조사 근거는 `docs/design/REBUILD.md`, 큰 지도(1024m)는 `docs/design/WORLD.md`. 이전 버전은 `archive/astra-3d` 브랜치.
+2026-09-28 전면 재시작. 설계·조사 근거는 `docs/design/REBUILD.md`, 큰 지도(1024m)는 `docs/design/WORLD.md`, 둥근 대륙·왕국(M10)은 `docs/design/M10_kingdoms.md`. 이전 버전은 `archive/astra-3d` 브랜치.
 
 ## 절대 규칙
 1. 직업·스킬·기연 데이터는 코드에 하드코딩하지 않는다. 전부 `data/**.json` + C# 로더.
@@ -26,7 +26,8 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - `dotnet build` → `tools/godot.sh --headless --import` (새 그림을 넣었을 때) → `tools/godot.sh`
 - 지도(1024m): `$PY tools/mapgen/mapgen.py` → `data/world/*` + `docs/design/map_preview.png` (약 2분)
   - `$PY` = `/c/Users/gram/AppData/Local/Programs/Python/Python313/python.exe` (numpy·Pillow 가 여기 깔려 있다. Bash 의 `python` 은 msys 라 없다)
-  - 지역·절벽선·강·길·마을·폭포는 mapgen.py 위쪽 상수. 절벽선을 옮기면 폭포·호수 자리는 `pinned` 로 붙든다
+  - 지역·절벽선·강·길·마을·폭포는 mapgen.py 위쪽 상수. 하루미 마을이 한가운데(`CENTER`), 지역은 마을에서 본 방향(북 0°)과 절벽 A(`CLIFF_A_PTS`, 위/아래)로 가른다
+  - 왕국 여섯은 `KINGDOMS` (성 그림 `keep_<id>`·`castle_front_<id>`, 집 종류, 전송석 레벨), 지역 입구는 `HUBS`, 우두머리 자리는 `BOSS_SPOTS`(spawns.json fixed 와 같게)
 - 스프라이트 법선 지도: 새 그림을 받으면 `$PY tools/normals.py` (→ `*_n.png`: RG 법선, B 부피 깊이) 뒤 `--headless --import`.
   나무·덤불·바위는 B 깊이만큼 판을 부풀려 입체로 그린다 (`PropBuilder.Relief`, 끄기 `--no=relief`). 충돌은 그림 아랫선 모양 그대로 (`World/Footprint`)
 - 세계수는 조각 셋(`art_src/world_tree`)을 `$PY tools/compose_world_tree.py` 로 합성한다 (PixelLab 한 장은 256px 까지)
@@ -48,9 +49,15 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
     전직 대화는 `--level=10 --tap=interact:6:30 --settle=200 --shot=533,885,10` (전사 교관 앞에서 F 를 30프레임마다 톡톡)
 - 몬스터·사냥터(M9): `data/monsters/*.json` — 레벨·공격 목록(`melee`·`charge`·`shoot`·`slam`(leap)·`spin`, 연속 `hits`, 못 막는 `unblockable`, 순간이동 `blink`)·원거리 `keep_away`·등껍질 `guard_arc_deg`·우두머리 `boss`+`phases`.
   색만 바꾼 변종은 `"base"` + `"recolor"` (hue 범위는 `tools/palette.py --mark` 로). 경험치는 레벨 차이로 깎인다 (`levels.json exp_below`)
-  - 사냥터 무리는 `data/world/spawns.json` (지역별 계획 → `$PY tools/place_camps.py --preview` 가 자리를 채운다, 우두머리는 fixed). 주인공 둘레 60m 무리만 세운다 (`Combat/MonsterSpawner`)
+  - 사냥터 무리는 `data/world/spawns.json` (지역별 계획 → `$PY tools/place_camps.py --preview` 가 자리를 채운다, 우두머리는 fixed). 주인공 둘레 60m 무리만 세운다 (`Combat/MonsterSpawner`, 한 프레임에 한 무리씩, 몬스터 그림은 시작할 때 뒤에서 미리 읽는다)
+    `dist` [최소, 최대] = 마을에서 거리대 (같은 지역도 멀수록 세다), `gap` = 무리 간격 (초원은 18m)
   - 몬스터 그림은 5방향(S·SE·E·NE·N)만 뽑고 `assets.json` `"mirror": true` 로 서쪽을 뒤집어 채운다. 동작은 move·attack(·attack2)·death
-  - 확인: `--no=monsters --spawn=goblin_archer,kappa --react=guard --after=8 --shot=600,700,10`. 우두머리(고블린 대장)는 (346, 550)
+  - 확인: `--no=monsters --spawn=goblin_archer,kappa --react=guard --after=8 --shot=600,700,10`. id 뒤 `*` 는 정예 (`--spawn=forest_goblin*`)
+  - 정예(M10): 무리에서 8% 확률, 체력 x3·피해 x1.5·경험치 x5, 붉게 일렁임 (`CombatTuning.Elite*`). 그림 크기는 그대로 (규칙 5)
+  - 지역 우두머리 여섯은 기존 그림의 색 변종(`base`+`recolor`+`boss`+`phases`): 고블린 대장·허수아비 왕·텐구 대장·고목 수호자·안개 여왕·설인 왕
+  - 쓰러지면 그 레벨 필요 경험치의 10% 를 잃는다 (`levels.json death_exp_loss`, 레벨은 안 내려감)
+- 전송석(M10): `meta.waystones` (마을 1·지역 입구 6·왕국 6, 레벨). F → 부활 지점·체력 회복 + 목록, 레벨이 되면 가 본 적 없어도 간다 (`World/Waystones`).
+  교관 넷·안내인은 하루미 마을 광장. 확인은 `--level=12 --shot=520,575.8,10 --tap=interact:1:20 --settle=50`
 - 숙련·진화: 스킬 JSON 의 `mastery.evolution`. 진화 확인은 `--mastery=sk_moon_crescent:29.5 --press=skill_1 --settle=40`. 판정 규칙 검사는 `tools/godot.sh --headless -- --selftest`
 - 전망 지점은 지도 meta `viewpoints` (pitch·distance·look_ahead·look_up), 환경음은 `data/world/ambience.json` + `python tools/synth_ambience.py` (자연 소리는 Kenney 에 없어 합성). 끄기 `--no=ambience`
 - 세이브는 `user://save.json`. 캡처(`--capture`) 실행은 세이브를 읽지도 쓰지도 않는다

@@ -22,6 +22,10 @@ public partial class Enemy : CharacterBody3D
     private enum State { Idle, Chase, Windup, Active, Recover, Hurt, Stagger, Return, Dead }
 
     public MonsterDef Def { get; }
+    /// <summary>정예: 체력·피해·경험치가 크고 붉게 일렁인다 (MonsterSpawner 가 정한다)</summary>
+    public bool Elite { get; }
+    public float MaxHp => Def.Hp * (Elite ? T.EliteHp : 1f);
+    public string DisplayName => Elite ? "정예 " + Def.Name : Def.Name;
     public bool Alive => _state != State.Dead;
     public float Radius => Def.Radius;
     public int Level => Def.Level;
@@ -30,7 +34,7 @@ public partial class Enemy : CharacterBody3D
     public bool Threatening => _state is State.Windup or State.Active;
     /// <summary>주인공을 쫓거나 싸우는 중 (이름표·우두머리 막대)</summary>
     public bool Engaged => _state is not (State.Idle or State.Return or State.Dead);
-    public float HpRatio => Mathf.Clamp(_hp / Def.Hp, 0f, 1f);
+    public float HpRatio => Mathf.Clamp(_hp / MaxHp, 0f, 1f);
     /// <summary>주인공에게서 멀면 잔다 (AI·물리·애니메이션 모두 멈춤).</summary>
     private bool Asleep => Hero.Instance != null
         && GlobalPosition.DistanceSquaredTo(Hero.Instance.GlobalPosition) > T.MonsterSleepRange * T.MonsterSleepRange;
@@ -68,11 +72,13 @@ public partial class Enemy : CharacterBody3D
     private const string PlaceholderArt = "res://art/characters/forest_goblin";
     private static readonly Color WarnOrange = new(1f, 0.55f, 0.15f);
     private static readonly Color WarnPurple = new(0.85f, 0.3f, 1f);
+    private static readonly Color EliteRed = new(1f, 0.25f, 0.15f);
 
-    public Enemy(MonsterDef def, Vector3 home)
+    public Enemy(MonsterDef def, Vector3 home, bool elite = false)
     {
         Def = def;
         _home = home;
+        Elite = elite && !def.Boss;
     }
 
     public Enemy() { }
@@ -80,7 +86,7 @@ public partial class Enemy : CharacterBody3D
     public override void _Ready()
     {
         Name = Def.Id;
-        _hp = Def.Hp;
+        _hp = MaxHp;
         // 적끼리·주인공과는 몸으로 부딪히지 않는다 (돌진으로 빠져나가야 하니까). 땅·건물만.
         CollisionLayer = 1 << 2;
         CollisionMask = 1;
@@ -206,11 +212,11 @@ public partial class Enemy : CharacterBody3D
 
             case State.Return:
                 // 끌려 나왔다 — 체력을 채우며 집으로 (그동안은 맞지 않는다)
-                _hp = Mathf.MoveToward(_hp, Def.Hp, Def.Hp * T.MonsterReturnHeal * dt);
+                _hp = Mathf.MoveToward(_hp, MaxHp, MaxHp * T.MonsterReturnHeal * dt);
                 Vector3 home = Flat(_home - GlobalPosition);
                 if (home.Length() < 1f)
                 {
-                    _hp = Def.Hp;
+                    _hp = MaxHp;
                     Enter(State.Idle);
                     break;
                 }
@@ -422,7 +428,7 @@ public partial class Enemy : CharacterBody3D
     private void HitHero(Hero hero, float damage, Vector3 dir, bool charge, Vector3? from = null)
     {
         _attackResolved = true;
-        var result = hero.ReceiveAttack(from ?? GlobalPosition, damage, dir, _atk.Unblockable);
+        var result = hero.ReceiveAttack(from ?? GlobalPosition, damage * (Elite ? T.EliteDamage : 1f), dir, _atk.Unblockable);
         switch (result)
         {
             case HitResult.Parried:
@@ -445,7 +451,7 @@ public partial class Enemy : CharacterBody3D
         Vector3 dir = hero != null ? Flat(hero.GlobalPosition - GlobalPosition).Normalized() : _facing;
         if (dir.LengthSquared() < 0.01f)
             dir = _facing;
-        Projectile.FireHostile(this, GlobalPosition, dir, a.Projectile, a.Damage, a.Unblockable, CombatFx.PaletteOf(Def.Palette));
+        Projectile.FireHostile(this, GlobalPosition, dir, a.Projectile, a.Damage * (Elite ? T.EliteDamage : 1f), a.Unblockable, CombatFx.PaletteOf(Def.Palette));
         Sfx.Play(Def.Sounds.Shoot, -5f, 1.2f, 0.08f);
     }
 
@@ -539,7 +545,7 @@ public partial class Enemy : CharacterBody3D
     {
         Enter(State.Dead);
         if (Hero.Instance is IPlayerContext player)
-            player.GrantExp(Mathf.RoundToInt(Def.Exp * LevelDef.Instance.ExpFactor(Def.Level, player.Level)));
+            player.GrantExp(Mathf.RoundToInt(Def.Exp * (Elite ? T.EliteExp : 1f) * LevelDef.Instance.ExpFactor(Def.Level, player.Level)));
         if (Def.Boss)
             Hud.Announce($"{Def.Name} 처치", null, new Color(1f, 0.85f, 0.4f));
         if (EngagedBoss == this)
@@ -585,7 +591,13 @@ public partial class Enemy : CharacterBody3D
         if (_state is not State.Windup and not State.Stagger)
         {
             _flash = Mathf.MoveToward(_flash, 0f, (float)delta * 8f);
-            _sprite.SetFlash(_flash, _flashColor);
+            // 정예는 붉게 일렁인다 (맞아 번쩍일 때는 그 색이 이긴다)
+            float glow = Elite && _state != State.Dead
+                ? T.EliteGlow * (0.6f + 0.4f * Mathf.Sin(GameRoot.Instance.WorldTime * T.ElitePulse)) : 0f;
+            if (glow > _flash)
+                _sprite.SetFlash(glow, EliteRed);
+            else
+                _sprite.SetFlash(_flash, _flashColor);
         }
         _sprite.Advance(dt);
         Vector3 feet = GlobalPosition;

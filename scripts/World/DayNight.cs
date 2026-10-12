@@ -211,7 +211,7 @@ public partial class DayNight : Node
         if (root?.Rig == null || root.World == null)
             return 0.3f;
         string zone = root.World.ZoneAt(root.Rig.Target.X, root.Rig.Target.Z);
-        return zone == "서리 고원" || zone == "눈꽃 마을" ? 1f : 0.3f;
+        return zone == "서리 고원" || zone == "노르드 왕국" ? 1f : 0.3f;
     }
 
     private static (Key a, Key b, float t) Bracket(float hour)

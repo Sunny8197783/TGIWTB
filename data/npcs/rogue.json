@@ -1,6 +1,6 @@
 {
   "id": "npc_rogue", "name": "카스", "title": "도적 교관", "role": "trainer", "job": "rogue",
-  "art": "res://art/characters/npc_rogue", "x": 500, "z": 925,
+  "art": "res://art/characters/npc_rogue", "x": 522, "z": 549,
   "lines": {
     "greet": ["...뭘 봐. 견습생이 올 데가 아니야.", "레벨 {level}. 그 정도는 돼야 말이라도 섞지."],
     "offer": ["흠. 발소리가 줄었군. 쓸 만해.",

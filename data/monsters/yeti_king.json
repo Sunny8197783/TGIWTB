@@ -1,0 +1,79 @@
+{
+  "id": "yeti_king",
+  "base": "yeti",
+  "name": "설인 왕",
+  "level": 30,
+  "hp": 5000,
+  "poise": 400,
+  "speed": 2.6,
+  "sight": 12,
+  "radius": 0.9,
+  "knockback": 0.1,
+  "exp": 2000,
+  "boss": true,
+  "leash": 40,
+  "attacks": [
+    {
+      "kind": "slam",
+      "damage": 90,
+      "reach": 3.6,
+      "radius": 3.6,
+      "windup": 1.0,
+      "active": 0.25,
+      "recover": 0.9,
+      "cooldown": 2.2,
+      "telegraph": true
+    },
+    {
+      "kind": "shoot",
+      "anim": "attack2",
+      "damage": 60,
+      "reach": 13,
+      "min_range": 4.5,
+      "windup": 0.9,
+      "active": 0.25,
+      "recover": 0.8,
+      "cooldown": 4,
+      "projectile": {
+        "kind": "orb",
+        "speed": 11,
+        "range": 15,
+        "radius": 0.55,
+        "explode": 1.5,
+        "count": 3,
+        "spread_deg": 30
+      }
+    },
+    {
+      "kind": "charge",
+      "anim": "move",
+      "damage": 70,
+      "reach": 12,
+      "min_range": 5,
+      "windup": 1.0,
+      "active": 0.7,
+      "recover": 1.4,
+      "lunge": 13,
+      "cooldown": 7,
+      "phase": 1
+    }
+  ],
+  "phases": [
+    {
+      "hp_below": 0.5,
+      "speed": 1.25,
+      "tempo": 0.8,
+      "line": "눈보라를 부른다!"
+    }
+  ],
+  "recolor": {
+    "hue": [
+      190,
+      235
+    ],
+    "min_sat": 0.08,
+    "to": 222,
+    "sat": 2.2,
+    "val": 0.8
+  }
+}

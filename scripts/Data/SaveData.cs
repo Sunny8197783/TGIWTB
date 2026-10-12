@@ -18,9 +18,7 @@ public sealed class SaveData
     /// <summary>모습 (AppearanceDef). null 이면 아직 고르지 않았다 → 처음 켤 때 모습 고르기가 열린다</summary>
     public string LookBase { get; set; }
     public int LookAccent { get; set; }
-    /// <summary>깨운 여신상 id (meta.statues). 빠른 이동 목록</summary>
-    public List<string> Statues { get; set; } = new();
-    /// <summary>마지막으로 기도한 여신상 — 쓰러지면, 다시 켜면 여기서 시작한다</summary>
+    /// <summary>마지막으로 쓴 전송석 id (meta.waystones) — 쓰러지면, 다시 켜면 여기서 시작한다. 이름은 여신상 시절 그대로</summary>
     public string RespawnStatue { get; set; }
     /// <summary>레벨·경험치(다음 레벨까지 모은 것)·직업 id (data/jobs)</summary>
     public int Level { get; set; } = 1;

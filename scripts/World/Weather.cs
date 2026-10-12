@@ -33,13 +33,13 @@ public partial class Weather : Node3D
 
     public override void _Ready()
     {
-        Add(new Dictionary<string, float> { ["벚꽃 골짜기"] = 1f, ["하나미 마을"] = 0.7f },
+        Add(new Dictionary<string, float> { ["벚꽃 골짜기"] = 1f, ["하나미 왕도"] = 0.7f },
             amount: 150, life: 9f, fall: new Vector2(0.35f, 0.7f), scale: new Vector2(0.07f, 0.1f), turbulence: 0.9f,
             new Color(1f, 0.82f, 0.88f), new Color(0.96f, 0.6f, 0.74f), new Color(1f, 0.95f, 0.96f));
-        Add(new Dictionary<string, float> { ["단풍 협곡"] = 1f, ["고목의 숲"] = 0.35f },
+        Add(new Dictionary<string, float> { ["단풍 협곡"] = 1f, ["홍엽 왕도"] = 0.7f, ["고목의 숲"] = 0.35f, ["엘더 왕국"] = 0.35f },
             amount: 100, life: 8f, fall: new Vector2(0.6f, 1.1f), scale: new Vector2(0.08f, 0.12f), turbulence: 1.4f,
             new Color(0.95f, 0.45f, 0.15f), new Color(0.85f, 0.22f, 0.12f), new Color(0.98f, 0.78f, 0.25f));
-        Add(new Dictionary<string, float> { ["서리 고원"] = 1f, ["눈꽃 마을"] = 0.8f },
+        Add(new Dictionary<string, float> { ["서리 고원"] = 1f, ["노르드 왕국"] = 0.8f },
             amount: 260, life: 8f, fall: new Vector2(0.7f, 1.3f), scale: new Vector2(0.05f, 0.09f), turbulence: 0.5f,
             new Color(1f, 1f, 1f), new Color(0.9f, 0.94f, 1f), new Color(1f, 1f, 1f));
     }

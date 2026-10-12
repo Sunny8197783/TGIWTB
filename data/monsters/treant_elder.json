@@ -1,0 +1,71 @@
+{
+  "id": "treant_elder",
+  "base": "treant",
+  "name": "고목 수호자",
+  "level": 21,
+  "hp": 3200,
+  "poise": 300,
+  "speed": 1.8,
+  "sight": 11,
+  "radius": 0.9,
+  "knockback": 0.1,
+  "exp": 900,
+  "boss": true,
+  "leash": 40,
+  "attacks": [
+    {
+      "kind": "slam",
+      "damage": 52,
+      "reach": 3.6,
+      "radius": 3.6,
+      "windup": 1.1,
+      "active": 0.25,
+      "recover": 1.0,
+      "cooldown": 2.2,
+      "telegraph": true
+    },
+    {
+      "kind": "melee",
+      "damage": 34,
+      "reach": 2.8,
+      "windup": 0.7,
+      "active": 0.25,
+      "recover": 0.8,
+      "lunge": 2.5,
+      "cooldown": 1.8,
+      "hits": 2,
+      "gap": 0.4,
+      "weight": 0.7
+    },
+    {
+      "kind": "slam",
+      "unblockable": true,
+      "damage": 70,
+      "reach": 5.0,
+      "radius": 5.2,
+      "windup": 1.6,
+      "active": 0.3,
+      "recover": 1.4,
+      "cooldown": 7,
+      "phase": 1
+    }
+  ],
+  "phases": [
+    {
+      "hp_below": 0.5,
+      "speed": 1.3,
+      "tempo": 0.8,
+      "line": "뿌리가 땅을 뒤흔든다!"
+    }
+  ],
+  "recolor": {
+    "hue": [
+      60,
+      110
+    ],
+    "min_sat": 0.2,
+    "to": 40,
+    "sat": 1.1,
+    "val": 0.95
+  }
+}

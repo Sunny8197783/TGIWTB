@@ -1,6 +1,6 @@
 {
   "id": "npc_archer", "name": "실리아", "title": "궁수 교관", "role": "trainer", "job": "archer",
-  "art": "res://art/characters/npc_archer", "x": 215, "z": 610,
+  "art": "res://art/characters/npc_archer", "x": 527, "z": 560,
   "lines": {
     "greet": ["숨을 고르고, 바람을 읽어. 활은 그다음이야.", "레벨 {level}이 되면 와. 그땐 시위를 당길 수 있을 거야."],
     "offer": ["발걸음이 가벼워졌네. 거리를 재는 눈도 생겼고.",

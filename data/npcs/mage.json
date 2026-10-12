@@ -1,6 +1,6 @@
 {
   "id": "npc_mage", "name": "에델", "title": "마법 교관", "role": "trainer", "job": "mage",
-  "art": "res://art/characters/npc_mage", "x": 808, "z": 660,
+  "art": "res://art/characters/npc_mage", "x": 502, "z": 549,
   "lines": {
     "greet": ["책을 거꾸로 들고 있구나, 견습생. 서두를 것 없다.", "레벨 {level}이 되면 다시 찾아오렴. 마력이 그릇을 채울 테니."],
     "offer": ["오, 네 안에서 무언가 반짝이는구나.",

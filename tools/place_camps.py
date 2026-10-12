@@ -1,6 +1,7 @@
 """몬스터 무리 자리를 지역마다 고른다: data/world/spawns.json 의 "zones"(계획) → "camps"(자리).
 
-지역 안에서 평평하고, 물·길·마을 건물·여신상에서 떨어지고, 무리끼리 간격을 둔 자리를 고른다.
+지역 안에서 평평하고, 물·길·마을·왕국·건물·전송석에서 떨어지고, 무리끼리 간격(gap)을 둔 자리를 고른다.
+"dist" 가 있으면 하루미 마을(meta.center)에서 그 거리대 안에서만 — 같은 지역도 멀수록 센 무리를 둔다.
 "prefer" 가 있으면 그 지면(밭·물가 등) 위 자리를 먼저 쓴다. 고정 자리("fixed")는 그대로 둔다 (우두머리).
 지도를 다시 만들면(mapgen) 이것도 다시 돌린다.  $PY tools/place_camps.py [--preview]
 """
@@ -25,7 +26,8 @@ BUILDING = re.compile(r"house|shop|inn|warehouse|shrine|torii|lighthouse|clockto
 MIN_GAP = 30.0       # 무리끼리 (m)
 ROAD_GAP = 5.0       # 길에서
 BUILDING_GAP = 14.0
-STATUE_GAP = 16.0
+STATUE_GAP = 16.0    # 전송석에서
+TOWN_GAP = 20.0      # 마을·왕국 가장자리에서
 SLOPE = 0.35         # 무리 반지름 안 높이 차 / 반지름
 
 
@@ -43,7 +45,9 @@ def main():
     names = meta["zone_names"]
     props = json.load(open(os.path.join(WORLD, "props.json"), encoding="utf-8"))
     buildings = np.array([(p["x"], p["z"]) for p in props if BUILDING.search(p["type"])] or [(-999, -999)])
-    statues = np.array([(s["x"], s["z"]) for s in meta["statues"]])
+    statues = np.array([(s["x"], s["z"]) for s in meta["waystones"]])
+    towns = [(t["x"], t["z"], t["r"]) for t in meta.get("towns", [])]
+    cx0, cz0 = meta.get("center", [W / 2, H / 2])
 
     # 길까지 거리: 길 칸을 ROAD_GAP 만큼 부풀린 가면
     path = np.isin(ground, list(PATH))
@@ -60,7 +64,7 @@ def main():
     taken = [(c["x"], c["z"]) for c in camps]
     rng = np.random.default_rng(7)
 
-    def ok(x, z, radius, prefer=None):
+    def ok(x, z, radius, prefer=None, gap=MIN_GAP, dist=None):
         ix, iz = int(x), int(z)
         rr = int(radius)
         if ix - rr < 1 or iz - rr < 1 or ix + rr >= W - 1 or iz + rr >= H - 1:
@@ -76,7 +80,11 @@ def main():
             return False
         if np.hypot(statues[:, 0] - x, statues[:, 1] - z).min() < STATUE_GAP + radius:
             return False
-        return all(np.hypot(tx - x, tz - z) >= MIN_GAP for tx, tz in taken)
+        if any(np.hypot(tx - x, tz - z) < tr + TOWN_GAP for tx, tz, tr in towns):
+            return False
+        if dist is not None and not dist[0] <= np.hypot(x - cx0, z - cz0) <= dist[1]:
+            return False
+        return all(np.hypot(tx - x, tz - z) >= gap for tx, tz in taken)
 
     for zone, zp in plan["zones"].items():
         zid = names.index(zone)
@@ -91,7 +99,7 @@ def main():
                         break
                     x = cx * ZC + rng.uniform(1, ZC - 1)
                     z = cz * ZC + rng.uniform(1, ZC - 1)
-                    if not ok(x, z, group["radius"], pass_prefer):
+                    if not ok(x, z, group["radius"], pass_prefer, group.get("gap", MIN_GAP), group.get("dist")):
                         continue
                     taken.append((x, z))
                     camps.append({"ids": group["ids"], "x": round(float(x), 1), "z": round(float(z), 1),

@@ -1,6 +1,6 @@
 {
   "id": "npc_warrior", "name": "브란", "title": "전사 교관", "role": "trainer", "job": "warrior",
-  "art": "res://art/characters/npc_warrior", "x": 533, "z": 882.5,
+  "art": "res://art/characters/npc_warrior", "x": 497, "z": 560,
   "lines": {
     "greet": ["검을 쥐는 법부터 다시 배워야겠군, 견습생.", "레벨 {level}이 되면 다시 오게. 그때 진짜 검을 쥐여 주지."],
     "offer": ["좋은 눈이다. 맞고도 쓰러지지 않는 몸이 되었군.",

@@ -157,8 +157,11 @@ public partial class Hud : Control
             {
                 DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
                 // 싸우는 중엔 레벨만 (무리가 엉기면 이름이 겹친다)
-                string tag = e.Engaged ? $"Lv{e.Level}" : $"Lv{e.Level} {e.Def.Name}";
-                PixelText.DrawCentered(this, tag, (head / px - new Vector2(0, 3)).Round(), LevelColor(e.Level), 0.9f);
+                // 정예는 레벨 색 대신 주황 — 레벨이 낮아도 세다
+                string tag = e.Engaged ? $"Lv{e.Level}" : $"Lv{e.Level} {e.DisplayName}";
+                if (e.Elite && e.Engaged)
+                    tag = "정예 " + tag;
+                PixelText.DrawCentered(this, tag, (head / px - new Vector2(0, 3)).Round(), e.Elite ? EliteTag : LevelColor(e.Level), 0.9f);
                 DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
             }
         }
@@ -187,6 +190,8 @@ public partial class Hud : Control
             Number(Snap(p, px), value, scale, c, px);
         }
     }
+
+    private static readonly Color EliteTag = new(1f, 0.55f, 0.2f);
 
     private Color LevelColor(int level)
     {

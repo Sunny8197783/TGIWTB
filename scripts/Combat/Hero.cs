@@ -58,7 +58,6 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     private bool _persist;                  // 캡처(검증) 실행은 진짜 세이브를 읽지도 쓰지도 않는다
     private string _lookBase;
     private int _lookAccent;
-    private readonly HashSet<string> _statues = new();
     private string _respawnStatue;
 
     public float Hp => _hp;
@@ -76,7 +75,6 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     public float CooldownRemaining(string skillId) => skillId != null && _cooldowns.TryGetValue(skillId, out float t) ? Mathf.Max(t, 0f) : 0f;
     public float MasteryProgress(string skillId) => skillId != null && SkillDef.All.TryGetValue(skillId, out var def) ? _mastery.Progress(def) : -1f;
     public float SkillDamageScale(SkillDef def) => _mastery.Multiplier(def) * Power;
-    public IReadOnlySet<string> Statues => _statues;
     public string RespawnStatue => _respawnStatue;
     public string LookBase => _lookBase;
     public int LookAccent => _lookAccent;
@@ -112,7 +110,6 @@ public partial class Hero : CharacterBody3D, IPlayerContext
             lookAccent = save.LookAccent;
             FirstLaunch = lookBase == null;
             _mastery.Load(save);
-            _statues.UnionWith(save.Statues ?? new List<string>());
             _respawnStatue = save.RespawnStatue;
             _level = Mathf.Clamp(save.Level, 1, LevelDef.Instance.MaxLevel);
             _exp = save.Exp;
@@ -164,7 +161,7 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         var save = new SaveData
         {
             LookBase = _lookBase, LookAccent = _lookAccent,
-            Statues = new List<string>(_statues), RespawnStatue = _respawnStatue,
+            RespawnStatue = _respawnStatue,
             Level = _level, Exp = _exp, Job = _job.Id,
         };
         _mastery.Save(save);
@@ -183,14 +180,12 @@ public partial class Hero : CharacterBody3D, IPlayerContext
         GameRoot.Instance.Rig.SnapNext();
     }
 
-    public bool Pray(string statueId, Vector3 respawnFeet)
+    public void RestAt(string waystoneId, Vector3 respawnFeet)
     {
-        bool first = _statues.Add(statueId);
-        _respawnStatue = statueId;
+        _respawnStatue = waystoneId;
         _spawn = respawnFeet;
         _hp = MaxHp;
         Save();
-        return first;
     }
 
     public void TravelTo(Vector3 feet)
@@ -849,6 +844,14 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
     private void Respawn()
     {
+        // 쓰러진 값: 경험치를 조금 잃는다 (레벨은 그대로) — 높은 지역에 들어가는 데 긴장이 생긴다
+        int loss = Mathf.Min(_exp, Mathf.RoundToInt(LevelDef.Instance.Need(_level) * LevelDef.Instance.DeathExpLoss));
+        if (loss > 0)
+        {
+            _exp -= loss;
+            Hud.Announce("쓰러졌다", $"경험치 -{loss}", new Color(1f, 0.45f, 0.4f));
+            Save();
+        }
         _hp = MaxHp;
         _iframes = T.HurtIFrames;
         Teleport(_spawn);

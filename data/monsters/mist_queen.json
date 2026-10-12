@@ -1,0 +1,85 @@
+{
+  "id": "mist_queen",
+  "base": "mist_ghost",
+  "name": "안개 여왕",
+  "level": 23,
+  "hp": 2400,
+  "poise": 160,
+  "speed": 3.0,
+  "sight": 14,
+  "radius": 0.45,
+  "knockback": 0.3,
+  "exp": 1000,
+  "boss": true,
+  "leash": 40,
+  "keep_away": 7,
+  "attacks": [
+    {
+      "kind": "shoot",
+      "damage": 34,
+      "reach": 11,
+      "windup": 0.9,
+      "active": 0.2,
+      "recover": 0.6,
+      "cooldown": 2.2,
+      "blink": 7,
+      "projectile": {
+        "kind": "orb",
+        "speed": 6,
+        "range": 14,
+        "radius": 0.45,
+        "explode": 1.6,
+        "homing": 35
+      }
+    },
+    {
+      "kind": "shoot",
+      "damage": 22,
+      "reach": 10,
+      "windup": 1.1,
+      "active": 0.2,
+      "recover": 0.8,
+      "cooldown": 4,
+      "weight": 0.7,
+      "projectile": {
+        "kind": "orb",
+        "speed": 8,
+        "range": 13,
+        "radius": 0.4,
+        "count": 5,
+        "spread_deg": 60
+      }
+    },
+    {
+      "kind": "spin",
+      "unblockable": true,
+      "damage": 46,
+      "reach": 3.0,
+      "radius": 4.0,
+      "windup": 1.2,
+      "active": 0.4,
+      "recover": 1.0,
+      "cooldown": 6,
+      "phase": 1
+    }
+  ],
+  "phases": [
+    {
+      "hp_below": 0.5,
+      "speed": 1.2,
+      "tempo": 0.8,
+      "line": "안개가 짙어진다…"
+    }
+  ],
+  "recolor": {
+    "hue": [
+      190,
+      290
+    ],
+    "min_sat": 0.02,
+    "min_val": 0.1,
+    "to": 285,
+    "sat": 4.0,
+    "val": 1.3
+  }
+}

@@ -51,7 +51,7 @@ public partial class CharacterSprite : Node3D
     {
         Name = "Sprite";
         TopLevel = true;
-        foreach (string file in ResourceLoader.ListDirectory(folder))
+        foreach (string file in Listing(folder))
         {
             if (!file.EndsWith(".png") || file.EndsWith("_n.png"))
                 continue;
@@ -79,6 +79,15 @@ public partial class CharacterSprite : Node3D
     public CharacterSprite() { }
 
     private static readonly System.Collections.Generic.Dictionary<string, Texture2D> Recolored = new();
+    private static readonly Dictionary<string, string[]> Listings = new();
+
+    /// <summary>폴더의 파일 목록 (한 번만 읽는다 — 몬스터가 무리로 깨어날 때마다 디렉터리를 훑으면 한 마리에 몇 ms)</summary>
+    public static string[] Listing(string folder)
+    {
+        if (!Listings.TryGetValue(folder, out var files))
+            Listings[folder] = files = ResourceLoader.ListDirectory(folder);
+        return files;
+    }
 
     public bool Has(string anim) => _sheets.ContainsKey(anim);
 

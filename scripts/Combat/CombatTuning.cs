@@ -27,6 +27,13 @@ public static class CombatTuning
     public const float MonsterPackAlert = 8f;      // 한 마리가 덤비면 이 거리 안 무리도 같이 (m)
     public const float MonsterReturnSpeed = 1.5f;  // 끌려 나왔다 돌아갈 때 속도 배율
     public const float MonsterReturnHeal = 0.5f;   // 돌아가며 1초에 최대 체력의 이만큼 찬다
+    // 정예 (M10): 무리에서 나올 때 이 확률로. 그림 크기는 그대로(1텍셀 = 1픽셀) — 붉게 일렁이고 이름 앞에 "정예"
+    public const float EliteChance = 0.08f;
+    public const float EliteHp = 3f;               // 체력 배율
+    public const float EliteDamage = 1.5f;         // 피해 배율
+    public const float EliteExp = 5f;              // 경험치 배율
+    public const float EliteGlow = 0.3f;           // 붉은 일렁임 세기 (0~1)
+    public const float ElitePulse = 3f;            // 일렁임 빠르기 (rad/초)
     public const float ChargeHitPad = 0.6f;        // 돌진: 몸 반지름에 이만큼 더한 거리 안이면 맞는다 (m)
     public const float LeapHeight = 2.4f;          // 도약 내려찍기 그림이 뜨는 높이 (m)
     /// <summary>얕은 물은 걷고, 이보다 깊으면 못 들어간다 (m).</summary>

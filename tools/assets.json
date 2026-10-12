@@ -1729,5 +1729,100 @@
   "char": "2592fb97-a2d1-46db-b103-6fcef8c750ec",
   "anim": "mg_death",
   "mirror": true
+ },
+ {
+  "dest": "art/env/keep_hanami_0.png",
+  "object": "3bff1798-aaf0-4cc2-b220-8f4e8f9f8f91",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/keep_floren_0.png",
+  "object": "20dce59e-fbd6-42fb-8cfc-03c657dfbcb7",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/keep_hongyeop_0.png",
+  "object": "9eba5146-7652-4e98-aa97-f8cea525d086",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/keep_elder_0.png",
+  "object": "1b380fe8-4476-4daa-ba97-d3046f121565",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/keep_lumie_0.png",
+  "object": "49367db9-9cc6-4852-9146-c30dbb00a632",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/keep_nord_0.png",
+  "object": "8fbf7ef7-9fab-43e1-baa3-ccbd33aaea38",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/treehouse_0.png",
+  "object": "638501f3-bdeb-4782-abed-4fefaacb523f",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/waystone_0.png",
+  "object": "26f5ea9f-6212-429d-9228-f485e9a47718",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/hanok_0.png",
+  "object": "39dba76b-7725-45b4-a6d6-7d03b46b7f05",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_hanami_0.png",
+  "object": "4a3119dc-59c8-43bf-bc0a-f1aecc49aa3c",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_floren_0.png",
+  "object": "812520dd-703e-48ff-8d0b-44e7163f7b29",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_hongyeop_0.png",
+  "object": "dd9e55bb-dab8-4882-9964-fb128a72a339",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_elder_0.png",
+  "object": "9c2675f9-6f1f-4217-84b0-b6338bd5acbb",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_lumie_0.png",
+  "object": "f3e34344-b5ab-4839-be6c-428cd377c11b",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/castle_front_nord_0.png",
+  "object": "2cce1cf3-92d7-44ac-aeb9-1472eab458f0",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/lakehouse_0.png",
+  "object": "41366cb9-afa1-413d-a97a-922e1ba88ebc",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/hanok_1.png",
+  "object": "647d106a-c2ea-4d1b-a440-544e0e7fcc9b",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/treehouse_1.png",
+  "object": "4840e9d2-f46f-4fba-8533-44f410695074",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
+ },
+ {
+  "dest": "art/env/lakehouse_1.png",
+  "object": "5b6b46eb-9e6a-4e25-b5b1-d478a9043551",
+  "note": "M10 왕국 (Pro Flash, 기존 그림을 화풍 참고로)"
  }
 ]

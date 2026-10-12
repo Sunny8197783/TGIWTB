@@ -181,6 +181,18 @@ public static class PropCatalog
         House("ice_hut", new Color(0.75f, 0.25f, 0.2f), 192, 192, 4f);
         House("boathouse", new Color(0.4f, 0.55f, 0.8f), 224, 192, 7f);
         House("house_tower", new Color(0.3f, 0.6f, 0.4f));
+        // M10 왕국: 지역 화풍마다 집 + 본성 + 성문(성문·양옆 성벽·양끝 탑 한 장), 전송석
+        House("hanok", new Color(0.3f, 0.3f, 0.34f));
+        House("treehouse", new Color(0.35f, 0.55f, 0.25f));
+        House("lakehouse", new Color(0.3f, 0.65f, 0.6f));
+        foreach (var (id, roof) in new[] { ("hanami", new Color(0.3f, 0.32f, 0.36f)), ("floren", new Color(0.3f, 0.45f, 0.85f)),
+                     ("hongyeop", new Color(0.3f, 0.3f, 0.34f)), ("elder", new Color(0.3f, 0.5f, 0.25f)),
+                     ("lumie", new Color(0.25f, 0.6f, 0.55f)), ("nord", new Color(0.85f, 0.9f, 0.95f)) })
+        {
+            Add(new PropKind { Id = "keep_" + id, Size = new(224, 256), Color = roof, Placeholder = PropKind.Shape.Tower, Flip = false, Footprint = new(6f, 4f), Sink = 1, ShadowCaster = PropKind.Caster.Box });
+            Add(new PropKind { Id = "castle_front_" + id, Size = new(256, 192), Color = roof, Placeholder = PropKind.Shape.Box, Flip = false, Footprint = new(8f, 1.6f), Sink = 1, ShadowCaster = PropKind.Caster.Box });
+        }
+        Add(new PropKind { Id = "waystone", Size = new(96, 128), Color = new Color(0.55f, 0.75f, 0.95f), Placeholder = PropKind.Shape.Tower, Flip = false, Glow = 0.7f, Trunk = 0.5f, ShadowCaster = PropKind.Caster.Column });
         Add(new PropKind { Id = "moon_deck", Size = new(224, 208), Color = new Color(0.7f, 0.2f, 0.15f), Placeholder = PropKind.Shape.House, Flip = false, Footprint = new(6f, 4f), Glow = 0.8f, ShadowCaster = PropKind.Caster.Box });
         Add(new PropKind { Id = "pass_gate", Size = new(224, 224), Color = new Color(0.6f, 0.6f, 0.65f), Placeholder = PropKind.Shape.Box, Flip = false, Trunk = 0.4f });
         Add(new PropKind { Id = "fairy_ring", Size = new(160, 160), Color = new Color(0.8f, 0.3f, 0.3f), Placeholder = PropKind.Shape.Flat, Flat = true, Shadow = false });

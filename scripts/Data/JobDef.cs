@@ -131,6 +131,8 @@ public sealed class LevelDef
     /// <summary>몬스터가 높을 때 레벨마다 더하는 비율과 그 상한</summary>
     public float ExpAbovePerLevel { get; set; }
     public float ExpAboveMax { get; set; } = 1f;
+    /// <summary>쓰러지면 이번 레벨 필요량의 이 비율을 잃는다</summary>
+    public float DeathExpLoss { get; set; }
 
     /// <summary>레벨 차이에 따른 경험치 배율 — 낮은 몬스터만 잡으면 거의 안 오른다</summary>
     public float ExpFactor(int monsterLevel, int heroLevel)

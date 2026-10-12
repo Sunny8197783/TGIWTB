@@ -15,6 +15,7 @@ namespace PixelMmo.Dev;
 ///   --exp=N            장면마다 경험치 N (레벨업 연출)  ·  --level=N --job=id  레벨·직업을 정해 시작
 ///   --tap=interact:7:30  그 조작을 7번, 30 물리 프레임마다 톡 누른다 (대화 넘기기 → 전직 확인)
 ///   --spawn=goblin_archer[,kappa]  장면마다 주인공 북쪽 6m 에 그 몬스터를 세운다 (사냥터 무리와 따로. 무리를 끄려면 --no=monsters)
+///                      id 뒤에 * 를 붙이면 정예 (--spawn=forest_goblin*)
 ///   --react=guard|dodge --after=N
 ///                      적의 공격 예고가 끝나기 직전에 그 조작을 누르고 N 프레임 뒤에 찍는다 (패링·완벽 회피 확인)
 ///   --novsync          60fps 상한을 풀어 실제 여유를 잰다
@@ -186,7 +187,8 @@ public partial class DevCapture : Node
         {
             float x = s[0] + (i - (_spawn.Count - 1) * 0.5f) * 2.5f, z = s[1] - 6f;
             var home = new Vector3(x, root.World.WalkHeightAt(x, z), z);
-            var e = new Combat.Enemy(Data.MonsterDef.Get(_spawn[i]), home);
+            string id = _spawn[i].TrimEnd('*');
+            var e = new Combat.Enemy(Data.MonsterDef.Get(id), home, elite: id.Length < _spawn[i].Length);
             root.Stage.AddChild(e);
             e.GlobalPosition = home + Vector3.Up * 0.1f;
         }

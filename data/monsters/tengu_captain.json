@@ -1,0 +1,75 @@
+{
+  "id": "tengu_captain",
+  "base": "crow_tengu",
+  "name": "텐구 대장",
+  "level": 18,
+  "hp": 2200,
+  "poise": 200,
+  "speed": 4.4,
+  "sight": 13,
+  "radius": 0.5,
+  "knockback": 0.2,
+  "exp": 700,
+  "boss": true,
+  "leash": 40,
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 24,
+      "reach": 2.2,
+      "windup": 0.5,
+      "active": 0.16,
+      "recover": 0.4,
+      "lunge": 6.0,
+      "cooldown": 2.0,
+      "hits": 4,
+      "gap": 0.18,
+      "telegraph": true
+    },
+    {
+      "kind": "slam",
+      "anim": "attack2",
+      "leap": true,
+      "unblockable": true,
+      "damage": 44,
+      "reach": 10,
+      "min_range": 4,
+      "radius": 2.8,
+      "windup": 0.8,
+      "active": 0.5,
+      "recover": 1.0,
+      "cooldown": 5
+    },
+    {
+      "kind": "melee",
+      "damage": 30,
+      "reach": 2.4,
+      "windup": 0.4,
+      "active": 0.18,
+      "recover": 0.3,
+      "lunge": 9.0,
+      "cooldown": 4,
+      "blink": 6,
+      "phase": 1
+    }
+  ],
+  "phases": [
+    {
+      "hp_below": 0.5,
+      "speed": 1.2,
+      "tempo": 0.75,
+      "line": "바람이 거세진다!"
+    }
+  ],
+  "recolor": {
+    "hue": [
+      180,
+      260
+    ],
+    "min_sat": 0.04,
+    "min_val": 0.12,
+    "to": 352,
+    "sat": 2.2,
+    "val": 0.72
+  }
+}

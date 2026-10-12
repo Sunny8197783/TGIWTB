@@ -182,12 +182,12 @@ public partial class GameRoot : Node
         var feet = new Vector3(spawn.X, World.HeightAt(spawn.X, spawn.Y), spawn.Y);
         Rig.Target = feet;
         Rig.SnapNext();
-        var statues = new Statues(World);
+        var waystones = new Waystones(World);
         if (!off.Contains("hero"))
         {
             Stage.AddChild(new Hero());
-            // 마지막으로 기도한 여신상 앞에서 시작한다 (처음이면 하루미 광장)
-            Hero.Instance.Teleport(statues.RespawnFeet(Hero.Instance) ?? feet);
+            // 마지막으로 쓴 전송석 앞에서 시작한다 (처음이면 하루미 광장)
+            Hero.Instance.Teleport(waystones.RespawnFeet(Hero.Instance) ?? feet);
         }
         if (!off.Contains("monsters"))
             AddChild(new MonsterSpawner());
@@ -196,8 +196,8 @@ public partial class GameRoot : Node
         if (Hero.Instance != null)
         {
             hud.Bind(Hero.Instance);
-            ui.AddChild(statues);
-            statues.Bind(Hero.Instance);
+            ui.AddChild(waystones);
+            waystones.Bind(Hero.Instance);
             var npcs = new Npcs(World);
             ui.AddChild(npcs);
             npcs.Bind(Hero.Instance);

@@ -23,6 +23,7 @@ public partial class MonsterSpawner : Node
     }
 
     private readonly List<Camp> _camps = new();
+    private readonly Queue<Camp> _waking = new();
     private float _check;
 
     /// <summary>지역 이름 → 레벨대 (spawns.json zones.levels)</summary>
@@ -51,10 +52,34 @@ public partial class MonsterSpawner : Node
                 Members = new Enemy[ids.Count],
             });
         }
+        Preload();
+    }
+
+    /// <summary>
+    /// 몬스터 그림을 뒤에서 미리 읽어 둔다. 처음 보는 몬스터 무리가 깨어날 때 그 자리에서 읽으면
+    /// 시트 대여섯 장에 무리 하나 100~150ms 멈췄다 (순간이동·부활 직후엔 여럿이 한꺼번에 깨어 0.5초).
+    /// </summary>
+    private void Preload()
+    {
+        var folders = new HashSet<string>();
+        foreach (var c in _camps)
+            foreach (var id in c.Ids)
+                folders.Add(MonsterDef.Get(id).Art);
+        foreach (var folder in folders)
+            foreach (string file in Render.CharacterSprite.Listing(folder))
+                if (file.EndsWith(".png"))
+                    ResourceLoader.LoadThreadedRequest($"{folder}/{file}");
     }
 
     public override void _Process(double delta)
     {
+        // 깨울 무리는 한 프레임에 하나씩 — 한꺼번에 세우면 그 프레임이 튄다
+        if (_waking.Count > 0)
+        {
+            var next = _waking.Dequeue();
+            if (!next.Awake)
+                Wake(next);
+        }
         _check -= (float)delta;
         if (_check > 0f || Hero.Instance == null)
             return;
@@ -63,8 +88,8 @@ public partial class MonsterSpawner : Node
         foreach (var camp in _camps)
         {
             float d = at.DistanceTo(camp.Center);
-            if (!camp.Awake && d < T.CampWakeRange)
-                Wake(camp);
+            if (!camp.Awake && d < T.CampWakeRange && !_waking.Contains(camp))
+                _waking.Enqueue(camp);
             else if (camp.Awake && d > T.CampSleepRange)
                 Sleep(camp);
         }
@@ -100,7 +125,8 @@ public partial class MonsterSpawner : Node
         float a = Mathf.Tau * slot / camp.Ids.Length;
         Vector2 at = camp.Center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * camp.Radius * (camp.Ids.Length == 1 ? 0f : 0.6f);
         var home = new Vector3(at.X, world.WalkHeightAt(at.X, at.Y), at.Y);
-        var e = new Enemy(def, home);
+        // 정예는 무리마다 가끔 (우두머리는 아니다)
+        var e = new Enemy(def, home, GD.Randf() < T.EliteChance);
         GameRoot.Instance.Stage.AddChild(e);
         e.GlobalPosition = home + Vector3.Up * 0.1f;
         camp.Members[slot] = e;

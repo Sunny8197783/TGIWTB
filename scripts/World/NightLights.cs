@@ -65,7 +65,7 @@ public partial class NightLights : Node3D
         _fireflies.GlobalPosition = center + Vector3.Up * 0.8f;
         // 눈밭엔 반딧불이가 없다
         string zone = root.World.ZoneAt(center.X, center.Z);
-        bool cold = zone == "서리 고원" || zone == "눈꽃 마을";
+        bool cold = zone == "서리 고원" || zone == "노르드 왕국";
         _fireflies.AmountRatio = cold ? 0f : Mathf.Clamp((night - 0.4f) * 2f, 0f, 1f);
 
         _timer -= (float)delta;
