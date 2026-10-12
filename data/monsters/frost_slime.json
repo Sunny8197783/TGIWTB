@@ -1,0 +1,31 @@
+{
+  "id": "frost_slime",
+  "base": "sakura_slime",
+  "name": "얼음 슬라임",
+  "level": 23,
+  "hp": 260,
+  "exp": 70,
+  "palette": "ice",
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 38,
+      "reach": 1.6,
+      "windup": 0.55,
+      "active": 0.22,
+      "recover": 0.65,
+      "lunge": 7.0,
+      "cooldown": 1.0
+    }
+  ],
+  "recolor": {
+    "hue": [
+      290,
+      360
+    ],
+    "min_sat": 0.1,
+    "to": 200,
+    "sat": 0.8,
+    "val": 1.1
+  }
+}

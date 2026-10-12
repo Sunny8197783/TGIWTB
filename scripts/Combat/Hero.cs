@@ -430,9 +430,13 @@ public partial class Hero : CharacterBody3D, IPlayerContext
     public static void StepOnGround(CharacterBody3D body, ref Vector3 vel, float dt, float timeScale)
     {
         var world = GameRoot.Instance.World;
-        vel = world.ConstrainMove(body.GlobalPosition, vel, dt, T.WadeDepth, T.MaxSlope);
-        body.Velocity = new Vector3(vel.X, 0f, vel.Z) * timeScale;
-        body.MoveAndSlide();
+        // 서 있으면 물리로 밀지 않는다 (사냥터 몬스터 수십 마리가 매 물리 프레임 MoveAndSlide 하면 3ms)
+        if (vel.X * vel.X + vel.Z * vel.Z > 1e-4f)
+        {
+            vel = world.ConstrainMove(body.GlobalPosition, vel, dt, T.WadeDepth, T.MaxSlope);
+            body.Velocity = new Vector3(vel.X, 0f, vel.Z) * timeScale;
+            body.MoveAndSlide();
+        }
         Vector3 p = body.GlobalPosition;
         p.Y = world.WalkHeightAt(p.X, p.Z);
         body.GlobalPosition = p;
@@ -785,17 +789,18 @@ public partial class Hero : CharacterBody3D, IPlayerContext
 
     // ── 맞기 ────────────────────────────────────────────
 
-    public HitResult ReceiveAttack(Enemy src, float damage, Vector3 dir)
+    /// <summary>적의 공격이 닿았다. from = 공격이 온 자리 (막기 방향 판정), unblockable = 막기·패링 불가 (자줏빛 예고)</summary>
+    public HitResult ReceiveAttack(Vector3 from, float damage, Vector3 dir, bool unblockable = false)
     {
         if (!IsAlive)
             return HitResult.Dodged;
         if ((_state == State.Dash && _dashAge <= T.DashIFrames) || _iframes > 0f || (_state == State.Skill && _skill.Invulnerable))
             return HitResult.Dodged;
-        Vector3 toEnemy = Flat(src.GlobalPosition - GlobalPosition).Normalized();
+        Vector3 toEnemy = Flat(from - GlobalPosition).Normalized();
         bool facingIt = Mathf.RadToDeg(FacingVector().AngleTo(toEnemy)) <= T.GuardArcDeg;
         Vector3 contact = GlobalPosition + Vector3.Up * 0.8f + toEnemy * 0.45f;
 
-        if (_state == State.Guard && facingIt)
+        if (_state == State.Guard && facingIt && !unblockable)
         {
             if (_guardAge <= _mastery.Passive(p => p.ParryWindow, T.ParryWindow))
             {

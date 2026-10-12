@@ -1,0 +1,38 @@
+{
+  "id": "goblin_archer",
+  "name": "고블린 궁수",
+  "level": 8,
+  "art": "res://art/characters/goblin_archer",
+  "hp": 70,
+  "poise": 10,
+  "speed": 3.0,
+  "sight": 12,
+  "radius": 0.4,
+  "knockback": 1.0,
+  "exp": 20,
+  "keep_away": 6,
+  "palette": "fire",
+  "attacks": [
+    {
+      "kind": "shoot",
+      "damage": 16,
+      "reach": 11,
+      "windup": 0.8,
+      "active": 0.15,
+      "recover": 0.6,
+      "cooldown": 1.8,
+      "projectile": {
+        "kind": "arrow",
+        "speed": 15,
+        "range": 14,
+        "radius": 0.35
+      }
+    }
+  ],
+  "sounds": {
+    "hit": "impactPunch_medium",
+    "windup": "drawKnife",
+    "death": "impactPunch_heavy",
+    "shoot": "swing"
+  }
+}

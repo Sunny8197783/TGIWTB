@@ -1,6 +1,7 @@
 {
   "id": "forest_goblin",
   "name": "숲 고블린",
+  "level": 7,
   "art": "res://art/characters/forest_goblin",
   "hp": 90,
   "poise": 18,
@@ -9,7 +10,7 @@
   "radius": 0.4,
   "knockback": 0.8,
   "exp": 18,
-  "attack": {
+  "attacks": [{ "kind": "melee",
     "damage": 20,
     "reach": 1.9,
     "windup": 0.75,
@@ -18,7 +19,7 @@
     "lunge": 3.5,
     "cooldown": 1.6,
     "telegraph": true
-  },
+  }],
   "sounds": {
     "hit": "impactPunch_medium",
     "windup": "drawKnife",

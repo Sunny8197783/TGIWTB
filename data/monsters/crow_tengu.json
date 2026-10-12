@@ -1,0 +1,47 @@
+{
+  "id": "crow_tengu",
+  "name": "까마귀 텐구",
+  "level": 16,
+  "art": "res://art/characters/crow_tengu",
+  "hp": 190,
+  "poise": 26,
+  "speed": 4.0,
+  "sight": 11,
+  "radius": 0.42,
+  "knockback": 0.8,
+  "exp": 48,
+  "palette": "shadow",
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 20,
+      "reach": 2.0,
+      "windup": 0.55,
+      "active": 0.18,
+      "recover": 0.4,
+      "lunge": 5.0,
+      "cooldown": 2.2,
+      "hits": 3,
+      "gap": 0.22
+    },
+    {
+      "kind": "slam",
+      "anim": "attack2",
+      "leap": true,
+      "damage": 34,
+      "reach": 9,
+      "min_range": 4,
+      "radius": 2.0,
+      "windup": 0.8,
+      "active": 0.55,
+      "recover": 0.9,
+      "cooldown": 5
+    }
+  ],
+  "sounds": {
+    "hit": "impactPunch_medium",
+    "windup": "swing",
+    "death": "impactPunch_heavy",
+    "shoot": "swing"
+  }
+}

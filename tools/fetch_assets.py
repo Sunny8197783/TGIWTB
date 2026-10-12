@@ -5,6 +5,7 @@
   {"sheet": "art/characters/hero/run.png", "char": "<id>", "anim": "hero_run_v3b"}   PixelLab 애니메이션 이름
   {"sheet": "art/characters/hero/rot.png", "char": "<id>", "rotations": true}
       망친 방향만 다시 뽑았으면 "redo": {"west": "rg_attack3c"} (그 방향만 다른 애니메이션 이름에서 가져온다)
+      "mirror": true — 서쪽 셋(서·남서·북서)은 동쪽 셋을 좌우로 뒤집어 채운다 (몬스터: 5방향만 뽑아 생성을 아낀다. rot 에도 같이 준다)
       다시 뽑아도 푸른 마법 빛이 남으면 "deglow": ["south"] — 그 방향에서 채도 높은 청록·파랑 픽셀을 지운다 (푸른 옷·눈이 없는 캐릭터만)
   {"object": "<id>", "grid": 3, "cells": ["bush_0", "bush_pink_0", ...]}   작은 소품 여럿을 한 장에 격자로 뽑은 것.
       가로·세로 칸 수가 다르면 "cols"/"rows". 이름은 왼쪽 위부터 읽는 순서.
@@ -307,6 +308,14 @@ def deglow(img):
     return w, h, [(0, 0, 0, 0) if glow(c) else c for c in px]
 
 
+MIRROR = {"west": "east", "south-west": "south-east", "north-west": "north-east"}
+
+
+def hflip(img):
+    w, h, px = img
+    return w, h, [px[y * w + (w - 1 - x)] for y in range(h) for x in range(w)]
+
+
 def pack(item):
     folder = src_dir(item)
     # skip_first: v3 가 맨 앞에 붙인 서 있는 원화 칸을 뺀다 (달리기처럼 도는 동작에서 한 번씩 멈칫했다)
@@ -318,19 +327,21 @@ def pack(item):
     W, H = CELL * frames, CELL * len(DIRS)
     out = [(0, 0, 0, 0)] * (W * H)
     for row, d in enumerate(DIRS):
-        rot_path = os.path.join(rot_dir, d, "0.png")
+        src = MIRROR.get(d, d) if item.get("mirror") else d
+        flip = (lambda im: hflip(im)) if src != d else (lambda im: im)
+        rot_path = os.path.join(rot_dir, src, "0.png")
         if not os.path.exists(rot_path):
             print("rot 원화가 없어 빈 줄:", rot_path, "— rot 시트를 먼저 받는다")
             continue
-        ref = png.read_rgba(rot_path)
+        ref = flip(png.read_rgba(rot_path))
         # 원화 자리: 캔버스 가운데와 발밑 줄을 ANCHOR 에
         rx = ANCHOR[0] - ref[0] // 2
         ry = ANCHOR[1] - max(opaque_rows(*ref))
-        paths = [os.path.join(folder, d, f"{i}.png") for i in range(start, start + frames)]
+        paths = [os.path.join(folder, src, f"{i}.png") for i in range(start, start + frames)]
         if item.get("rotations") or not all(os.path.exists(p) for p in paths):
             imgs, off = [ref] * frames, (0, 0)  # 아직 없는 방향은 서 있는 원화
         else:
-            imgs = [clear_bg(png.read_rgba(p)) for p in paths]
+            imgs = [flip(clear_bg(png.read_rgba(p))) for p in paths]
             if d in item.get("deglow", ()):
                 imgs = [deglow(im) for im in imgs]
             if d not in cache or d in item.get("redo", {}):

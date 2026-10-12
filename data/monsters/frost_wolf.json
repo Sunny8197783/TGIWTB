@@ -1,0 +1,32 @@
+{
+  "id": "frost_wolf",
+  "base": "field_wolf",
+  "name": "서리 늑대",
+  "level": 24,
+  "hp": 280,
+  "speed": 5.0,
+  "exp": 78,
+  "palette": "ice",
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 42,
+      "reach": 2.0,
+      "windup": 0.4,
+      "active": 0.2,
+      "recover": 0.5,
+      "lunge": 8.5,
+      "cooldown": 1.1
+    }
+  ],
+  "recolor": {
+    "hue": [
+      10,
+      45
+    ],
+    "min_sat": 0.15,
+    "to": 205,
+    "sat": 0.25,
+    "val": 1.35
+  }
+}

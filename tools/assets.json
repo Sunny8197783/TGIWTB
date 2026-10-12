@@ -1336,19 +1336,26 @@
   "sheet": "art/characters/job_rogue_m/attack1.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
   "anim": "rg_attack1",
-  "deglow": ["south", "north-west"]
+  "deglow": [
+   "south",
+   "north-west"
+  ]
  },
  {
   "sheet": "art/characters/job_rogue_m/attack2.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
   "anim": "rg_attack2",
-  "redo": {"east": "rg_attack2b"}
+  "redo": {
+   "east": "rg_attack2b"
+  }
  },
  {
   "sheet": "art/characters/job_rogue_m/attack3.png",
   "char": "10c158bb-2ca5-430a-b8dd-1c51738abb24",
   "anim": "rg_attack3",
-  "deglow": ["south"]
+  "deglow": [
+   "south"
+  ]
  },
  {
   "sheet": "art/characters/job_rogue_f/rot.png",
@@ -1390,13 +1397,19 @@
   "sheet": "art/characters/job_rogue_f/attack2.png",
   "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
   "anim": "rg_attack2",
-  "redo": {"south-east": "rg_attack2b"}
+  "redo": {
+   "south-east": "rg_attack2b"
+  }
  },
  {
   "sheet": "art/characters/job_rogue_f/attack3.png",
   "char": "fa94cde3-64dd-4ecc-abe2-8d583f30b277",
   "anim": "rg_attack3b",
-  "redo": {"south-east": "rg_attack3c", "north-west": "rg_attack3c", "west": "rg_attack3c"}
+  "redo": {
+   "south-east": "rg_attack3c",
+   "north-west": "rg_attack3c",
+   "west": "rg_attack3c"
+  }
  },
  {
   "sheet": "art/characters/npc_guide/rot.png",
@@ -1452,5 +1465,269 @@
   "sheet": "art/characters/npc_rogue/idle.png",
   "char": "fbede50e-0c25-46a3-89c5-8b29bd6104b1",
   "anim": "npc_idle"
+ },
+ {
+  "sheet": "art/characters/goblin_archer/rot.png",
+  "char": "764fdd55-4cb9-42ae-91d5-2ccd9561e688",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_archer/attack.png",
+  "char": "764fdd55-4cb9-42ae-91d5-2ccd9561e688",
+  "anim": "gb_shoot",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_archer/move.png",
+  "char": "764fdd55-4cb9-42ae-91d5-2ccd9561e688",
+  "anim": "gb_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_archer/death.png",
+  "char": "764fdd55-4cb9-42ae-91d5-2ccd9561e688",
+  "anim": "gb_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/scarecrow/rot.png",
+  "char": "793cd0ca-1ada-43db-b8fd-51a149e1293d",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/scarecrow/attack.png",
+  "char": "793cd0ca-1ada-43db-b8fd-51a149e1293d",
+  "anim": "sc_attack",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/scarecrow/move.png",
+  "char": "793cd0ca-1ada-43db-b8fd-51a149e1293d",
+  "anim": "sc_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/scarecrow/death.png",
+  "char": "793cd0ca-1ada-43db-b8fd-51a149e1293d",
+  "anim": "sc_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/kappa/rot.png",
+  "char": "50da4b65-fff4-46b6-acdb-17f893d8304e",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/kappa/attack.png",
+  "char": "50da4b65-fff4-46b6-acdb-17f893d8304e",
+  "anim": "kp_attack",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/kappa/attack2.png",
+  "char": "50da4b65-fff4-46b6-acdb-17f893d8304e",
+  "anim": "kp_spit",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/kappa/move.png",
+  "char": "50da4b65-fff4-46b6-acdb-17f893d8304e",
+  "anim": "kp_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/kappa/death.png",
+  "char": "50da4b65-fff4-46b6-acdb-17f893d8304e",
+  "anim": "kp_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/fox_spirit/rot.png",
+  "char": "f86dbf93-ee67-4d74-a21a-5bdcc5e6dd5e",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/fox_spirit/attack.png",
+  "char": "f86dbf93-ee67-4d74-a21a-5bdcc5e6dd5e",
+  "anim": "fx_cast",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/fox_spirit/move.png",
+  "char": "f86dbf93-ee67-4d74-a21a-5bdcc5e6dd5e",
+  "anim": "fx_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/fox_spirit/death.png",
+  "char": "f86dbf93-ee67-4d74-a21a-5bdcc5e6dd5e",
+  "anim": "fx_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/crow_tengu/rot.png",
+  "char": "eb586f18-4556-426e-a507-93b19ac70aaa",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/crow_tengu/attack.png",
+  "char": "eb586f18-4556-426e-a507-93b19ac70aaa",
+  "anim": "tg_slash",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/crow_tengu/attack2.png",
+  "char": "eb586f18-4556-426e-a507-93b19ac70aaa",
+  "anim": "tg_leap",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/crow_tengu/move.png",
+  "char": "eb586f18-4556-426e-a507-93b19ac70aaa",
+  "anim": "tg_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/crow_tengu/death.png",
+  "char": "eb586f18-4556-426e-a507-93b19ac70aaa",
+  "anim": "tg_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_chief/rot.png",
+  "char": "bdb8aae4-3188-4771-abdd-b1f8502b8354",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_chief/attack.png",
+  "char": "bdb8aae4-3188-4771-abdd-b1f8502b8354",
+  "anim": "gc_swing",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_chief/attack2.png",
+  "char": "bdb8aae4-3188-4771-abdd-b1f8502b8354",
+  "anim": "gc_slam2",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_chief/move.png",
+  "char": "bdb8aae4-3188-4771-abdd-b1f8502b8354",
+  "anim": "gc_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/goblin_chief/death.png",
+  "char": "bdb8aae4-3188-4771-abdd-b1f8502b8354",
+  "anim": "gc_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/field_wolf/rot.png",
+  "char": "9c393f34-d704-454c-aa6a-10d6297f5a70",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/field_wolf/attack.png",
+  "char": "9c393f34-d704-454c-aa6a-10d6297f5a70",
+  "anim": "wf_bite",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/field_wolf/move.png",
+  "char": "9c393f34-d704-454c-aa6a-10d6297f5a70",
+  "anim": "wf_run",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/field_wolf/death.png",
+  "char": "9c393f34-d704-454c-aa6a-10d6297f5a70",
+  "anim": "wf_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/treant/rot.png",
+  "char": "0f6103e4-9b1e-4cd1-9d72-ab08826c270b",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/treant/attack.png",
+  "char": "0f6103e4-9b1e-4cd1-9d72-ab08826c270b",
+  "anim": "tr_slam",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/treant/move.png",
+  "char": "0f6103e4-9b1e-4cd1-9d72-ab08826c270b",
+  "anim": "tr_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/treant/death.png",
+  "char": "0f6103e4-9b1e-4cd1-9d72-ab08826c270b",
+  "anim": "tr_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/yeti/rot.png",
+  "char": "42925f88-8f8a-48a7-91a9-375031050b59",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/yeti/attack.png",
+  "char": "42925f88-8f8a-48a7-91a9-375031050b59",
+  "anim": "yt_slam",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/yeti/attack2.png",
+  "char": "42925f88-8f8a-48a7-91a9-375031050b59",
+  "anim": "yt_throw",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/yeti/move.png",
+  "char": "42925f88-8f8a-48a7-91a9-375031050b59",
+  "anim": "yt_walk",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/yeti/death.png",
+  "char": "42925f88-8f8a-48a7-91a9-375031050b59",
+  "anim": "yt_death",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/mist_ghost/rot.png",
+  "char": "2592fb97-a2d1-46db-b103-6fcef8c750ec",
+  "rotations": true,
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/mist_ghost/attack.png",
+  "char": "2592fb97-a2d1-46db-b103-6fcef8c750ec",
+  "anim": "mg_cast",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/mist_ghost/move.png",
+  "char": "2592fb97-a2d1-46db-b103-6fcef8c750ec",
+  "anim": "mg_float",
+  "mirror": true
+ },
+ {
+  "sheet": "art/characters/mist_ghost/death.png",
+  "char": "2592fb97-a2d1-46db-b103-6fcef8c750ec",
+  "anim": "mg_death",
+  "mirror": true
  }
 ]

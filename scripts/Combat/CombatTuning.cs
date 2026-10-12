@@ -21,6 +21,14 @@ public static class CombatTuning
     public const float MaxSlope = 1.2f;
     /// <summary>이 거리보다 먼 몬스터는 잔다 (m). 화면 밖 AI·물리를 돌리지 않는다.</summary>
     public const float MonsterSleepRange = 40f;
+    public const float CampCheckEvery = 0.5f;      // 사냥터 무리를 세우고 거두는 검사 간격 (초)
+    public const float CampWakeRange = 60f;        // 이 안의 무리를 세운다 (m) — 잠드는 거리(MonsterSleepRange)보다 멀리
+    public const float CampSleepRange = 85f;       // 이보다 멀어진 무리는 거둔다
+    public const float MonsterPackAlert = 8f;      // 한 마리가 덤비면 이 거리 안 무리도 같이 (m)
+    public const float MonsterReturnSpeed = 1.5f;  // 끌려 나왔다 돌아갈 때 속도 배율
+    public const float MonsterReturnHeal = 0.5f;   // 돌아가며 1초에 최대 체력의 이만큼 찬다
+    public const float ChargeHitPad = 0.6f;        // 돌진: 몸 반지름에 이만큼 더한 거리 안이면 맞는다 (m)
+    public const float LeapHeight = 2.4f;          // 도약 내려찍기 그림이 뜨는 높이 (m)
     /// <summary>얕은 물은 걷고, 이보다 깊으면 못 들어간다 (m).</summary>
     public const float WadeDepth = 0.45f;
 

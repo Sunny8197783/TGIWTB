@@ -12,6 +12,7 @@ namespace PixelMmo.Combat;
 /// 주인공이 쏘는 투사체 — 화살·마법탄·터지는 구슬 (직업 평타 JobDef.ProjectileDef, 스킬 이벤트 "projectile").
 /// 가슴 높이로 수평으로 날아가고, 적의 반지름 안에 들면 맞는다. 언덕에 박히거나 사거리를 다 가면 멈춘다(구슬은 터진다).
 /// 판은 카메라를 보고 서 있고 가로축이 날아가는 쪽 — 화살은 비스듬히 날아도 화면에서 그 방향을 가리킨다.
+/// 적이 쏜 것(FireHostile)은 주인공을 친다: 막으면 부서지고, 패링하면 되돌아가 적을 친다. 세계 시간으로 난다 (슬로우에 느려진다).
 /// </summary>
 public partial class Projectile : Node3D
 {
@@ -31,6 +32,10 @@ public partial class Projectile : Node3D
     private MeshInstance3D _mesh;
     private ShaderMaterial _mat;
     private float _trail;
+    private Enemy _owner;          // 적이 쐈다 (null = 주인공 것)
+    private bool _unblockable;
+    private const float HeroRadius = 0.35f;
+    private const float HostileScale = 1.3f;
 
     private static Shader _shader;
     private static readonly QuadMesh Quad = new() { Size = Vector2.One };
@@ -49,6 +54,24 @@ public partial class Projectile : Node3D
             };
             GameRoot.Instance.Stage.AddChild(p);
             p.GlobalPosition = feet + Vector3.Up * Height + p._dir * 0.5f;
+        }
+    }
+
+    /// <summary>적의 투사체: 주인공을 노린다</summary>
+    public static void FireHostile(Enemy owner, Vector3 feet, Vector3 dir, JobDef.ProjectileDef def, float damage, bool unblockable,
+                                   CombatFx.Palette pal)
+    {
+        int n = Math.Max(1, def.Count);
+        for (int i = 0; i < n; i++)
+        {
+            float a = n == 1 ? 0f : Mathf.DegToRad(Mathf.Lerp(-def.SpreadDeg, def.SpreadDeg, i / (float)(n - 1)));
+            var p = new Projectile
+            {
+                _def = def, _damage = damage, _dir = dir.Rotated(Vector3.Up, a).Normalized(), _pal = pal,
+                _owner = owner, _unblockable = unblockable,
+            };
+            GameRoot.Instance.Stage.AddChild(p);
+            p.GlobalPosition = feet + Vector3.Up * Height + p._dir * (owner.Radius + 0.3f);
         }
     }
 
@@ -81,6 +104,12 @@ public partial class Projectile : Node3D
         bool arrow = _def.Kind == "arrow";
         float lenPx = arrow ? 18f : _def.Kind == "orb" ? 28f : 20f;
         float thickPx = arrow ? 5f : _def.Kind == "orb" ? 20f : 12f;
+        if (_owner != null)
+        {
+            // 적의 것은 더 굵게 — 날아오는 걸 읽고 막기·회피를 골라야 한다
+            lenPx *= HostileScale;
+            thickPx *= HostileScale * 1.2f;
+        }
         _mat.SetShaderParameter("kind", arrow ? 0 : 1);
         _mat.SetShaderParameter("px", new Vector2(lenPx, thickPx));
         _mat.SetShaderParameter(Uniform.Core, _pal.Core);
@@ -106,11 +135,16 @@ public partial class Projectile : Node3D
 
     public override void _PhysicsProcess(double delta)
     {
-        float dt = (float)delta * GameRoot.Instance.HeroScale;
+        float dt = (float)delta * (_owner != null ? GameRoot.Instance.WorldScale : GameRoot.Instance.HeroScale);
         if (dt <= 0f)
             return;
         if (_def.Homing > 0f)
-            Home(dt);
+        {
+            if (_owner != null)
+                HomeOnHero(dt);
+            else
+                Home(dt);
+        }
         float step = _def.Speed * dt;
         GlobalPosition += _dir * step;
         _travelled += step;
@@ -126,7 +160,12 @@ public partial class Projectile : Node3D
         }
 
         var p = GlobalPosition;
-        if (_def.Fall)
+        if (_owner != null)
+        {
+            if (HostileStep(p))
+                return;
+        }
+        else if (_def.Fall)
         {
             float ground = GameRoot.Instance.World.WalkHeightAt(p.X, p.Z);
             if (p.Y > ground + 0.4f)
@@ -143,7 +182,7 @@ public partial class Projectile : Node3D
             QueueFree();
             return;
         }
-        foreach (var e in Enemy.All.ToArray())
+        else foreach (var e in Enemy.All.ToArray())
         {
             if (!e.Alive || _hit.Contains(e))
                 continue;
@@ -177,6 +216,64 @@ public partial class Projectile : Node3D
                 QueueFree();
             }
         }
+    }
+
+    /// <summary>적의 투사체가 주인공에게 닿았나. 끝났으면(부서짐) true</summary>
+    private bool HostileStep(Vector3 p)
+    {
+        var hero = Hero.Instance;
+        if (hero == null || !hero.IsAlive)
+            return false;
+        Vector3 to = hero.GlobalPosition - p;
+        float d = new Vector2(to.X, to.Z).Length();
+        if (d > _def.Radius + HeroRadius)
+        {
+            // 스치기 직전에 막 돌진했다 → 완벽 회피
+            if (d < _def.Radius + HeroRadius + 0.6f && _owner.Alive)
+                hero.TryPerfectDodge(_owner);
+            return false;
+        }
+        if (_def.Explode > 0f)
+        {
+            Burst();
+            return true;
+        }
+        var result = hero.ReceiveAttack(p - _dir, _damage, _dir, _unblockable);
+        switch (result)
+        {
+            case HitResult.Dodged:
+                return false; // 몸을 뚫고 지나간다
+            case HitResult.Parried:
+                // 되받아친다: 쏜 쪽으로 돌아가 적을 친다
+                _dir = _owner.Alive ? (_owner.GlobalPosition - p) with { Y = 0f } : -_dir;
+                _dir = _dir.Normalized();
+                _owner = null;
+                _damage *= 2f;
+                _travelled = 0f;
+                Orient();
+                CombatFx.SparkleBurst(p, 12, 0.5f, _pal);
+                return false;
+            default:
+                Dust.Puff(p, 3, -_dir);
+                QueueFree();
+                return true;
+        }
+    }
+
+    /// <summary>적의 유도 투사체: 주인공 쪽으로 조금씩 휜다</summary>
+    private void HomeOnHero(float dt)
+    {
+        var hero = Hero.Instance;
+        if (hero == null)
+            return;
+        Vector3 want = hero.GlobalPosition - GlobalPosition;
+        want.Y = 0f;
+        if (Mathf.RadToDeg(_dir.AngleTo(want)) > HomingCone)
+            return;
+        float angle = _dir.SignedAngleTo(want.Normalized(), Vector3.Up);
+        float max = Mathf.DegToRad(_def.Homing) * dt;
+        _dir = _dir.Rotated(Vector3.Up, Mathf.Clamp(angle, -max, max)).Normalized();
+        Orient();
     }
 
     /// <summary>앞쪽 가까운 적 쪽으로 조금씩 휜다</summary>
@@ -213,7 +310,13 @@ public partial class Projectile : Node3D
         var hero = Hero.Instance;
         Vector3 at = GlobalPosition;
         int hits = 0;
-        foreach (var e in Enemy.All.ToArray())
+        if (_owner != null)
+        {
+            Vector3 toHero = (hero.GlobalPosition - at) with { Y = 0f };
+            if (hero.IsAlive && toHero.Length() <= _def.Explode + HeroRadius)
+                hero.ReceiveAttack(at, _damage, toHero.LengthSquared() > 0.01f ? toHero.Normalized() : _dir, _unblockable);
+        }
+        else foreach (var e in Enemy.All.ToArray())
         {
             if (!e.Alive)
                 continue;
@@ -227,6 +330,8 @@ public partial class Projectile : Node3D
         }
         if (hits > 0)
             hero.ApplyImpact(CombatTuning.HitHeavy, _dir);
+        if (_owner != null)
+            CombatFx.Shake(0.2f);
         CombatFx.Shockwave(at, _def.Explode * 1.3f, 0.45f, _pal);
         CombatFx.SparkleBurst(at, 30, _def.Explode * 0.7f, _pal);
         CombatFx.Star(at, 1.2f, _pal.Bright, 0.14f);

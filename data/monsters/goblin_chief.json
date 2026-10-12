@@ -1,0 +1,72 @@
+{
+  "id": "goblin_chief",
+  "name": "고블린 대장",
+  "level": 12,
+  "art": "res://art/characters/goblin_chief",
+  "hp": 1400,
+  "poise": 140,
+  "speed": 3.0,
+  "sight": 12,
+  "radius": 0.7,
+  "knockback": 0.2,
+  "exp": 400,
+  "boss": true,
+  "leash": 40,
+  "palette": "fire",
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 22,
+      "reach": 2.6,
+      "windup": 0.7,
+      "active": 0.22,
+      "recover": 0.5,
+      "lunge": 4.0,
+      "cooldown": 2.4,
+      "hits": 3,
+      "gap": 0.35,
+      "telegraph": true
+    },
+    {
+      "kind": "slam",
+      "anim": "attack2",
+      "leap": true,
+      "unblockable": true,
+      "damage": 40,
+      "reach": 10,
+      "min_range": 3.5,
+      "radius": 3.0,
+      "windup": 1.0,
+      "active": 0.6,
+      "recover": 1.2,
+      "cooldown": 6
+    },
+    {
+      "kind": "charge",
+      "anim": "move",
+      "damage": 30,
+      "reach": 12,
+      "min_range": 5,
+      "windup": 1.0,
+      "active": 0.7,
+      "recover": 1.4,
+      "lunge": 14,
+      "cooldown": 7,
+      "phase": 1
+    }
+  ],
+  "phases": [
+    {
+      "hp_below": 0.5,
+      "speed": 1.25,
+      "tempo": 0.8,
+      "line": "분노한다!"
+    }
+  ],
+  "sounds": {
+    "hit": "impactPunch_heavy",
+    "windup": "swing_heavy",
+    "death": "impactPlate_heavy",
+    "shoot": "swing_heavy"
+  }
+}

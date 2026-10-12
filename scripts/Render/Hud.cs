@@ -5,7 +5,7 @@ using PixelMmo.Core;
 namespace PixelMmo.Render;
 
 /// <summary>
-/// 화면 위 정보: 주인공 체력(왼쪽 위), 맞은 적 머리 위 체력, 튀어 오르는 피해 숫자.
+/// 화면 위 정보: 주인공 체력(왼쪽 위), 가까운 적 이름표(레벨 차이로 색), 맞은 적 머리 위 체력, 우두머리 막대(위 가운데), 튀어 오르는 피해 숫자.
 /// 전부 저해상도 픽셀 단위로 그려 월드와 같은 픽셀 크기로 보인다. 글자도 3x5 픽셀 숫자를 직접 찍는다.
 /// </summary>
 public partial class Hud : Control
@@ -14,13 +14,15 @@ public partial class Hud : Control
     private IPlayerContext _player;
     private float _chip = 1f;      // 깎인 만큼 늦게 따라오는 흰 잔상
     private readonly List<(Vector3 at, int value, bool heavy, float age)> _numbers = new();
-    private readonly List<(Vector3 at, int value, float age)> _exps = new();
+    private readonly List<(Vector3 at, string text, Color color, float age)> _texts = new();
     private float _expShown;   // 경험치 막대가 차오르는 중간값 (0..1)
     private string _announce, _announceSub;
     private Color _announceColor;
     private float _announceAge = 99f;
 
     private const float EnemyBarShow = 3f;   // 맞은 뒤 체력바를 띄워 두는 시간 (초)
+    private const float NameRange = 9f;      // 이 거리 안의 적은 이름표 (m)
+    private const int BossBarW = 160;
     private const float NumberLife = 0.7f;
     private const float AnnounceLife = 3.5f;
     private const float ExpLife = 1.1f;
@@ -33,6 +35,10 @@ public partial class Hud : Control
     private static readonly Color ExpHi = new(0.62f, 0.9f, 1f);
     private static readonly Color ExpLo = new(0.25f, 0.55f, 0.85f);
     private static readonly Color ExpText = new(0.75f, 0.95f, 0.55f);
+    // 이름표: 레벨 차이 — 훨씬 낮음(회색, 경험치 거의 없음) · 비슷함(흰색) · 높음(노랑) · 훨씬 높음(빨강)
+    private static readonly Color LvLow = new(0.62f, 0.62f, 0.62f);
+    private static readonly Color LvHigh = new(1f, 0.85f, 0.35f);
+    private static readonly Color LvDanger = new(1f, 0.4f, 0.32f);
 
     // 3x5 숫자 (위에서 아래로 한 줄씩, 1 = 칠함)
     // 스킬 칸 키 글자 (같은 3x5)
@@ -56,10 +62,13 @@ public partial class Hud : Control
     }
 
     /// <summary>쓰러뜨린 적 머리 위로 떠오르는 경험치 (연두 '+8')</summary>
-    public static void Exp(Vector3 at, int value)
+    public static void Exp(Vector3 at, int value) => Text(at, $"+{value} EXP", ExpText);
+
+    /// <summary>머리 위로 떠올랐다 사라지는 짧은 글자 ('회피' 같은)</summary>
+    public static void Text(Vector3 at, string text, Color? color = null)
     {
         if (_i != null)
-            _i._exps.Add((at, value, 0f));
+            _i._texts.Add((at, text, color ?? Colors.White, 0f));
     }
 
     /// <summary>화면 위쪽 가운데 한 줄 알림 (진화·히든 습득). 조건은 절대 쓰지 않는다 (규칙 4).</summary>
@@ -91,14 +100,14 @@ public partial class Hud : Control
         _announceAge += dt;
         if (_player != null)
             _chip = Mathf.MoveToward(_chip, _player.Hp / _player.MaxHp, dt * (_chip > _player.Hp / _player.MaxHp ? 0.6f : 5f));
-        for (int i = _exps.Count - 1; i >= 0; i--)
+        for (int i = _texts.Count - 1; i >= 0; i--)
         {
-            var n = _exps[i];
+            var n = _texts[i];
             n.age += dt;
             if (n.age > ExpLife)
-                _exps.RemoveAt(i);
+                _texts.RemoveAt(i);
             else
-                _exps[i] = n;
+                _texts[i] = n;
         }
         if (_player != null)
         {
@@ -132,20 +141,36 @@ public partial class Hud : Control
             DrawAnnounce(px);
 
         double now = Time.GetTicksMsec() / 1000.0;
+        Vector3 me = _player?.WorldPosition ?? Vector3.Zero;
         foreach (var e in Combat.Enemy.All)
         {
-            if (!e.Alive || now - e.LastHitAt > EnemyBarShow)
+            if (!e.Alive || e.Def.Boss)
+                continue;
+            bool bar = now - e.LastHitAt <= EnemyBarShow;
+            bool near = e.Engaged || e.GlobalPosition.DistanceTo(me) < NameRange;
+            if (!bar && !near)
                 continue;
             Vector2 head = view.WorldToScreen(e.GlobalPosition + Vector3.Up * (e.Radius * 3.2f + 0.35f));
-            Bar(Snap(head - new Vector2(9, 0) * px, px), 18, 2, e.HpRatio, e.HpRatio, px);
+            if (bar)
+                Bar(Snap(head - new Vector2(9, 0) * px, px), 18, 2, e.HpRatio, e.HpRatio, px);
+            if (near && _player != null)
+            {
+                DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
+                // 싸우는 중엔 레벨만 (무리가 엉기면 이름이 겹친다)
+                string tag = e.Engaged ? $"Lv{e.Level}" : $"Lv{e.Level} {e.Def.Name}";
+                PixelText.DrawCentered(this, tag, (head / px - new Vector2(0, 3)).Round(), LevelColor(e.Level), 0.9f);
+                DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+            }
         }
+        if (Combat.Enemy.EngagedBoss is { Alive: true } boss)
+            BossBar(boss, px);
 
-        foreach (var (at, value, age) in _exps)
+        foreach (var (at, text, color, age) in _texts)
         {
             float k = age / ExpLife;
             Vector2 p = view.WorldToScreen(at) / px - new Vector2(0, 10f * k + 4f);
             DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
-            PixelText.DrawCentered(this, $"+{value} EXP", p.Round(), ExpText, Mathf.Clamp((1f - k) * 2.5f, 0f, 1f));
+            PixelText.DrawCentered(this, text, p.Round(), color, Mathf.Clamp((1f - k) * 2.5f, 0f, 1f));
             DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
         }
 
@@ -161,6 +186,23 @@ public partial class Hud : Control
             Vector2 p = view.WorldToScreen(at) - new Vector2(0, rise) * px;
             Number(Snap(p, px), value, scale, c, px);
         }
+    }
+
+    private Color LevelColor(int level)
+    {
+        int diff = level - _player.Level;
+        return diff <= -5 ? LvLow : diff >= 5 ? LvDanger : diff >= 3 ? LvHigh : Colors.White;
+    }
+
+    /// <summary>우두머리: 화면 위 가운데 이름 + 긴 체력바</summary>
+    private void BossBar(Combat.Enemy boss, float px)
+    {
+        float lowW = GetViewportRect().Size.X / px;
+        int x = Mathf.RoundToInt(lowW * 0.5f - BossBarW * 0.5f);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
+        PixelText.DrawCentered(this, $"Lv{boss.Level} {boss.Def.Name}", new Vector2(lowW * 0.5f, 18), _player != null ? LevelColor(boss.Level) : Colors.White);
+        DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+        Bar(new Vector2(x, 23) * px, BossBarW, 4, boss.HpRatio, boss.HpRatio, px);
     }
 
     /// <summary>화면 아래 가운데 스킬 칸: 스킬 색, 대기 중이면 위에서부터 어둡게 덮고, 준비되면 흰 테두리.</summary>

@@ -1,0 +1,43 @@
+{
+  "id": "scarecrow",
+  "name": "허수아비",
+  "level": 7,
+  "art": "res://art/characters/scarecrow",
+  "hp": 110,
+  "poise": 22,
+  "speed": 2.2,
+  "sight": 8,
+  "radius": 0.45,
+  "knockback": 0.7,
+  "exp": 20,
+  "palette": "fire",
+  "attacks": [
+    {
+      "kind": "spin",
+      "damage": 18,
+      "reach": 2.2,
+      "radius": 2.4,
+      "windup": 0.9,
+      "active": 0.35,
+      "recover": 0.8,
+      "cooldown": 1.6
+    },
+    {
+      "kind": "melee",
+      "damage": 14,
+      "reach": 1.7,
+      "windup": 0.5,
+      "active": 0.2,
+      "recover": 0.6,
+      "lunge": 3.0,
+      "cooldown": 1.2,
+      "weight": 0.6
+    }
+  ],
+  "sounds": {
+    "hit": "impactWood_medium",
+    "windup": "knifeSlice",
+    "death": "impactWood_medium",
+    "shoot": "swing"
+  }
+}

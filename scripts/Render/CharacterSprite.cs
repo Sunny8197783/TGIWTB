@@ -46,7 +46,8 @@ public partial class CharacterSprite : Node3D
 
     /// <param name="folder">예: res://art/characters/hero — 그 안의 *.png 가 애니메이션 하나씩.</param>
     /// <param name="recolor">불러올 때 시트마다 한 번 거치는 색 바꾸기 (Render/Recolor). null 이면 원본.</param>
-    public CharacterSprite(string folder, System.Func<Image, Image> recolor = null)
+    /// <param name="recolorKey">같은 색 바꾸기를 여러 번 만들 때(몬스터 변종) 결과를 이 이름으로 한 번만 만들어 둔다</param>
+    public CharacterSprite(string folder, System.Func<Image, Image> recolor = null, string recolorKey = null)
     {
         Name = "Sprite";
         TopLevel = true;
@@ -55,9 +56,18 @@ public partial class CharacterSprite : Node3D
             if (!file.EndsWith(".png") || file.EndsWith("_n.png"))
                 continue;
             var tex = GD.Load<Texture2D>($"{folder}/{file}");
-            if (recolor != null)
-                tex = ImageTexture.CreateFromImage(recolor(tex.GetImage()));
             string anim = file[..^4];
+            if (recolor != null)
+            {
+                string key = recolorKey == null ? null : $"{recolorKey}/{anim}";
+                if (key == null || !Recolored.TryGetValue(key, out var done))
+                {
+                    done = ImageTexture.CreateFromImage(recolor(tex.GetImage()));
+                    if (key != null)
+                        Recolored[key] = done;
+                }
+                tex = done;
+            }
             _sheets[anim] = (tex, Mathf.Max(1, tex.GetWidth() / Cell));
             // 법선 지도(tools/normals.py): 몸이 해 쪽으로 밝고 역광에 테두리가 빛난다. 색 바꾸기와 상관없다
             string normal = $"{folder}/{anim}_n.png";
@@ -67,6 +77,8 @@ public partial class CharacterSprite : Node3D
     }
 
     public CharacterSprite() { }
+
+    private static readonly System.Collections.Generic.Dictionary<string, Texture2D> Recolored = new();
 
     public bool Has(string anim) => _sheets.ContainsKey(anim);
 

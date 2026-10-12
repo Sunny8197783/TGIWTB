@@ -1,0 +1,31 @@
+{
+  "id": "moss_wolf",
+  "base": "field_wolf",
+  "name": "이끼 늑대",
+  "level": 17,
+  "hp": 170,
+  "speed": 4.8,
+  "exp": 44,
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 26,
+      "reach": 1.9,
+      "windup": 0.42,
+      "active": 0.2,
+      "recover": 0.5,
+      "lunge": 8.0,
+      "cooldown": 1.2
+    }
+  ],
+  "recolor": {
+    "hue": [
+      10,
+      45
+    ],
+    "min_sat": 0.2,
+    "to": 105,
+    "sat": 0.8,
+    "val": 0.9
+  }
+}

@@ -46,6 +46,11 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - 직업(M8): `data/jobs/*.json` — 평타 연속기(근접 베기 또는 투사체)·스킬 칸(열리는 레벨)·성별별 원화·레벨당 체력·힘. 레벨 곡선 `data/player/levels.json`, 몬스터 `exp`
   - 견습생으로 시작 → Lv 10 에 마을 교관 NPC(`data/npcs/*.json`, `World/Npcs`)에게서 전직. 확인은 `--job=archer --level=15 --press=skill_3 --settle=40`,
     전직 대화는 `--level=10 --tap=interact:6:30 --settle=200 --shot=533,885,10` (전사 교관 앞에서 F 를 30프레임마다 톡톡)
+- 몬스터·사냥터(M9): `data/monsters/*.json` — 레벨·공격 목록(`melee`·`charge`·`shoot`·`slam`(leap)·`spin`, 연속 `hits`, 못 막는 `unblockable`, 순간이동 `blink`)·원거리 `keep_away`·등껍질 `guard_arc_deg`·우두머리 `boss`+`phases`.
+  색만 바꾼 변종은 `"base"` + `"recolor"` (hue 범위는 `tools/palette.py --mark` 로). 경험치는 레벨 차이로 깎인다 (`levels.json exp_below`)
+  - 사냥터 무리는 `data/world/spawns.json` (지역별 계획 → `$PY tools/place_camps.py --preview` 가 자리를 채운다, 우두머리는 fixed). 주인공 둘레 60m 무리만 세운다 (`Combat/MonsterSpawner`)
+  - 몬스터 그림은 5방향(S·SE·E·NE·N)만 뽑고 `assets.json` `"mirror": true` 로 서쪽을 뒤집어 채운다. 동작은 move·attack(·attack2)·death
+  - 확인: `--no=monsters --spawn=goblin_archer,kappa --react=guard --after=8 --shot=600,700,10`. 우두머리(고블린 대장)는 (346, 550)
 - 숙련·진화: 스킬 JSON 의 `mastery.evolution`. 진화 확인은 `--mastery=sk_moon_crescent:29.5 --press=skill_1 --settle=40`. 판정 규칙 검사는 `tools/godot.sh --headless -- --selftest`
 - 전망 지점은 지도 meta `viewpoints` (pitch·distance·look_ahead·look_up), 환경음은 `data/world/ambience.json` + `python tools/synth_ambience.py` (자연 소리는 Kenney 에 없어 합성). 끄기 `--no=ambience`
 - 세이브는 `user://save.json`. 캡처(`--capture`) 실행은 세이브를 읽지도 쓰지도 않는다

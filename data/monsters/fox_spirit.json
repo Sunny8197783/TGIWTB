@@ -1,0 +1,58 @@
+{
+  "id": "fox_spirit",
+  "name": "여우불",
+  "level": 14,
+  "art": "res://art/characters/fox_spirit",
+  "hp": 140,
+  "poise": 16,
+  "speed": 3.4,
+  "sight": 12,
+  "radius": 0.4,
+  "knockback": 1.0,
+  "exp": 40,
+  "keep_away": 5,
+  "palette": "fire",
+  "attacks": [
+    {
+      "kind": "shoot",
+      "damage": 28,
+      "reach": 10,
+      "windup": 0.9,
+      "active": 0.2,
+      "recover": 0.6,
+      "cooldown": 2.2,
+      "blink": 6,
+      "projectile": {
+        "kind": "orb",
+        "speed": 7,
+        "range": 14,
+        "radius": 0.45,
+        "homing": 55
+      }
+    },
+    {
+      "kind": "shoot",
+      "damage": 18,
+      "reach": 9,
+      "windup": 1.1,
+      "active": 0.2,
+      "recover": 0.8,
+      "cooldown": 5,
+      "weight": 0.5,
+      "projectile": {
+        "kind": "bolt",
+        "speed": 9,
+        "range": 12,
+        "radius": 0.4,
+        "count": 3,
+        "spread_deg": 25
+      }
+    }
+  ],
+  "sounds": {
+    "hit": "cloth",
+    "windup": "select",
+    "death": "impactSoft_heavy",
+    "shoot": "impactBell_heavy"
+  }
+}

@@ -17,11 +17,21 @@ public static class Recolor
         if (a == null || a.IsIdentity || b.AccentHue is not { Length: 2 })
             return null;
         float h0 = b.AccentHue[0], h1 = b.AccentHue[1], smin = b.AccentSat, vmin = b.AccentVal;
-        float center = h0 <= h1 ? (h0 + h1) * 0.5f : Mathf.PosMod((h0 + h1 + 360f) * 0.5f, 360f);
-        return img => Apply(img, h0, h1, smin, vmin, center, a);
+        return Range(h0, h1, smin, vmin, a.Hue, a.Sat, a.Val, a.MinSat);
     }
 
-    private static Image Apply(Image img, float h0, float h1, float smin, float vmin, float center, AppearanceDef.AccentDef a)
+    /// <summary>몬스터 지역 변종 (data/monsters 의 recolor)</summary>
+    public static Func<Image, Image> For(MonsterDef.RecolorDef r) =>
+        r?.Hue is not { Length: 2 } ? null : Range(r.Hue[0], r.Hue[1], r.MinSat, r.MinVal, r.To, r.Sat, r.Val, 0f);
+
+    /// <summary>색상 h0~h1 (채도·명도 최소 이상) 픽셀을 hue 로 옮기고 채도·명도에 배율. hue 가 null 이면 색상은 그대로</summary>
+    public static Func<Image, Image> Range(float h0, float h1, float smin, float vmin, float? hue, float sat, float val, float minSat)
+    {
+        float center = h0 <= h1 ? (h0 + h1) * 0.5f : Mathf.PosMod((h0 + h1 + 360f) * 0.5f, 360f);
+        return img => Apply(img, h0, h1, smin, vmin, center, hue, sat, val, minSat);
+    }
+
+    private static Image Apply(Image img, float h0, float h1, float smin, float vmin, float center, float? hue, float sat, float val, float minSat)
     {
         img.Convert(Image.Format.Rgba8);
         byte[] px = img.GetData();
@@ -35,8 +45,8 @@ public static class Recolor
             if (!inside)
                 continue;
             // 원래 범위 안의 색상 차이는 살린다 (한 옷 안의 미묘한 색 흔들림)
-            float nh = a.Hue is float target ? Mathf.PosMod(target + Mathf.Wrap(h - center, -180f, 180f), 360f) : h;
-            var n = Color.FromHsv(nh / 360f, Mathf.Clamp(Mathf.Max(c.S * a.Sat, a.MinSat), 0f, 1f), Mathf.Clamp(c.V * a.Val, 0f, 1f));
+            float nh = hue is float target ? Mathf.PosMod(target + Mathf.Wrap(h - center, -180f, 180f), 360f) : h;
+            var n = Color.FromHsv(nh / 360f, Mathf.Clamp(Mathf.Max(c.S * sat, minSat), 0f, 1f), Mathf.Clamp(c.V * val, 0f, 1f));
             px[i] = (byte)Mathf.RoundToInt(n.R * 255f);
             px[i + 1] = (byte)Mathf.RoundToInt(n.G * 255f);
             px[i + 2] = (byte)Mathf.RoundToInt(n.B * 255f);

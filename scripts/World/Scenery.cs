@@ -103,6 +103,7 @@ public partial class Scenery : Node
         if (_zoneShownAt.TryGetValue(now, out double last) && t - last < ZoneRepeat)
             return;
         _zoneShownAt[now] = t;
-        Hud.Announce(now, null, ZoneColor);
+        string levels = Combat.MonsterSpawner.ZoneLevels.TryGetValue(now, out var lv) ? $"Lv {lv.Min}~{lv.Max}" : null;
+        Hud.Announce(now, levels, ZoneColor);
     }
 }

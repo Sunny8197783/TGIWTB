@@ -126,6 +126,20 @@ public sealed class LevelDef
     public List<int> ExpToNext { get; set; } = new();
 
     public int Need(int level) => level >= MaxLevel ? 0 : ExpToNext[Mathf.Clamp(level - 1, 0, ExpToNext.Count - 1)];
+    /// <summary>몬스터가 주인공보다 낮을 때: index = 낮은 레벨 수 (끝 값이 그 아래 전부)</summary>
+    public List<float> ExpBelow { get; set; } = new() { 1f };
+    /// <summary>몬스터가 높을 때 레벨마다 더하는 비율과 그 상한</summary>
+    public float ExpAbovePerLevel { get; set; }
+    public float ExpAboveMax { get; set; } = 1f;
+
+    /// <summary>레벨 차이에 따른 경험치 배율 — 낮은 몬스터만 잡으면 거의 안 오른다</summary>
+    public float ExpFactor(int monsterLevel, int heroLevel)
+    {
+        int diff = monsterLevel - heroLevel;
+        if (diff >= 0)
+            return Mathf.Min(1f + diff * ExpAbovePerLevel, ExpAboveMax);
+        return ExpBelow[Mathf.Min(-diff, ExpBelow.Count - 1)];
+    }
 
     private static LevelDef _i;
     public static LevelDef Instance => _i ??= JsonSerializer.Deserialize<LevelDef>(

@@ -1,0 +1,52 @@
+{
+  "id": "kappa",
+  "name": "갓파",
+  "level": 11,
+  "art": "res://art/characters/kappa",
+  "hp": 160,
+  "poise": 26,
+  "speed": 2.6,
+  "sight": 9,
+  "radius": 0.45,
+  "knockback": 0.6,
+  "exp": 30,
+  "guard_arc_deg": 70,
+  "guard_take": 0.15,
+  "palette": "ice",
+  "attacks": [
+    {
+      "kind": "melee",
+      "damage": 24,
+      "reach": 1.9,
+      "windup": 0.7,
+      "active": 0.22,
+      "recover": 0.9,
+      "lunge": 4.0,
+      "cooldown": 1.6,
+      "telegraph": true
+    },
+    {
+      "kind": "shoot",
+      "anim": "attack2",
+      "damage": 18,
+      "reach": 8,
+      "min_range": 3.5,
+      "windup": 0.8,
+      "active": 0.2,
+      "recover": 0.7,
+      "cooldown": 3.0,
+      "projectile": {
+        "kind": "bolt",
+        "speed": 11,
+        "range": 10,
+        "radius": 0.4
+      }
+    }
+  ],
+  "sounds": {
+    "hit": "impactSoft_heavy",
+    "windup": "cloth",
+    "death": "impactSoft_heavy",
+    "shoot": "impactSoft_medium"
+  }
+}

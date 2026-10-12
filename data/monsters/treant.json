@@ -1,0 +1,43 @@
+{
+  "id": "treant",
+  "name": "나무 정령",
+  "level": 19,
+  "art": "res://art/characters/treant",
+  "hp": 420,
+  "poise": 60,
+  "speed": 1.6,
+  "sight": 9,
+  "radius": 0.8,
+  "knockback": 0.3,
+  "exp": 90,
+  "palette": "leaf",
+  "attacks": [
+    {
+      "kind": "slam",
+      "damage": 45,
+      "reach": 3.4,
+      "radius": 3.0,
+      "windup": 1.2,
+      "active": 0.25,
+      "recover": 1.1,
+      "cooldown": 2.0
+    },
+    {
+      "kind": "melee",
+      "damage": 28,
+      "reach": 2.6,
+      "windup": 0.8,
+      "active": 0.25,
+      "recover": 0.9,
+      "lunge": 2.0,
+      "cooldown": 1.6,
+      "weight": 0.7
+    }
+  ],
+  "sounds": {
+    "hit": "impactWood_medium",
+    "windup": "impactWood_medium",
+    "death": "chop",
+    "shoot": "swing_heavy"
+  }
+}
