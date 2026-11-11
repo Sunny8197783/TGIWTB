@@ -1,0 +1,11 @@
+{
+  // 서리 늑대: 둘레를 돌며 틈을 보다가 멀리서 덮친다. 무리로 다닌다
+  "id": "frost_wolf", "name": "서리 늑대", "art": "res://art/characters/frost_wolf",
+  "level": 20, "hp": 260, "poise": 35, "speed": 5.0, "sight": 13, "radius": 0.5, "knockback": 0.9, "exp": 150,
+  "move": "circle", "prefer_range": 4.5,
+  "attacks": [
+    { "id": "pounce", "shape": "arc", "damage": 52, "reach": 1.7, "windup": 0.5, "active": 0.3, "recover": 0.7, "lunge": 12,
+      "cooldown": 1.6, "max_range": 6.5, "hit_frame": 5 }
+  ],
+  "sounds": { "hit": "impactPunch_medium", "windup": "drawKnife", "death": "impactPunch_heavy" }
+}

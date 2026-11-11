@@ -119,6 +119,14 @@ hero_z={
 "type": "float",
 "value": 0.0
 }
+ambient_luma={
+"type": "float",
+"value": 0.5
+}
+hush_map={
+"type": "sampler2D",
+"value": ""
+}
 
 [importer_defaults]
 

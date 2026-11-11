@@ -1395,57 +1395,426 @@
  },
  {
   "sheet": "art/characters/npc_guide/rot.png",
-  "char": "39995271-677b-48ec-bf65-bc563ba5229b",
+  "char": "f16f5c43-6a12-488d-bc20-3da40fa4c3e7",
   "rotations": true,
   "note": "마을 NPC (M8)"
  },
  {
   "sheet": "art/characters/npc_guide/idle.png",
-  "char": "39995271-677b-48ec-bf65-bc563ba5229b",
-  "anim": "npc_idle"
+  "char": "f16f5c43-6a12-488d-bc20-3da40fa4c3e7",
+  "anim": "breathing_idle"
  },
  {
   "sheet": "art/characters/npc_warrior/rot.png",
-  "char": "6c409a6e-9a18-4bea-89b7-c45a054420cc",
+  "char": "ddd6cf20-61f0-46ef-ba63-cc42fae8d6f1",
   "rotations": true,
   "note": "마을 NPC (M8)"
  },
  {
   "sheet": "art/characters/npc_warrior/idle.png",
-  "char": "6c409a6e-9a18-4bea-89b7-c45a054420cc",
-  "anim": "npc_idle"
+  "char": "ddd6cf20-61f0-46ef-ba63-cc42fae8d6f1",
+  "anim": "breathing_idle"
  },
  {
   "sheet": "art/characters/npc_archer/rot.png",
-  "char": "b39df277-c5f4-43c1-bf51-525ff4afdda7",
+  "char": "b4c169c2-4514-4a9f-9efe-aa7af0744bb0",
   "rotations": true,
   "note": "마을 NPC (M8)"
  },
  {
   "sheet": "art/characters/npc_archer/idle.png",
-  "char": "b39df277-c5f4-43c1-bf51-525ff4afdda7",
-  "anim": "npc_idle"
+  "char": "b4c169c2-4514-4a9f-9efe-aa7af0744bb0",
+  "anim": "breathing_idle"
  },
  {
   "sheet": "art/characters/npc_mage/rot.png",
-  "char": "cfcaa900-6208-4108-bc14-a83609202fbd",
+  "char": "a8ef22aa-4c59-47ec-a351-fd7d827ed8e7",
   "rotations": true,
   "note": "마을 NPC (M8)"
  },
  {
   "sheet": "art/characters/npc_mage/idle.png",
-  "char": "cfcaa900-6208-4108-bc14-a83609202fbd",
-  "anim": "npc_idle"
+  "char": "a8ef22aa-4c59-47ec-a351-fd7d827ed8e7",
+  "anim": "breathing_idle"
  },
  {
   "sheet": "art/characters/npc_rogue/rot.png",
-  "char": "fbede50e-0c25-46a3-89c5-8b29bd6104b1",
+  "char": "0db0c411-5edb-4f01-a5ea-e7f404e7f7a4",
   "rotations": true,
   "note": "마을 NPC (M8)"
  },
  {
   "sheet": "art/characters/npc_rogue/idle.png",
-  "char": "fbede50e-0c25-46a3-89c5-8b29bd6104b1",
-  "anim": "npc_idle"
+  "char": "0db0c411-5edb-4f01-a5ea-e7f404e7f7a4",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/hush_shade/rot.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hush_shade/idle.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "anim": "hush_shade_idle"
+ },
+ {
+  "sheet": "art/characters/moss_boar/rot.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/petal_wisp/rot.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/stone_crab/rot.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/frost_wolf/rot.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/maple_fox/rot.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/rot.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/bark_golem/rot.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "rotations": true,
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/rot.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "rotations": true,
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/narae/rot.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/npc_miko/rot.png",
+  "char": "3d57d71c-d2c9-4616-81df-2e1f6eb84857",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/npc_keeper/rot.png",
+  "char": "2671d83c-a29d-44aa-8f69-e0167f2558d4",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/npc_monk/rot.png",
+  "char": "bae501dc-3e83-4a3c-9e76-8c5b320eb6e4",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/npc_scribe/rot.png",
+  "char": "b4180cb4-bbeb-4851-8d6e-2f0a17f0926e",
+  "rotations": true
+ },
+ {
+  "sheet": "art/characters/hush_shade/move.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "anim": "hush_shade_move"
+ },
+ {
+  "sheet": "art/characters/hush_shade/death.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "anim": "hush_shade_death"
+ },
+ {
+  "sheet": "art/characters/moss_boar/idle.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "anim": "moss_boar_idle"
+ },
+ {
+  "sheet": "art/characters/moss_boar/move.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "anim": "moss_boar_move"
+ },
+ {
+  "sheet": "art/characters/moss_boar/hurt.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "anim": "moss_boar_hurt"
+ },
+ {
+  "sheet": "art/characters/petal_wisp/idle.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "anim": "petal_wisp_idle"
+ },
+ {
+  "sheet": "art/characters/petal_wisp/hurt.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "anim": "petal_wisp_hurt"
+ },
+ {
+  "sheet": "art/characters/hush_shade/attack.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "anim": "hush_shade_attack"
+ },
+ {
+  "sheet": "art/characters/hush_shade/hurt.png",
+  "char": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+  "anim": "hush_shade_hurt"
+ },
+ {
+  "sheet": "art/characters/narae/idle.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/narae/run.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "anim": "narae_run"
+ },
+ {
+  "sheet": "art/characters/narae/attack.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "anim": "narae_attack"
+ },
+ {
+  "sheet": "art/characters/narae/cheer.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "anim": "narae_cheer"
+ },
+ {
+  "sheet": "art/characters/narae/hurt.png",
+  "char": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+  "anim": "narae_hurt"
+ },
+ {
+  "sheet": "art/characters/moss_boar/attack.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "anim": "moss_boar_attack"
+ },
+ {
+  "sheet": "art/characters/moss_boar/death.png",
+  "char": "ff108083-d159-4fe2-9873-8c287d8d4222",
+  "anim": "moss_boar_death"
+ },
+ {
+  "sheet": "art/characters/petal_wisp/move.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "anim": "petal_wisp_move"
+ },
+ {
+  "sheet": "art/characters/petal_wisp/attack.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "anim": "petal_wisp_attack"
+ },
+ {
+  "sheet": "art/characters/petal_wisp/death.png",
+  "char": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+  "anim": "petal_wisp_death"
+ },
+ {
+  "sheet": "art/characters/stone_crab/idle.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_idle"
+ },
+ {
+  "sheet": "art/characters/stone_crab/move.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_move"
+ },
+ {
+  "sheet": "art/characters/stone_crab/attack.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_attack"
+ },
+ {
+  "sheet": "art/characters/stone_crab/guard.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_guard"
+ },
+ {
+  "sheet": "art/characters/stone_crab/hurt.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_hurt"
+ },
+ {
+  "sheet": "art/characters/stone_crab/death.png",
+  "char": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+  "anim": "stone_crab_death"
+ },
+ {
+  "sheet": "art/characters/npc_scribe/idle.png",
+  "char": "b4180cb4-bbeb-4851-8d6e-2f0a17f0926e",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/hollow_stag/idle.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_idle",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/move.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_move",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/attack.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_attack",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/stomp.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_stomp",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/roar.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_roar",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/hurt.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_hurt",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/hollow_stag/death.png",
+  "char": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+  "anim": "hollow_stag_death",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/idle.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "anim": "field_scarecrow_idle"
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/move.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "anim": "field_scarecrow_move"
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/attack.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "anim": "field_scarecrow_attack"
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/hurt.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "anim": "field_scarecrow_hurt"
+ },
+ {
+  "sheet": "art/characters/field_scarecrow/death.png",
+  "char": "938cc501-2097-4d8b-be91-e8bce7aba454",
+  "anim": "field_scarecrow_death"
+ },
+ {
+  "sheet": "art/characters/npc_miko/idle.png",
+  "char": "3d57d71c-d2c9-4616-81df-2e1f6eb84857",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/npc_keeper/idle.png",
+  "char": "2671d83c-a29d-44aa-8f69-e0167f2558d4",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/npc_monk/idle.png",
+  "char": "bae501dc-3e83-4a3c-9e76-8c5b320eb6e4",
+  "anim": "breathing_idle"
+ },
+ {
+  "sheet": "art/characters/maple_fox/idle.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "anim": "maple_fox_idle"
+ },
+ {
+  "sheet": "art/characters/maple_fox/attack.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "anim": "maple_fox_attack"
+ },
+ {
+  "sheet": "art/characters/maple_fox/hurt.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "anim": "maple_fox_hurt"
+ },
+ {
+  "sheet": "art/characters/maple_fox/death.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "anim": "maple_fox_death"
+ },
+ {
+  "sheet": "art/characters/bark_golem/idle.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "anim": "bark_golem_idle",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/bark_golem/move.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "anim": "bark_golem_move",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/bark_golem/attack.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "anim": "bark_golem_attack",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/bark_golem/hurt.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "anim": "bark_golem_hurt",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/bark_golem/death.png",
+  "char": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+  "anim": "bark_golem_death",
+  "cell": 192
+ },
+ {
+  "sheet": "art/characters/frost_wolf/idle.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "anim": "frost_wolf_idle"
+ },
+ {
+  "sheet": "art/characters/frost_wolf/move.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "anim": "frost_wolf_move"
+ },
+ {
+  "sheet": "art/characters/frost_wolf/attack.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "anim": "frost_wolf_attack"
+ },
+ {
+  "sheet": "art/characters/frost_wolf/hurt.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "anim": "frost_wolf_hurt"
+ },
+ {
+  "sheet": "art/characters/frost_wolf/death.png",
+  "char": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+  "anim": "frost_wolf_death"
+ },
+ {
+  "sheet": "art/characters/maple_fox/move.png",
+  "char": "a424ccb4-6092-412d-b517-77adf544e915",
+  "anim": "maple_fox_move"
  }
 ]

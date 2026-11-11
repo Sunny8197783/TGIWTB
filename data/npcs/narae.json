@@ -1,0 +1,6 @@
+{
+  // 나래: 동행 (World/Companion). 자리에 세워 두는 사람이 아니다 — role companion 은 Npcs 가 건너뛴다. 대사는 data/story/blank_leaf.json
+  "id": "narae", "name": "나래", "title": "등불지기", "role": "companion",
+  "art": "res://art/characters/narae", "x": 0, "z": 0,
+  "lines": {}
+}

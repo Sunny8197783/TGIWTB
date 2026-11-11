@@ -1,0 +1,8 @@
+{
+  // 허수아비: 쇠스랑으로 멀리 찌른다. 사거리가 길지만 찌른 뒤 빈틈이 크다
+  "id": "field_scarecrow", "name": "허수아비", "art": "res://art/characters/field_scarecrow",
+  "level": 6, "hp": 100, "poise": 22, "speed": 2.8, "sight": 9, "radius": 0.4, "knockback": 0.9, "exp": 24,
+  "attack": { "damage": 22, "reach": 2.9, "windup": 0.7, "active": 0.18, "recover": 0.95, "lunge": 4.5, "cooldown": 1.7,
+              "telegraph": true, "hit_frame": 6 },
+  "sounds": { "hit": "impactPunch_medium", "windup": "cloth", "death": "impactSoft_heavy" }
+}

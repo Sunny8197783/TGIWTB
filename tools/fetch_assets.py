@@ -302,6 +302,9 @@ def pack(item):
     rot_dir = os.path.join(SRC, os.path.basename(os.path.dirname(item["sheet"])), "rot")
     cache_path = os.path.join(folder, "offsets.json")
     cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+    # 큰 몸(보스·골렘)은 "cell": 192 — 발밑 자리도 같은 비율로 (Render/CharacterSprite 의 cell 과 같아야 한다)
+    CELL = item.get("cell", 128)
+    ANCHOR = (CELL // 2, CELL - 12 * CELL // 128)
     W, H = CELL * frames, CELL * len(DIRS)
     out = [(0, 0, 0, 0)] * (W * H)
     for row, d in enumerate(DIRS):

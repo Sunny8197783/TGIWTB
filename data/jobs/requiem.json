@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "requiem",
+  "name": "진혼사",
+  "glyph": "鎭",
+  "motto": "진 이름을 달래어 보내는 자",
+  "weapon": "tome",
+  "tier": 2,
+  "description": "잊힌 것들에게 마지막 이름을 불러 준다.",
+  "required_level": 25,
+  "from": [
+    "mage"
+  ],
+  "sealed": true,
+  "hidden": false,
+  "requires": {
+    "deeds": {
+      "kill_hushed": 150
+    },
+    "engrave": {
+      "mage": 5
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "moon",
+  "attack": [],
+  "skills": []
+}

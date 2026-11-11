@@ -52,7 +52,11 @@ public partial class GameRoot : Node
     /// <summary>메뉴(모습 고르기)가 떠 있다 — 주인공은 입력을 받지 않는다</summary>
     public bool MenuOpen { get; set; }
     /// <summary>주인공이 조작을 받지 않는다: 메뉴가 떠 있거나 전망으로 둘러보는 중</summary>
-    public bool InputLocked => MenuOpen || (Rig != null && Rig.VistaOn);
+    public bool InputLocked => MenuOpen || Cinematic || (Rig != null && Rig.VistaOn);
+    /// <summary>연출 중 (이름비가 깨어나는 장면, 나래의 귀환) — 주인공은 조작을 받지 않는다</summary>
+    public bool Cinematic { get; set; }
+    /// <summary>첫 화면(타이틀)이 떠 있다 — HUD 를 숨긴다</summary>
+    public bool TitleOpen { get; set; }
 
     private void TickClock(float real)
     {
@@ -183,6 +187,8 @@ public partial class GameRoot : Node
         Rig.Target = feet;
         Rig.SnapNext();
         var statues = new Statues(World);
+        // 무명지: 만들자마자 전역 hush_map 을 채운다 (비어 있으면 온 세상이 잿빛으로 읽힌다)
+        var hush = new Hush(World);
         if (!off.Contains("hero"))
         {
             Stage.AddChild(new Hero());
@@ -198,15 +204,44 @@ public partial class GameRoot : Node
             hud.Bind(Hero.Instance);
             ui.AddChild(statues);
             statues.Bind(Hero.Instance);
+            ui.AddChild(hush);
+            hush.Bind(Hero.Instance);
             var npcs = new Npcs(World);
             ui.AddChild(npcs);
             npcs.Bind(Hero.Instance);
+            // 나래(동행)와 이야기: 무명지·사람이 다 선 뒤에
+            Stage.AddChild(new Companion(Hero.Instance));
+            AddChild(new Story(Hero.Instance));
             var creator = new CharacterCreator();
             ui.AddChild(creator);
             creator.Bind(Hero.Instance);
-            // 처음 켰으면 모습부터 (--creator: 캡처에서 화면 확인용)
-            if (Hero.Instance.FirstLaunch || System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--creator") >= 0)
-                creator.Open(first: true);
+            ui.AddChild(new Dialogue());   // 대화창은 맨 위에
+            // 첫 화면 → (처음이면) 모습 고르기 → 여는 글. 캡처는 첫 화면 없이 바로 (--menu=이름 으로 화면을 열어 볼 수 있다)
+            var menus = new Menus();
+            ui.AddChild(menus);
+            menus.Bind(Hero.Instance, creator);
+            ui.MoveChild(menus, ui.GetChildCount() - 2);   // 대화창 바로 아래
+            string[] args = OS.GetCmdlineUserArgs();
+            // --creator : 모습 화면, --creator=forge : 빚기 갈래, --creator=forgetest : 빚기를 실제로 한 번 돌린다 (생성 2회)
+            string creatorArg = System.Array.Find(args, a => a.StartsWith("--creator"));
+            if (creatorArg != null)
+            {
+                creator.Open(first: true, forgeTab: creatorArg.Contains("forge"));
+                if (creatorArg.EndsWith("forgetest"))
+                    creator.ForgeTest();
+                else if (creatorArg.EndsWith("forgeanim"))
+                    creator.ForgeAnimTest();   // 동작까지 끝까지 (약 72회 · 30분). --waitforge 와 같이 쓴다
+            }
+            else if (Dev.DevCapture.Requested())
+            {
+                string menu = System.Array.Find(args, a => a.StartsWith("--menu="));
+                if (menu != null)
+                    menus.OpenForCapture(menu.Substring(7));
+                else if (System.Array.IndexOf(args, "--boot") >= 0)
+                    menus.Boot(title: true);   // 캡처에서도 평소처럼 첫 화면부터 (--keys 로 눌러 가며 흐름을 본다)
+            }
+            else
+                menus.Boot(title: true);
             var scenery = new Scenery(World);
             AddChild(scenery);
             AddChild(new Ambience(World, scenery));

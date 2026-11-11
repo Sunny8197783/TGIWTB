@@ -13,9 +13,11 @@ namespace PixelMmo.Render;
 public partial class CharacterSprite : Node3D
 {
     public static readonly string[] Dirs = { "south", "south-east", "east", "north-east", "north", "north-west", "west", "south-west" };
-    private const int Cell = 128;
-    private static readonly Vector2 Anchor = new(64, 116); // fetch_assets.py ANCHOR 와 같아야 한다
+    /// <summary>시트 한 칸 (px). 보통 128, 큰 몸(골렘·보스)은 192 — fetch_assets.py 의 cell·ANCHOR 와 같아야 한다</summary>
+    private readonly int Cell = 128;
+    private Vector2 Anchor => new(Cell / 2, Cell - 12 * Cell / 128);
     private const float DepthPull = 0.6f;
+    private static readonly StringName HushSelf = "hush_self", HushExempt = "hush_exempt";
 
     private readonly Dictionary<string, (Texture2D tex, int frames)> _sheets = new();
     private readonly Dictionary<string, Texture2D> _normals = new();
@@ -46,10 +48,27 @@ public partial class CharacterSprite : Node3D
 
     /// <param name="folder">예: res://art/characters/hero — 그 안의 *.png 가 애니메이션 하나씩.</param>
     /// <param name="recolor">불러올 때 시트마다 한 번 거치는 색 바꾸기 (Render/Recolor). null 이면 원본.</param>
-    public CharacterSprite(string folder, System.Func<Image, Image> recolor = null)
+    public CharacterSprite(string folder, System.Func<Image, Image> recolor = null, int cell = 128)
     {
         Name = "Sprite";
         TopLevel = true;
+        Cell = cell;
+        if (folder.StartsWith("user://"))
+        {
+            // 빚은 모습 (Core/Forge): 가져오기를 거치지 않은 그림 — 파일에서 바로 읽는다. 법선 지도는 없다
+            foreach (string file in DirAccess.GetFilesAt(folder))
+            {
+                if (!file.EndsWith(".png"))
+                    continue;
+                var img = Image.LoadFromFile($"{folder}/{file}");
+                if (img == null)
+                    continue;
+                if (recolor != null)
+                    img = recolor(img);
+                _sheets[file[..^4]] = (ImageTexture.CreateFromImage(img), Mathf.Max(1, img.GetWidth() / Cell));
+            }
+            return;
+        }
         foreach (string file in ResourceLoader.ListDirectory(folder))
         {
             if (!file.EndsWith(".png") || file.EndsWith("_n.png"))
@@ -196,6 +215,18 @@ public partial class CharacterSprite : Node3D
 
     /// <summary>슬로우 중에도 제 색 (주인공).</summary>
     public void ExemptFromSlow() => _mat.SetShaderParameter(Uniform.SlowExempt, true);
+
+    /// <summary>무명지에서도 제 색 (주인공·나래 — 이름 없이도 색이 남은 존재)</summary>
+    public void ExemptFromHush() => _mat.SetShaderParameter(HushExempt, true);
+
+    /// <summary>어디에 있든 잿빛 (이름을 잃은 것). 0 이면 선 자리의 무명지 세기만 따른다</summary>
+    public void SetHushed(float amount)
+    {
+        _hushed = amount;
+        _mat?.SetShaderParameter(HushSelf, amount);
+    }
+
+    private float _hushed;
 
     /// <summary>지금 그림 그대로 잔상을 하나 남긴다.</summary>
     public void SpawnGhost(Color color, float life)

@@ -44,6 +44,8 @@ uniform bool atlas = false;
 // 비탈을 오를 때 발이 앞쪽 땅에 파묻혀 잘리지 않는다. 캐릭터 0.6, 소품 0.
 uniform float depth_pull = 0.0;
 uniform bool slow_exempt = false; // 주인공: 슬로우 중에도 제 색
+uniform bool hush_exempt = false; // 주인공·나래: 무명지에서도 제 색 (이름 없이도 색이 남은 유일한 존재)
+uniform float hush_self = 0.0;    // 무명이 된 몬스터: 어디에 있든 잿빛
 // 그림 아래쪽을 땅 그늘로 살짝 어둡게 (판이 땅에 '붙어' 보이게). 캐릭터·풀은 0
 uniform float contact_ao = 0.0;
 // 부피 깊이 (m, B = 1 일 때). 0 이면 납작한 판. 1 = 판에서 4m 앞 (normals.py DEPTH_PX 128)
@@ -62,6 +64,7 @@ varying float rim_mask;
 varying float base_h;
 varying float ground_ao;
 varying float anchor_z;
+varying float hush;
 
 const float MIP_BIAS = -1.0;
 
@@ -83,6 +86,8 @@ void vertex() {
 	VERTEX.x += w * amount * top * top * (wind.x + 0.4);
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	anchor_z = MODEL_MATRIX[3].z;
+	// hush_self 는 면제(주인공)에도 걸린다 — 이름이 지워지는 순간 주인공마저 색을 잃는다
+	hush = max(hush_exempt ? 0.0 : hush_at(MODEL_MATRIX[3].xz / map_size, MODEL_MATRIX[3].xz), hush_self);
 	if (relief > 0.0) {
 		vec2 auv = atlas ? vec2(mix(irect.x, irect.y, UV.x), mix(irect.z, 1.0, UV.y)) : UV;
 		// 흐린 밉 단에서 읽는다 — 격자 칸(10~20px)보다 잘게 바뀌는 깊이는 꼭짓점에서 계단이 된다
@@ -125,6 +130,7 @@ void fragment() {
 		col *= 1.0 - contact_ao * (1.0 - k);
 	}
 	col *= 1.0 - floor(clamp(ground_ao, 0.0, 0.6) * 4.0) / 4.0;
+	col = mix(hush_mix(col, hush), flash_color.rgb, flash * hush); // 섬광은 잿빛 위에서도 제 색
 	ALBEDO = slow_exempt ? col : slow_tint(col);
 	ROUGHNESS = 1.0;
 
@@ -147,6 +153,10 @@ void fragment() {
 		EMISSION = tex.rgb * warm * glow_at_night * night * 2.5;
 	}
 	EMISSION += flash_color.rgb * flash * 0.6;
+	// 무명지: 환경광(푸른 하늘빛) 대신 무채색 밑빛
+	AO = 1.0 - hush;
+	AO_LIGHT_AFFECT = 0.0;
+	EMISSION += ALBEDO * ambient_luma * hush;
 	cloud = cloud_shade(wpos.xz, world_time, wind);
 }
 
@@ -162,7 +172,7 @@ void light() {
 		// 제 그림자 입체에 가려도 테두리는 빛난다 (빛이 몸을 스쳐 지나가는 자리)
 		float back = clamp(-dot(LIGHT, VIEW), 0.0, 1.0);
 		float rim = step(0.45, rim_mask * d) * (0.6 + 2.6 * back);
-		DIFFUSE_LIGHT += LIGHT_COLOR / PI * rim * cloud;
+		DIFFUSE_LIGHT += hush_light(LIGHT_COLOR, hush) / PI * rim * cloud;
 	}
-	DIFFUSE_LIGHT += LIGHT_COLOR / PI * lit * shade;
+	DIFFUSE_LIGHT += hush_light(LIGHT_COLOR, hush) / PI * lit * shade;
 }

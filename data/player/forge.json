@@ -1,0 +1,61 @@
+{
+  // 빚기 (Core/Forge, Render/CharacterCreator): 고른 항목의 영어 조각을 이어 PixelLab 묘사를 만든다.
+  // 조각은 원화 생성기가 잘 알아듣는 짧은 영어로. 항목을 늘리려면 여기에 줄만 더한다.
+  "prompt": "{gender} adventurer with {build} build, {hair} {hair_color} hair, {skin} skin, {face}wearing {outfit} in {color} with {trim} accents, {extra}holding {weapon}, {free}fantasy RPG hero, standing ready",
+  "rows": [
+    { "id": "build", "name": "체형", "options": [
+      ["보통", "average"], ["호리호리", "slim lean"], ["다부진", "broad muscular"], ["작고 날랜", "short nimble"], ["키 큰", "tall long-limbed"], ["듬직한", "big heavyset"] ] },
+    { "id": "gender", "name": "인상", "options": [
+      ["남성적", "a male"], ["여성적", "a female"], ["중성적", "an androgynous"], ["소년", "a young boy"], ["소녀", "a young girl"], ["노련한", "an old veteran"] ] },
+    { "id": "hair", "name": "머리 모양", "options": [
+      ["짧은 머리", "short tousled"], ["긴 생머리", "long straight"], ["포니테일", "high ponytail"], ["땋은 머리", "long braided"],
+      ["곱슬", "curly"], ["단발", "bob cut"], ["올림머리", "hair tied up in a bun"], ["뾰족 머리", "spiky"],
+      ["양갈래", "twin tails"], ["덥수룩", "shaggy messy"], ["삭발", "shaved"], ["반 묶음", "half-up"] ] },
+    { "id": "hair_color", "name": "머리 색", "options": [
+      ["검정", "black"], ["갈색", "brown"], ["금발", "golden blonde"], ["은빛", "silver"], ["흰색", "white"], ["빨강", "red"],
+      ["주황", "orange"], ["분홍", "pink"], ["파랑", "blue"], ["청록", "teal"], ["보라", "purple"], ["초록", "green"] ] },
+    { "id": "skin", "name": "피부", "options": [
+      ["밝은", "fair"], ["살구빛", "light tan"], ["구릿빛", "tanned"], ["갈색", "brown"], ["짙은", "dark"], ["창백한", "pale"] ] },
+    { "id": "face", "name": "얼굴", "options": [
+      ["그대로", ""], ["흉터", "a scar across one eye, "], ["안대", "an eyepatch, "], ["안경", "round glasses, "], ["수염", "a short beard, "],
+      ["문신", "face tattoo markings, "], ["주근깨", "freckles, "], ["가면", "a half mask, "], ["붕대", "bandage on the cheek, "] ] },
+    { "id": "outfit", "name": "옷차림", "options": [
+      ["여행자 튜닉", "a traveler tunic and trousers"], ["가죽 갑옷", "light leather armor"], ["판금 갑옷", "steel plate armor"],
+      ["로브", "a long flowing robe"], ["도복", "an eastern martial arts gi with a sash"], ["방랑자 외투", "a long weathered coat"],
+      ["사냥꾼", "a hunter jerkin with fur trim"], ["예복", "an elegant noble outfit"], ["밤옷", "a dark ninja outfit"],
+      ["누더기", "ragged patched clothes"], ["비늘 갑옷", "scale mail armor"], ["한복풍", "a hanbok-inspired jacket and wide trousers"] ] },
+    { "id": "color", "name": "옷 색", "options": [
+      ["남색", "navy blue"], ["진홍", "crimson"], ["숲빛", "forest green"], ["보라", "purple"], ["황토", "ochre"], ["먹색", "charcoal black"],
+      ["흰색", "white"], ["하늘색", "sky blue"], ["청록", "teal"], ["갈색", "brown"], ["분홍", "rose pink"], ["금빛", "gold"] ] },
+    { "id": "trim", "name": "보조 색", "options": [
+      ["금빛", "gold"], ["흰색", "white"], ["검정", "black"], ["빨강", "red"], ["은빛", "silver"], ["청록", "teal"],
+      ["주황", "orange"], ["보라", "purple"], ["초록", "green"], ["갈색", "brown"] ] },
+    { "id": "extra", "name": "장신구", "options": [
+      ["없음", ""], ["목도리", "a long scarf, "], ["망토", "a cape, "], ["두건", "a hood, "], ["챙 모자", "a wide-brimmed hat, "],
+      ["머리띠", "a headband, "], ["깃털", "a feather in the hair, "], ["뿔", "small horns, "], ["등짐", "a backpack, "],
+      ["어깨 갑옷", "big shoulder pauldrons, "], ["귀걸이", "dangling earrings, "] ] },
+    { "id": "weapon", "name": "쥔 것", "options": [
+      ["검", "a sword in the right hand"], ["도끼", "an axe in the right hand"], ["창", "a spear"], ["철퇴", "a mace in the right hand"],
+      ["지팡이", "a wooden staff"], ["낫", "a sickle in the right hand"] ] }
+  ],
+  // 동작: 기성 원화(hero)와 같은 박자 — 연속기의 판정 칸(start_frame·hit_frame)이 그대로 맞는다. 위에서부터 차례로 만든다.
+  "anims": [
+    { "name": "idle", "template": "breathing-idle" },
+    { "name": "run", "frames": 8, "keep_first": false,
+      "action": "running forward at a brisk pace, arms swinging naturally, the weapon held low in one hand" },
+    { "name": "attack1", "frames": 8, "keep_first": true,
+      "action": "quick horizontal slash: swings the weapon from right to left in front of the body, then returns to a ready stance; no magic effects, no glow" },
+    { "name": "hurt", "frames": 4, "keep_first": false,
+      "action": "getting hit: flinches and recoils backward from a blow, then recovers balance" },
+    { "name": "dash", "frames": 4, "keep_first": false,
+      "action": "quick evasive dash: pushes off one foot and lunges low and fast in the facing direction, clothes trailing behind" },
+    { "name": "guard", "frames": 4, "keep_first": false,
+      "action": "snapping into a defensive guard: raises the weapon crosswise in front of the body to block, knees bent" },
+    { "name": "attack2", "frames": 8, "keep_first": true,
+      "action": "quick backhand slash: swings the weapon from left to right in front of the body, then returns to a ready stance; no magic effects, no glow" },
+    { "name": "attack3", "frames": 10, "keep_first": true,
+      "action": "heavy overhead strike: raises the weapon high above the head with both hands, then smashes it straight down in front, and recovers; no magic effects, no glow" },
+    { "name": "cast", "frames": 8, "keep_first": true,
+      "action": "thrusts one open hand forward as if releasing a shot or casting, the other arm drawn back, then returns to a ready stance; no magic effects, no glow" }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "warden",
+  "name": "수문장",
+  "glyph": "守",
+  "motto": "이름 하나를 지키려고 문 앞에 선 자",
+  "weapon": "blade",
+  "tier": 2,
+  "description": "물러서지 않는 것을 넘어, 뒤에 선 것을 지킨다.",
+  "required_level": 25,
+  "from": [
+    "warrior"
+  ],
+  "sealed": true,
+  "hidden": false,
+  "requires": {
+    "deeds": {
+      "parry": 150
+    },
+    "engrave": {
+      "warrior": 5
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "oath",
+  "attack": [],
+  "skills": []
+}

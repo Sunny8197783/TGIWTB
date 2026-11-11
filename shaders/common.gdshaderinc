@@ -56,6 +56,29 @@ float cloud_shade(vec2 xz, float t, vec2 wind_dir) {
 	return mix(1.0, 0.62, smoothstep(0.52, 0.66, c));
 }
 
+// 무명지: 이름이 지워진 땅은 색이 빠진다 (World/Hush 가 256x256 지도에 세기를 칠한다, 4m = 1텍셀).
+// 이름비를 깨우면 그 원이 줄어들며 색이 물결처럼 돌아온다. 소품·몬스터는 제 발밑 자리로 판정해 하나씩 색을 되찾는다.
+global uniform sampler2D hush_map : filter_linear, repeat_disable;
+float hush_raw(vec2 uv, vec2 xz) {
+	float h = textureLod(hush_map, uv, 0.0).r;
+	// 경계를 잡음으로 흔든다 — 자로 그은 원이면 인공적으로 보인다
+	return h + (vnoise(xz * 0.21) - 0.5) * 0.22 * step(0.02, h);
+}
+float hush_at(vec2 uv, vec2 xz) {
+	return smoothstep(0.44, 0.56, hush_raw(uv, xz));
+}
+// 잿빛 땅은 빛도 색을 잃는다: 파란 하늘빛(환경광)이 회색 그늘을 남색으로 물들였다.
+// 그래서 무명지에서는 환경광을 끄고(AO) 같은 밝기의 무채색을 EMISSION 으로 대신 넣는다 (World/DayNight 가 밝기를 넘긴다).
+global uniform float ambient_luma;
+vec3 hush_light(vec3 light_color, float h) {
+	return mix(light_color, vec3(dot(light_color, vec3(0.3, 0.59, 0.11))), h);
+}
+vec3 hush_mix(vec3 c, float h) {
+	float l = dot(c, vec3(0.3, 0.59, 0.11));
+	vec3 grey = mix(vec3(l), vec3(0.46, 0.48, 0.52), 0.2) * vec3(0.94, 0.96, 1.04);
+	return mix(c, grey, h * 0.96);
+}
+
 // 완벽 회피 슬로우: 세계는 채도가 빠지고 보랏빛으로 가라앉는다. 주인공 스프라이트는 빠진다(slow_exempt).
 global uniform float time_slow;
 vec3 slow_tint(vec3 c) {

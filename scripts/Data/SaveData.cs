@@ -26,6 +26,20 @@ public sealed class SaveData
     public int Level { get; set; } = 1;
     public int Exp { get; set; }
     public string Job { get; set; } = "novice";
+    /// <summary>나래가 지어 준 이름 (없으면 아직 이름이 없다)</summary>
+    public string Name { get; set; }
+    /// <summary>행적 (Core/Deeds) — 사건 이름 → 횟수</summary>
+    public Dictionary<string, int> Deeds { get; set; } = new();
+    /// <summary>이야기·세계 상태 (줄기 단계, 깨운 이름비, 표시) — 이름 → 값</summary>
+    public Dictionary<string, int> Vars { get; set; } = new();
+    /// <summary>거쳐 온 이름(직업) id</summary>
+    public List<string> PastJobs { get; set; } = new();
+    /// <summary>이름 조각 (무명을 쓰러뜨리면 떨어진다)</summary>
+    public int Shards { get; set; }
+    /// <summary>빚은 모습 id (user://forge/&lt;id&gt;) — 있으면 바탕 원화 대신 쓴다</summary>
+    public string LookForge { get; set; }
+    /// <summary>부위별 색 (부위 이름 → [색상°, 채도 배율, 명도 배율])</summary>
+    public Dictionary<string, float[]> LookParts { get; set; } = new();
 
     private static readonly JsonSerializerOptions Options = new() { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower };
 

@@ -1,0 +1,9 @@
+{
+  // 바위 게: 맞다 보면 껍데기에 숨는다 — 숨은 동안은 거의 안 박힌다. 강타(3타·기술)로 깨뜨리면 무방비
+  "id": "stone_crab", "name": "바위 게", "art": "res://art/characters/stone_crab",
+  "level": 5, "hp": 140, "poise": 40, "speed": 2.2, "sight": 7, "radius": 0.6, "knockback": 0.4, "exp": 24,
+  "guard": { "chance": 0.45, "time": 1.8, "reduce": 0.12 },
+  "attack": { "damage": 24, "reach": 2.0, "windup": 0.8, "active": 0.2, "recover": 1.0, "lunge": 2.0, "cooldown": 1.8,
+              "telegraph": true, "hit_frame": 6 },
+  "sounds": { "hit": "impactMetal_medium", "windup": "impactMetal_light", "death": "impactPlate_heavy" }
+}

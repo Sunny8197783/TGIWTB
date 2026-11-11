@@ -1,4 +1,8 @@
-"""하루미 대륙 지도 생성기 (1024x1024m). 설계와 근거: docs/design/WORLD.md
+"""하루미 대륙 지도 생성기 (1024x1024m). 설계와 근거: docs/design/WORLD.md, 여정의 모양은 docs/design/NAMELESS.md
+
+M9(무명록): 땅의 생김새(남쪽이 낮고 북쪽이 높다 — 카메라가 북쪽만 본다)는 그대로 두고 '여정의 모양'을 바꿨다.
+  시작은 남쪽 항구가 아니라 지도 한가운데 거울 호수 나루(NARU). 세계수는 큰 폭포 옆 절벽 끝(TREE)에 서서
+  나루에서 올려다보인다. 길은 나루에서 사방으로 갈리고, 지역마다 무명지와 이름비(STELES)가 하나씩 있다.
 
 카메라는 북쪽(-z)을 본다. 남쪽이 낮고 북쪽으로 갈수록 계단처럼 높아진다:
   남쪽 바다·하루미 마을 → 초원(가운데)·벚꽃 골짜기(서)·꽃 들판(동) → 절벽 A
@@ -109,7 +113,7 @@ def south_coast(x):
 def cliff_a(x):
     """초원 → 절벽 위 고원. 폭포(x≈602·206)와 거울 호수 북쪽은 붙들어 둔다."""
     base = lambda t: 438 + wiggle(t, 121, 110, 28, 2.5)  # noqa: E731
-    return pinned(base, x, [(206, 436), (602, 437), (650, 432), (1000, 448)], 34)
+    return pinned(base, x, [(206, 436), (602, 437), (650, 432), (1000, 448), (TREE[0], 438), (508, 438)], 34)
 
 
 def cliff_b(x):
@@ -119,7 +123,8 @@ def cliff_b(x):
 
 
 # 길이 절벽을 넘는 곳: (x 가운데, 반폭). 이 띠에서는 절벽 대신 긴 오르막.
-RAMPS_A = [(302, 22), (708, 22), (884, 26)]
+# (508): 뿌리 계단 — 나루 서쪽 들에서 세계수 곁 '뿌리의 상처'로 바로 오르는 길
+RAMPS_A = [(302, 22), (708, 22), (884, 26), (508, 15)]
 RAMPS_B = [(540, 22), (330, 26)]
 
 
@@ -156,6 +161,12 @@ def tier_step(d, ramp, x, seed, half=5.0, ramp_half=34.0):
 # --- 장소 -----------------------------------------------------------------
 
 PLAZA = (520.0, 885.0)
+# M9: 시작 나루(거울 호수 남쪽 물가), 세계수(큰 폭포 서쪽 절벽 끝), 뿌리의 상처(보스 터)
+NARU = (634.0, 544.0)
+TREE = (572.0, 424.0)
+ARENA = (548.0, 392.0)
+# 이름비 자리 (data/world/hush.json 의 x, z 와 같아야 한다)
+STELES = [(478, 556), (232, 900), (312, 572), (812, 752), (350, 300), (800, 282), (ARENA[0], ARENA[1]), (440, 96)]
 # 평평하게 고르는 자리: (x, z, 반지름, 목표 높이 또는 None=가운데 높이)
 PADS = [
     (PLAZA[0], PLAZA[1], 66, None),   # 하루미 마을
@@ -169,7 +180,10 @@ PADS = [
     (820, 252, 22, None),             # 옛 성터
     (790, 126, 44, None),             # 얼어붙은 호수
     (690, 160, 14, None),             # 온천
-]
+    (NARU[0], NARU[1], 18, None),     # 뿌리 나루 (시작)
+    (TREE[0], TREE[1] - 3, 10, None), # 세계수 밑
+    (ARENA[0], ARENA[1], 20, None),   # 뿌리의 상처
+] + [(sx, sz, 9, None) for sx, sz in STELES if (sx, sz) != ARENA]
 
 # 언덕: (x, z, 반지름, 높이)
 BUMPS = [
@@ -260,6 +274,11 @@ ROADS = [
     ("t_spring", [(660, 118), (680, 140), (688, 152)], 0.9, "trail"),
     ("t_misty", [(712, 350), (690, 340), (662, 336)], 0.9, "trail"),
     ("t_sunset", [(232, 318), (190, 336), (150, 352), (114, 366), (100, 374)], 0.9, "trail"),
+    # M9: 나루에서 사방으로 — 서쪽 물가를 따라 잿빛 들, 동쪽으로 큰길, 그리고 세계수 곁으로 오르는 뿌리 계단
+    ("t_root_w", [(628, 552), (600, 557), (566, 556), (530, 559), (500, 561), (482, 562)], 1.0, "trail"),
+    ("t_root_e", [(640, 552), (660, 556), (680, 556)], 1.0, "trail"),
+    ("t_root_stair", [(500, 561), (505, 520), (508, 476), (508, 438), (510, 404), (528, 394), (540, 396)], 1.1, "trail"),
+    ("t_tree", [(552, 400), (562, 410), (568, 416)], 0.9, "trail"),
     # 마을 골목 (포석)
     ("s_harumi_n", [(PLAZA[0], PLAZA[1] - 6), (526, 840), (532, 800)], 1.6, "street"),
     ("s_harumi_e", [(PLAZA[0] + 6, PLAZA[1]), (560, 882), (600, 890), (632, 902)], 1.4, "street"),
@@ -695,6 +714,16 @@ class Scatter:
                         return False
         return True
 
+    def reserve(self, x, z, r):
+        """소품 없이 자리만 비워 둔다 (이름비·싸움터). 큰 원은 작은 원 여럿으로 — free 가 이웃 버킷만 보기 때문."""
+        step = 5.0
+        n = int(r // step) + 1
+        for i in range(-n, n + 1):
+            for j in range(-n, n + 1):
+                px, pz = x + i * step, z + j * step
+                if (px - x) ** 2 + (pz - z) ** 2 <= r * r:
+                    self.grid.setdefault((int(px // 8), int(pz // 8)), []).append((px, pz, 4.0))
+
     def add(self, kind, x, z, r, **extra):
         self.grid.setdefault((int(x // 8), int(z // 8)), []).append((x, z, r))
         item = {"type": kind, "x": round(float(x), 2), "z": round(float(z), 2)}
@@ -803,6 +832,15 @@ def add_landmarks(sc, rng, hcell):
     def h_at(x, z):
         return float(hcell[min(H - 1, max(0, int(z))), min(W - 1, max(0, int(x)))])
 
+    # M9: 이름비 둘레·싸움터·세계수 밑은 비워 둔다 (나무가 싸움을 가리지 않게)
+    for sx, sz in STELES:
+        sc.reserve(sx, sz, 16.0 if (sx, sz) == ARENA else 8.0)
+    sc.reserve(NARU[0], NARU[1], 12.0)
+    # 뿌리 나루: 천막 하나, 길잡이 팻말, 물가 벤치 — 마을이 아니라 길 떠나는 자리
+    sc.add("tent", NARU[0] + 12, NARU[1] + 6, 2.6)
+    sc.add("signpost", NARU[0] - 6, NARU[1] + 9, 0.8)
+    sc.add("bench", NARU[0] + 3, NARU[1] - 10, 1.2, look="north")
+    sc.add("hokora", NARU[0] - 14, NARU[1] + 1, 2.0, front_z=NARU[1] + 2)
     sc.add("lighthouse", 1002, 420, 5.0)
     sc.add("bench", 990, 412, 1.5, look="north")
     for i, (x, z) in enumerate(((880, 556), (934, 650), (782, 738))):
@@ -912,7 +950,8 @@ def add_landmarks(sc, rng, hcell):
             sc.add("ruin_arch", rx + rng.uniform(-3, 3), rz + 14, 2.0)
     sc.add("tree_lone", 421, 718, 4.5)
     sc.add("tree_sakura_giant", 252, 524, 5.5)
-    sc.add("tree_world", 480, 296, 9.0)      # 세계수 (고목의 숲 한가운데)
+    sc.add("tree_world", TREE[0], TREE[1], 9.0)   # 세계수: 큰 폭포 곁 절벽 끝 — 나루에서 올려다보인다
+    sc.add("tree_giant", 480, 296, 6.0)           # 고목의 숲 한가운데 (세계수가 있던 자리)
     sc.add("tree_giant", 294, 674, 6.0)      # 초원 연못가의 큰 나무
     sc.add("temple", 224, 280, 4.5, front_z=283)
     sc.add("pagoda", 208, 300, 3.5)
@@ -930,7 +969,7 @@ def add_landmarks(sc, rng, hcell):
 
 
 # 여신상 (id, 이름, x, z). meta.statues 로 나가 게임이 읽는다
-STATUES = [("harumi", "하루미 광장", 548, 898), ("meadow", "바람의 초원 쉼터", 576, 664), ("hanami", "하나미 마을", 252, 616),
+STATUES = [("root", "뿌리 나루", NARU[0] + 6, NARU[1] - 4), ("harumi", "하루미 광장", 548, 898), ("meadow", "바람의 초원 쉼터", 576, 664), ("hanami", "하나미 마을", 252, 616),
            ("flower", "꽃 마을", 858, 628), ("cape", "등대 곶", 980, 438), ("autumn", "단풍 산길", 276, 364),
            ("ancient", "고목의 숲", 496, 352), ("misty", "안개 호숫가", 720, 362), ("snow", "눈꽃 마을", 548, 132)]
 
@@ -1195,27 +1234,11 @@ def main():
 
     meta = {
         "width": W, "height": H, "sea_level": SEA,
-        "spawn": [PLAZA[0], PLAZA[1] + 7],
+        "spawn": [NARU[0] - 3, NARU[1] + 4],
+        "root": list(NARU), "world_tree": list(TREE), "arena": list(ARENA),
         "lake_surface": round(lake_surf["mirror"], 2),
         "waterfalls": falls,
-        "monsters": [
-            {"id": "sakura_slime", "x": 500, "z": 700, "radius": 6, "count": 3, "respawn": 8},
-            {"id": "sakura_slime", "x": 620, "z": 744, "radius": 6, "count": 3, "respawn": 8},
-            {"id": "sakura_slime", "x": 380, "z": 680, "radius": 6, "count": 3, "respawn": 8},
-            {"id": "sakura_slime", "x": 476, "z": 520, "radius": 6, "count": 3, "respawn": 8},
-            {"id": "sakura_slime", "x": 262, "z": 664, "radius": 7, "count": 4, "respawn": 9},
-            {"id": "forest_goblin", "x": 150, "z": 640, "radius": 6, "count": 3, "respawn": 14},
-            {"id": "forest_goblin", "x": 282, "z": 500, "radius": 6, "count": 3, "respawn": 14},
-            {"id": "sakura_slime", "x": 760, "z": 702, "radius": 7, "count": 4, "respawn": 9},
-            {"id": "sakura_slime", "x": 884, "z": 620, "radius": 6, "count": 3, "respawn": 9},
-            {"id": "forest_goblin", "x": 322, "z": 318, "radius": 7, "count": 4, "respawn": 14},
-            {"id": "forest_goblin", "x": 232, "z": 384, "radius": 6, "count": 3, "respawn": 14},
-            {"id": "forest_goblin", "x": 452, "z": 382, "radius": 7, "count": 4, "respawn": 14},
-            {"id": "forest_goblin", "x": 540, "z": 276, "radius": 7, "count": 4, "respawn": 14},
-            {"id": "forest_goblin", "x": 724, "z": 372, "radius": 7, "count": 4, "respawn": 14},
-            {"id": "forest_goblin", "x": 452, "z": 140, "radius": 7, "count": 4, "respawn": 14},
-            {"id": "forest_goblin", "x": 700, "z": 176, "radius": 7, "count": 4, "respawn": 14},
-        ],
+        # 몬스터는 못 박아 두지 않는다 — data/world/spawns.json (Combat/MonsterSpawner) 가 주인공 둘레를 밀도로 채운다
         # 전망 지점: 반지름 안에 서면 카메라가 고개를 든다 (평소 38°, 21m). look_ahead·look_up: 바라보는 점을 북쪽·위로 (m)
         "viewpoints": [
             {"name": "약속의 언덕", "x": 422, "z": 728, "radius": 8, "pitch": 14, "distance": 26, "look_ahead": 12, "look_up": 4},
@@ -1226,6 +1249,8 @@ def main():
             {"name": "노을 절벽", "x": 100, "z": 372, "radius": 8, "pitch": 8, "distance": 26, "look_ahead": 10, "look_up": 2},
             {"name": "안개 호숫가", "x": 662, "z": 340, "radius": 7, "pitch": 12, "distance": 26, "look_ahead": 10, "look_up": 8},
             {"name": "눈꽃 마을 언덕", "x": 560, "z": 154, "radius": 7, "pitch": 10, "distance": 28, "look_ahead": 10, "look_up": 12},
+            {"name": "뿌리 계단", "x": 508, "z": 470, "radius": 6, "pitch": 12, "distance": 28, "look_ahead": 14, "look_up": 10},
+            {"name": "세계수 아래", "x": 566, "z": 414, "radius": 5, "pitch": 16, "distance": 28, "look_ahead": 6, "look_up": 5},
         ],
         "statues": [{"id": sid, "name": name, "x": x, "z": z} for sid, name, x, z in STATUES],
         "zone_cell": ZONE_CELL,

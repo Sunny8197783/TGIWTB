@@ -1,22 +1,24 @@
 {
-  // 궁수: 거리를 둔다. 평타는 화살 두 발 + 시위를 끝까지 당긴 관통 사격. 체력이 낮다 — 회피로 거리를 벌린다
+  // 풍문사(風聞士): 바람결에 이름을 실어 보내는 사수. 평타는 화살 두 발 + 끝까지 당긴 관통 사격. 체력이 낮다
   "id": "archer",
-  "name": "궁수",
+  "name": "풍문사",
+  "glyph": "風", "motto": "이름을 바람에 실어 보내는 자", "weapon": "bow",
   "tier": 1,
-  "description": "닿지 않는 거리를 유지하는 것이 기술의 전부다.",
+  "description": "화살 끝에 이름을 매달아 쏜다. 바람이 닿는 곳이면 어디든 닿는다.",
   "required_level": 10, "from": ["novice"], "trainer": "npc_archer",
   "art": {
     "m": { "art": "res://art/characters/job_archer_m", "accent_hue": [70, 160], "accent_sat": 0.2 },
     "f": { "art": "res://art/characters/job_archer_f", "accent_hue": [70, 160], "accent_sat": 0.2 }
   },
   "hp": 95, "hp_per_level": 7, "power_per_level": 0.055,
-  "palette": "sakura",
+  "palette": "wind",
+  "fx": { "cast": "bow", "hit": "gust", "glyph": true },
   "attack": [
-    { "anim": "attack1", "duration": 0.34, "hit_at": 0.17, "cancel_at": 0.22, "lunge": -0.3, "damage": 9, "start_frame": 1, "hit_frame": 5, "slash": "none", "sound": "dash",
+    { "anim": "attack1", "anim_alt": "cast", "duration": 0.34, "hit_at": 0.17, "cancel_at": 0.22, "lunge": -0.3, "damage": 9, "start_frame": 1, "hit_frame": 5, "slash": "none", "sound": "dash",
       "projectile": { "kind": "arrow", "speed": 28, "range": 15, "radius": 0.35 } },
-    { "anim": "attack1", "duration": 0.32, "hit_at": 0.15, "cancel_at": 0.2, "lunge": -0.3, "damage": 9, "start_frame": 1, "hit_frame": 5, "slash": "none", "sound": "dash",
+    { "anim": "attack1", "anim_alt": "cast", "duration": 0.32, "hit_at": 0.15, "cancel_at": 0.2, "lunge": -0.3, "damage": 9, "start_frame": 1, "hit_frame": 5, "slash": "none", "sound": "dash",
       "projectile": { "kind": "arrow", "speed": 28, "range": 15, "radius": 0.35 } },
-    { "anim": "attack3", "duration": 0.62, "hit_at": 0.4, "cancel_at": 0.48, "lunge": -0.6, "damage": 24, "heavy": true, "start_frame": 1, "hit_frame": 9, "slash": "none", "sound": "swing_heavy",
+    { "anim": "attack3", "anim_alt": "cast", "duration": 0.62, "hit_at": 0.4, "cancel_at": 0.48, "lunge": -0.6, "damage": 24, "heavy": true, "start_frame": 1, "hit_frame": 9, "slash": "none", "sound": "swing_heavy",
       "projectile": { "kind": "arrow", "speed": 38, "range": 19, "radius": 0.45, "pierce": 3 } }
   ],
   "skills": [ { "id": "sk_piercing_volley", "level": 10 }, { "id": "sk_evade_shot", "level": 12 }, { "id": "sk_arrow_rain", "level": 15 } ]

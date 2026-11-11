@@ -24,3 +24,6 @@ __pycache__/
 *.zip
 *.lnk
 
+
+# PixelLab 열쇠 (올리지 않는다)
+tools/.pixellab_key

@@ -108,6 +108,48 @@ public static class CombatTuning
     public const float CorpseBlinkTime = 0.4f;
     public const float CorpseBlinkStep = 0.067f;
 
+    // ── 몬스터 (M9) ─────────────────────────────────────
+    /// <summary>스폰 레벨이 기준 레벨보다 높을 때 레벨마다 오르는 비율.</summary>
+    public const float MonsterHpPerLevel = 0.14f;
+    public const float MonsterDamagePerLevel = 0.08f;
+    public const float MonsterExpPerLevel = 0.16f;
+    /// <summary>무명(이름을 잃은 것): 체력·피해·경험치 배율.</summary>
+    public const float HushedHp = 1.4f;
+    public const float HushedDamage = 1.2f;
+    public const float HushedExp = 1.6f;
+    /// <summary>나타나는 시간 (30f) — 하얗게 드러났다가 제 색으로.</summary>
+    public const float MonsterAppearTime = 0.5f;
+    /// <summary>주인공을 처음 보고 멈칫하는 시간 (21f) — 머리 위 '!'.</summary>
+    public const float MonsterAlertTime = 0.35f;
+    /// <summary>예고의 이 비율까지만 주인공을 따라 겨눈다. 그 뒤는 굳는다 — 끝에 피하면 피해진다.</summary>
+    public const float MonsterAimLock = 0.6f;
+    /// <summary>시야의 이 배만큼 멀어지면 놓친다 / 집에서 시야의 이 배만큼 끌려오면 돌아간다.</summary>
+    public const float MonsterLoseSight = 1.7f;
+    public const float MonsterLeash = 3.2f;
+    /// <summary>집으로 돌아가는 동안 초당 되찾는 체력 비율.</summary>
+    public const float MonsterReturnRegen = 0.25f;
+    /// <summary>돌진이 닿는 여유 (m, 몸 반지름에 더한다).</summary>
+    public const float MonsterRamReach = 0.55f;
+    /// <summary>껍데기에 숨은 뒤 다시 숨기까지 (초).</summary>
+    public const float MonsterGuardCooldown = 4f;
+    /// <summary>되받아친 적의 탄: 피해 배율과 빨라지는 배율.</summary>
+    public const float ReflectDamage = 2.5f;
+    public const float ReflectSpeed = 1.7f;
+
+    // ── 이슬 병 (M9) ────────────────────────────────────
+    /// <summary>병 횟수 (여신상에 기도하면 찬다).</summary>
+    public const int FlaskMax = 3;
+    /// <summary>한 모금: 최대 체력의 이 비율을 이 시간(48f)에 걸쳐 채운다.</summary>
+    public const float FlaskHeal = 0.45f;
+    public const float FlaskTime = 0.8f;
+
+    // ── 각인·경험치 (M9) ────────────────────────────────
+    /// <summary>제 레벨보다 이만큼 넘게 낮은 적은 각인에 세지 않고 경험치도 조금만 준다 (규칙 3).</summary>
+    public const int EngraveLowLevelGap = 6;
+    public const float LowLevelExp = 0.25f;
+    /// <summary>보스 하나의 각인 점수.</summary>
+    public const int EngraveBossPoints = 6;
+
     // ── 레벨 ────────────────────────────────────────────
     /// <summary>레벨이 오르는 순간 무적 (30f) — 연출 동안 맞지 않게</summary>
     public const float LevelUpIFrames = 0.5f;

@@ -1,0 +1,12 @@
+{
+  // 이끼 멧돼지: 멀면 땅을 긁다가 일직선으로 들이받는다 (긴 띠 예고 — 옆으로 피한다). 붙으면 엄니로 친다
+  "id": "moss_boar", "name": "이끼 멧돼지", "art": "res://art/characters/moss_boar",
+  "level": 3, "hp": 110, "poise": 30, "speed": 2.6, "sight": 10, "radius": 0.55, "knockback": 0.6, "exp": 16,
+  "attacks": [
+    { "id": "charge", "shape": "charge", "damage": 22, "reach": 0.1, "windup": 0.9, "active": 0.75, "recover": 1.1, "lunge": 11,
+      "cooldown": 2.4, "telegraph": true, "min_range": 3.0, "max_range": 9.5, "weight": 3 },
+    { "id": "gore", "shape": "arc", "damage": 14, "reach": 1.7, "windup": 0.45, "active": 0.2, "recover": 0.7, "lunge": 3.0,
+      "cooldown": 1.3, "max_range": 1.9, "weight": 2 }
+  ],
+  "sounds": { "hit": "impactPunch_medium", "windup": "footstep", "death": "impactPunch_heavy" }
+}

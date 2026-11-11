@@ -1,0 +1,109 @@
+{
+  // 몬스터 밀도 (Combat/MonsterSpawner). 지도에 무리를 못 박지 않고 주인공 둘레를 채운다.
+  // interval 초마다 한 번: 둘레(count_radius m)에 살아 있는 수가 상한보다 적으면 화면 밖 고리(ring m)에 한 무리.
+  // 상한이 스폰율이다 — 낮 6, 밤 9, 무명지 8. 30m 고리에 6마리면 화면에는 보통 1~3마리가 들어온다.
+  "interval": 1.2,
+  "cap_day": 6,
+  "cap_night": 9,
+  "cap_hush": 8,
+  "count_radius": 42,
+  "ring": [20, 30],
+  "despawn": 52,
+  // 마을 안, 여신상·사람 둘레에는 세우지 않는다 (m)
+  "safe_zones": ["하루미 마을", "하나미 마을", "꽃 마을", "눈꽃 마을"],
+  "safe_statue": 16,
+  "safe_npc": 12,
+  // 밤에는 이름이 흐려진다: 이 확률로 그 지역의 것 대신 무명이 나온다 (레벨은 그 지역 범위)
+  "night_hush_chance": 0.35,
+  "night": [
+    { "id": "hush_shade", "w": 3, "group": [1, 2] }
+  ],
+  // 지역 이름(지도 meta.zone_names) → 표. w 무게, lv 레벨 범위, group 한 번에 세우는 수, time day·night·any
+  // 난이도는 '위로 갈수록'이 아니라 한가운데(거울 호수)에서 멀수록 오른다.
+  "tables": {
+    "default": [
+      { "id": "sakura_slime", "w": 3, "lv": [1, 3], "group": [1, 2] }
+    ],
+    "거울 호수": [
+      { "id": "sakura_slime", "w": 4, "lv": [1, 2], "group": [1, 2] },
+      { "id": "stone_crab", "w": 1, "lv": [3, 4], "group": [1, 1] }
+    ],
+    "바람의 초원": [
+      { "id": "sakura_slime", "w": 5, "lv": [1, 4], "group": [1, 3] },
+      { "id": "moss_boar", "w": 3, "lv": [3, 6], "group": [1, 2] },
+      { "id": "forest_goblin", "w": 2, "lv": [4, 7], "group": [1, 2] }
+    ],
+    "남쪽 해변": [
+      { "id": "stone_crab", "w": 4, "lv": [5, 8], "group": [1, 2] },
+      { "id": "sakura_slime", "w": 2, "lv": [4, 6], "group": [2, 3] }
+    ],
+    "벚꽃 골짜기": [
+      { "id": "petal_wisp", "w": 4, "lv": [5, 9], "group": [1, 2] },
+      { "id": "sakura_slime", "w": 3, "lv": [5, 8], "group": [2, 3] },
+      { "id": "forest_goblin", "w": 3, "lv": [6, 9], "group": [1, 3] }
+    ],
+    "꽃 들판": [
+      { "id": "field_scarecrow", "w": 4, "lv": [6, 9], "group": [1, 2] },
+      { "id": "petal_wisp", "w": 3, "lv": [5, 9], "group": [1, 2] },
+      { "id": "moss_boar", "w": 2, "lv": [6, 9], "group": [1, 2] }
+    ],
+    "등대 곶": [
+      { "id": "stone_crab", "w": 4, "lv": [8, 11], "group": [1, 2] },
+      { "id": "field_scarecrow", "w": 2, "lv": [8, 11], "group": [1, 2] }
+    ],
+    "단풍 협곡": [
+      { "id": "maple_fox", "w": 4, "lv": [12, 15], "group": [1, 2] },
+      { "id": "forest_goblin", "w": 3, "lv": [11, 14], "group": [2, 3] },
+      { "id": "moss_boar", "w": 2, "lv": [11, 14], "group": [1, 2] }
+    ],
+    "고목의 숲": [
+      { "id": "bark_golem", "w": 2, "lv": [14, 17], "group": [1, 1] },
+      { "id": "forest_goblin", "w": 3, "lv": [13, 16], "group": [2, 3] },
+      { "id": "petal_wisp", "w": 2, "lv": [13, 16], "group": [1, 2] }
+    ],
+    "안개 호수": [
+      { "id": "stone_crab", "w": 3, "lv": [15, 18], "group": [1, 2] },
+      { "id": "maple_fox", "w": 2, "lv": [15, 18], "group": [1, 1] },
+      { "id": "hush_shade", "w": 3, "lv": [15, 18], "group": [1, 2], "hushed": true }
+    ],
+    "서리 고원": [
+      { "id": "frost_wolf", "w": 5, "lv": [20, 25], "group": [2, 3] },
+      { "id": "bark_golem", "w": 1, "lv": [22, 26], "group": [1, 1] },
+      { "id": "hush_shade", "w": 2, "lv": [20, 25], "group": [1, 3], "hushed": true }
+    ]
+  },
+  // 깨우지 않은 무명지 안: 무명지 id(data/world/hush.json) → 표. 여기 것은 모두 무명(잿빛·강함)
+  "hush": {
+    "default": [
+      { "id": "hush_shade", "w": 5, "lv": [3, 5], "group": [1, 3] }
+    ],
+    "h_meadow": [
+      { "id": "hush_shade", "w": 5, "lv": [2, 4], "group": [1, 2] },
+      { "id": "sakura_slime", "w": 2, "lv": [2, 4], "group": [1, 2] }
+    ],
+    "h_coast": [
+      { "id": "hush_shade", "w": 3, "lv": [6, 8], "group": [1, 2] },
+      { "id": "stone_crab", "w": 3, "lv": [6, 8], "group": [1, 2] }
+    ],
+    "h_sakura": [
+      { "id": "hush_shade", "w": 4, "lv": [8, 10], "group": [1, 3] },
+      { "id": "petal_wisp", "w": 3, "lv": [8, 10], "group": [1, 2] }
+    ],
+    "h_flower": [
+      { "id": "hush_shade", "w": 4, "lv": [8, 10], "group": [1, 3] },
+      { "id": "field_scarecrow", "w": 3, "lv": [8, 10], "group": [1, 2] }
+    ],
+    "h_autumn": [
+      { "id": "hush_shade", "w": 4, "lv": [13, 16], "group": [2, 3] },
+      { "id": "maple_fox", "w": 3, "lv": [13, 16], "group": [1, 2] }
+    ],
+    "h_root": [
+      { "id": "hush_shade", "w": 4, "lv": [16, 18], "group": [2, 3] },
+      { "id": "bark_golem", "w": 1, "lv": [16, 18], "group": [1, 1] }
+    ],
+    "h_frost": [
+      { "id": "hush_shade", "w": 3, "lv": [23, 26], "group": [2, 3] },
+      { "id": "frost_wolf", "w": 4, "lv": [23, 26], "group": [2, 3] }
+    ]
+  }
+}

@@ -28,6 +28,14 @@ public partial class CombatFx : Node
         ["fire"] = new(Colors.White, new Color(1f, 0.9f, 0.5f), new Color(1f, 0.5f, 0.15f), new Color(0.6f, 0.12f, 0.08f)),
         ["shadow"] = new(new Color(0.95f, 0.9f, 1f), new Color(0.72f, 0.58f, 1f), new Color(0.42f, 0.26f, 0.72f), new Color(0.16f, 0.08f, 0.3f)),
         ["leaf"] = new(Colors.White, new Color(0.85f, 1f, 0.6f), new Color(0.45f, 0.8f, 0.3f), new Color(0.18f, 0.42f, 0.2f)),
+        // 무명록 (M9): 이름마다 제 빛 — 맹세의 금빛, 먹빛, 바람빛, 부르는 소리의 보랏빛. 무명은 잿빛, 몬스터 공격은 잉걸불빛
+        ["oath"] = new(Colors.White, new Color(1f, 0.93f, 0.62f), new Color(0.98f, 0.72f, 0.26f), new Color(0.55f, 0.3f, 0.1f)),
+        ["ink"] = new(new Color(0.92f, 0.9f, 1f), new Color(0.5f, 0.48f, 0.62f), new Color(0.2f, 0.18f, 0.3f), new Color(0.05f, 0.04f, 0.09f)),
+        ["wind"] = new(Colors.White, new Color(0.85f, 1f, 0.97f), new Color(0.4f, 0.95f, 0.85f), new Color(0.1f, 0.55f, 0.6f)),
+        ["call"] = new(Colors.White, new Color(0.92f, 0.82f, 1f), new Color(0.68f, 0.45f, 1f), new Color(0.3f, 0.16f, 0.6f)),
+        ["hush"] = new(Colors.White, new Color(0.86f, 0.88f, 0.93f), new Color(0.55f, 0.57f, 0.63f), new Color(0.22f, 0.23f, 0.28f)),
+        ["ember"] = new(Colors.White, new Color(1f, 0.85f, 0.5f), new Color(1f, 0.45f, 0.2f), new Color(0.5f, 0.12f, 0.1f)),
+        ["lantern"] = new(Colors.White, new Color(1f, 0.95f, 0.7f), new Color(1f, 0.78f, 0.35f), new Color(0.7f, 0.4f, 0.15f)),
     };
     public static Palette PaletteOf(string name) => name != null && Palettes.TryGetValue(name, out var p) ? p : Palettes["teal"];
 
@@ -72,6 +80,12 @@ public partial class CombatFx : Node
     private readonly List<GpuParticles3D> _sparkles = new();
     private readonly List<GpuParticles3D> _petals = new();
     private int _nextRing, _nextBolt, _nextSparkle, _nextPetal;
+    // 이름마다 다른 손맛 (JobFx): 먹 붓질 궤적·먹 방울, 이름 빛으로 물든 불꽃
+    private readonly List<Pooled> _inks = new();
+    private readonly List<GpuParticles3D> _inkDrops = new();
+    private int _nextInk, _nextInkDrop;
+    private readonly Dictionary<(Spark, Palette), GradientTexture1D> _tintRamps = new();
+    private const int InkDropPool = 4;
     private Shader _slashShader, _sparkShader;
     private ImageTexture _starTex;
 
@@ -85,6 +99,9 @@ public partial class CombatFx : Node
         _slashShader = GD.Load<Shader>("res://shaders/slash.gdshader");
         _sparkShader = GD.Load<Shader>("res://shaders/particle_spark.gdshader");
         _starTex = MakeStar();
+        var inkShader = GD.Load<Shader>("res://shaders/slash_ink.gdshader");
+        for (int i = 0; i < InkDropPool; i++)
+            _inkDrops.Add(MakeInkEmitter());
         for (int i = 0; i < 8; i++)
             _sparks.Add(MakeSparkEmitter());
         foreach (Spark k in System.Enum.GetValues<Spark>())
@@ -92,6 +109,7 @@ public partial class CombatFx : Node
         for (int i = 0; i < PoolSize; i++)
         {
             _slashes.Add(MakePooled(new ShaderMaterial { Shader = _slashShader }, null));
+            _inks.Add(MakePooled(new ShaderMaterial { Shader = inkShader }, null));
             _stars.Add(MakePooled(null, new StandardMaterial3D
             {
                 AlbedoTexture = _starTex,
@@ -131,6 +149,8 @@ public partial class CombatFx : Node
         var hero = Hero.Instance;
         Vector3 at = hero != null ? hero.GlobalPosition : GameRoot.Instance.Rig.Target;
         Slash(at + Vector3.Up, Vector3.Forward, Vector3.Left, 1f, 90f, 0.2f);
+        Slash(at + Vector3.Up, Vector3.Forward, Vector3.Left, 1f, 90f, 0.2f, ink: true);
+        InkDrops(at + Vector3.Down * 3f, Vector3.Forward, 7);
         Star(at, 0.5f, Colors.Black, 0.2f);
         Sparks(at + Vector3.Down * 3f, Vector3.Forward, Spark.Hit);
         Dust.Puff(at + Vector3.Down * 3f);
@@ -154,15 +174,23 @@ public partial class CombatFx : Node
             foreach (var step in job.Attack)
             {
                 float r = step.Reach * Mathf.Min(step.SlashScale, 1.1f);
-                switch (step.Slash)
+                // 메아리 궤적(JobFx.EchoRadius)은 조금 더 큰 호를 쓴다
+                foreach (float rr in job.Fx.Echo > 0f ? new[] { r, r * JobFx.EchoRadius } : new[] { r })
                 {
-                    case "horizontal": WarmArc(r, 200f, false); break;
-                    case "reverse": WarmArc(r, 200f, true); break;
-                    case "vertical": WarmArc(r, 170f, true); break;
-                    case "stab": WarmArc(r, 40f, false); break;
+                    switch (step.Slash)
+                    {
+                        case "horizontal": WarmArc(rr, 200f, false); break;
+                        case "reverse": WarmArc(rr, 200f, true); break;
+                        case "vertical": WarmArc(rr, 170f, true); break;
+                        case "stab": WarmArc(rr, 40f, false); break;
+                    }
                 }
             }
+            // 이름 빛으로 물든 불꽃의 색 띠도 미리
+            TintRamp(Spark.Hit, PaletteOf(job.Palette));
+            TintRamp(Spark.Heavy, PaletteOf(job.Palette));
         }
+        JobFx.Warm(WarmArc);
         // 투사체 셰이더도 처음 그리는 순간 멈칫한다 — 화살·마법탄 판을 잠깐 세워 둔다
         foreach (int kind in new[] { 0, 1 })
         {
@@ -227,7 +255,7 @@ public partial class CombatFx : Node
     /// <summary>불꽃: 맞은 방향(dir)으로 튄다.</summary>
     private static readonly bool NoSparks = Dev.DevCapture.Disabled().Contains("sparks");
 
-    public static void Sparks(Vector3 at, Vector3 dir, Spark kind)
+    public static void Sparks(Vector3 at, Vector3 dir, Spark kind, Palette? tint = null)
     {
         if (NoSparks)
             return;
@@ -241,7 +269,7 @@ public partial class CombatFx : Node
         pm.Spread = look.spread;
         pm.InitialVelocityMin = look.vmin;
         pm.InitialVelocityMax = look.vmax;
-        pm.ColorRamp = _i._ramps[kind];
+        pm.ColorRamp = tint is Palette tp && kind is Spark.Hit or Spark.Heavy ? _i.TintRamp(kind, tp) : _i._ramps[kind];
         if (e.Amount != look.n)
             e.Amount = look.n; // 바꾸면 버퍼를 다시 잡는다
         e.Lifetime = look.life;
@@ -280,14 +308,23 @@ public partial class CombatFx : Node
     /// forward = 호의 가운데가 향하는 쪽, bend = 호가 휘어 나가는 쪽 (가로 베기면 둘 다 수평, 내려찍기면 bend = 위).
     /// </summary>
     public static void Slash(Vector3 center, Vector3 forward, Vector3 bend, float radius, float arcDeg,
-        float duration, bool reverse = false, float thickness = 1f, Palette? palette = null)
+        float duration, bool reverse = false, float thickness = 1f, Palette? palette = null, bool ink = false)
     {
         var pal = palette ?? Palettes["teal"];
         var key = (radius, arcDeg, reverse);
         if (!_i._arcs.TryGetValue(key, out var arc))
             _i._arcs[key] = arc = ArcMesh(radius, arcDeg, reverse);
-        var sl = _i._slashes[_i._nextSlash];
-        _i._nextSlash = (_i._nextSlash + 1) % PoolSize;
+        Pooled sl;
+        if (ink)
+        {
+            sl = _i._inks[_i._nextInk];
+            _i._nextInk = (_i._nextInk + 1) % PoolSize;
+        }
+        else
+        {
+            sl = _i._slashes[_i._nextSlash];
+            _i._nextSlash = (_i._nextSlash + 1) % PoolSize;
+        }
         sl.Mesh.Mesh = arc;
         // 메시는 로컬 XZ 평면(X = 정면, Z = 휘는 쪽)에 만들어 두고 방향은 기저로 돌린다
         forward = forward.Normalized();
@@ -359,6 +396,21 @@ public partial class CombatFx : Node
         e.Restart();
     }
 
+    /// <summary>먹 방울: 맞은 쪽(dir)으로 튀어 땅으로 떨어진다. 빛나지 않는 짙은 점.</summary>
+    public static void InkDrops(Vector3 at, Vector3 dir, int count)
+    {
+        var e = _i._inkDrops[_i._nextInkDrop];
+        _i._nextInkDrop = (_i._nextInkDrop + 1) % InkDropPool;
+        var pm = (ParticleProcessMaterial)e.ProcessMaterial;
+        dir.Y = 0f;
+        dir = dir.LengthSquared() > 1e-6f ? dir.Normalized() : Vector3.Forward;
+        pm.Direction = (dir + Vector3.Up * 0.7f).Normalized();
+        if (e.Amount != count)
+            e.Amount = count;
+        e.GlobalPosition = at;
+        e.Restart();
+    }
+
     /// <summary>꽃잎: dir 쪽으로 휘날리며 흩어진다.</summary>
     public static void Petals(Vector3 center, Vector3 dir, int count, float radius)
     {
@@ -384,7 +436,7 @@ public partial class CombatFx : Node
         _kickVel += acc * real;
         _kick += _kickVel * real;
         _trauma = Mathf.Max(0f, _trauma - TraumaDecay * real);
-        float s = _trauma * _trauma * ShakeMax;
+        float s = _trauma * _trauma * ShakeMax * Settings.ShakeScale;   // 설정에서 줄이거나 끌 수 있다
         var shake = new Vector3(
             Mathf.Sin(_t * 71f) * 0.6f + Mathf.Sin(_t * 113f + 1.7f) * 0.4f,
             Mathf.Sin(_t * 89f + 0.3f) * 0.6f + Mathf.Sin(_t * 127f + 2.9f) * 0.4f, 0f) * s;
@@ -412,20 +464,8 @@ public partial class CombatFx : Node
         }
 
         // 베기 궤적은 주인공 시간 — 히트스톱 동안 궤적도 멈춘다
-        foreach (var sl in _slashes)
-        {
-            if (!sl.Live)
-                continue;
-            sl.Age += heroDt;
-            // 앞 45% 에 끝까지 긋고, 나머지 동안 천천히 밀려나며 흩어진다
-            float u = sl.Age / sl.Life;
-            const float Sweep = 0.45f;
-            float p = u < Sweep ? u / Sweep : 1f + (u - Sweep) / (1f - Sweep) * SlashTail * 0.5f;
-            sl.Slash.SetShaderParameter(Uniform.Progress, p);
-            sl.Slash.SetShaderParameter(Uniform.Dissolve, Mathf.Clamp((u - Sweep) / (1f - Sweep), 0f, 1f));
-            if (u >= 1f)
-                sl.Live = sl.Mesh.Visible = false;
-        }
+        TickSlashes(_slashes, heroDt);
+        TickSlashes(_inks, heroDt);
         // 별은 실제 시간 — 히트스톱 동안 떠 있다가 풀리면 사라진다
         foreach (var st in _stars)
         {
@@ -463,6 +503,71 @@ public partial class CombatFx : Node
             if (b.Age >= b.Life)
                 b.Live = b.Mesh.Visible = false;
         }
+    }
+
+    private static void TickSlashes(List<Pooled> pool, float heroDt)
+    {
+        foreach (var sl in pool)
+        {
+            if (!sl.Live)
+                continue;
+            sl.Age += heroDt;
+            // 앞 45% 에 끝까지 긋고, 나머지 동안 천천히 밀려나며 흩어진다
+            float u = sl.Age / sl.Life;
+            const float Sweep = 0.45f;
+            float p = u < Sweep ? u / Sweep : 1f + (u - Sweep) / (1f - Sweep) * SlashTail * 0.5f;
+            sl.Slash.SetShaderParameter(Uniform.Progress, p);
+            sl.Slash.SetShaderParameter(Uniform.Dissolve, Mathf.Clamp((u - Sweep) / (1f - Sweep), 0f, 1f));
+            if (u >= 1f)
+                sl.Live = sl.Mesh.Visible = false;
+        }
+    }
+
+    private GradientTexture1D TintRamp(Spark kind, Palette pal)
+    {
+        if (!_tintRamps.TryGetValue((kind, pal), out var ramp))
+            _tintRamps[(kind, pal)] = ramp = MakeRamp(pal.Core, kind == Spark.Heavy ? pal.Mid : pal.Bright);
+        return ramp;
+    }
+
+    private GpuParticles3D MakeInkEmitter()
+    {
+        var fade = new Gradient();
+        fade.SetColor(0, new Color(0.06f, 0.05f, 0.1f, 1f));
+        fade.SetColor(1, new Color(0.06f, 0.05f, 0.1f, 0f));
+        fade.AddPoint(0.7f, new Color(0.1f, 0.08f, 0.16f, 0.9f));
+        var pm = new ParticleProcessMaterial
+        {
+            EmissionShape = ParticleProcessMaterial.EmissionShapeEnum.Sphere,
+            EmissionSphereRadius = 0.12f,
+            Spread = 42f,
+            InitialVelocityMin = 2.5f,
+            InitialVelocityMax = 6.5f,
+            Gravity = new Vector3(0f, -14f, 0f),
+            DampingMin = 1.5f,
+            DampingMax = 3f,
+            ScaleMin = 0.07f,   // m (2~5 저해상도 픽셀)
+            ScaleMax = 0.17f,
+            ColorRamp = new GradientTexture1D { Gradient = fade },
+        };
+        var mat = new ShaderMaterial { Shader = GD.Load<Shader>("res://shaders/particle_dust.gdshader") };
+        mat.SetShaderParameter(Uniform.PxSize, 3f);
+        var e = new GpuParticles3D
+        {
+            OneShot = true,
+            Emitting = false,
+            Amount = 7,
+            Lifetime = 0.5f,
+            Explosiveness = 1f,
+            ProcessMaterial = pm,
+            DrawPass1 = new QuadMesh { Size = Vector2.One, Material = mat },
+            LocalCoords = false,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            VisibilityAabb = new Aabb(new Vector3(-6, -3, -6), new Vector3(12, 8, 12)),
+        };
+        e.AddToGroup(GameRoot.WorldParticles);
+        GameRoot.Instance.Stage.AddChild(e);
+        return e;
     }
 
     private void WarmArc(float radius, float arcDeg, bool reverse)

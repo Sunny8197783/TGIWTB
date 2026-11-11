@@ -158,17 +158,11 @@ public partial class Statues : Control
         if (!_menu && _near >= 0 && !GameRoot.Instance.InputLocked)
         {
             // 주인공 머리 위에 'F 기도' (깨운 상은 금빛). 상 머리 위는 가까이 서면 화면 밖으로 잘렸다
-            Vector2 p = (view.WorldToScreen(_player.WorldPosition + Vector3.Up * 2.4f) / px).Round();
+            // 사람·이름비와 같은 모양의 안내 (Npcs.Prompt)
             bool awake = _player.Statues.Contains(_all[_near].Id);
-            float bob = Mathf.PosMod(_age, 1f) < 0.5f ? 0f : 1f;
-            DrawSetTransform(Vector2.Zero, 0f, Vector2.One * px);
-            string label = "F  기도";
-            float w = PixelText.Width(label) + 10f;
-            var r = new Rect2(Mathf.Round(p.X - w * 0.5f), p.Y - 14 - bob, Mathf.Round(w), 17);
-            DrawRect(r, Back);
-            DrawRect(r, awake ? Gold : Dim, false, 1f);
-            PixelText.DrawCentered(this, label, new Vector2(p.X, p.Y - 1 - bob), awake ? Gold : Colors.White);
-            DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
+            Ui.Begin(this, px);
+            Npcs.Prompt(this, view, px, _player.WorldPosition, awake ? "기도" : "잠든 여신상을 깨운다");
+            Ui.End(this);
         }
         if (!_menu)
             return;
@@ -176,22 +170,20 @@ public partial class Statues : Control
         DrawSetTransform(new Vector2(0f, -drop * px), 0f, Vector2.One * px);
         float lowW = GetViewportRect().Size.X / px;
         int rows = _list.Count;
-        var panel = new Rect2(Mathf.Round(lowW - 196), 70, 178, 44 + rows * 18 + 16);
-        DrawRect(panel, Back);
-        DrawRect(panel, Gold, false, 1f);
-        DrawRect(new Rect2(panel.Position + new Vector2(2, 2), panel.Size - new Vector2(4, 4)), new Color(Gold, 0.35f), false, 1f);
-        PixelText.DrawCentered(this, "여신상 — 어디로 갈까", new Vector2(panel.GetCenter().X, panel.Position.Y + 18), Gold);
+        var panel = new Rect2(Mathf.Round(lowW - 206), 84, 188, 24 + rows * 18 + 26);
+        Ui.Frame(this, panel);
+        Ui.Title(this, panel, "여신상 — 어디로 갈까");
         for (int k = 0; k < rows; k++)
         {
             var s = _all[_list[k]];
-            float y = panel.Position.Y + 42 + k * 18;
+            float y = panel.Position.Y + 28 + k * 18;
             bool on = k == _pick;
             if (on)
-                DrawRect(new Rect2(panel.Position.X + 4, y - 12, panel.Size.X - 8, 16), new Color(Gold, 0.18f));
+                Ui.Highlight(this, new Rect2(panel.Position.X + 4, y - 12, panel.Size.X - 8, 16));
             string mark = _near >= 0 && _all[_near].Id == s.Id ? "  (여기)" : "";
-            PixelText.Draw(this, (on ? "▶ " : "   ") + s.Name + mark, new Vector2(panel.Position.X + 10, y), on ? Colors.White : Dim);
+            PixelText.Draw(this, (on ? "▶ " : "   ") + s.Name + mark, new Vector2(panel.Position.X + 10, y), on ? Ui.Text : Ui.Dim);
         }
-        PixelText.Draw(this, "↑↓ 고르기  F 이동  Space 닫기", new Vector2(panel.Position.X + 10, panel.End.Y - 6), new Color(Dim, 0.9f));
+        Ui.Hints(this, new Vector2(panel.GetCenter().X, panel.End.Y - 7), ("↑↓", "고르기"), ("F", "이동"), ("Space", "닫기"));
         DrawSetTransform(Vector2.Zero, 0f, Vector2.One);
     }
 }
