@@ -1,16 +1,18 @@
 {
-  // 도적: 두 자루 단검. 짧고 빠른 4연타 — 한 타는 약하지만 끊기지 않는다. 회피가 빨리 돌아온다
+  // 묵영(墨影): 적의 이름에 먹을 긋는 그림자. 짧고 빠른 4연타 — 한 타는 약하지만 끊기지 않는다
   "id": "rogue",
-  "name": "도적",
+  "name": "묵영",
+  "glyph": "墨", "motto": "이름을 먹으로 지우는 자", "weapon": "twin",
   "tier": 1,
-  "description": "보이지 않는 곳에서 가장 먼저 닿는다.",
+  "description": "먹 한 방울이면 이름 한 줄이 지워진다. 제 발소리부터 지웠다.",
   "required_level": 10, "from": ["novice"], "trainer": "npc_rogue",
   "art": {
     "m": { "art": "res://art/characters/job_rogue_m", "accent_hue": [260, 320], "accent_sat": 0.15 },
     "f": { "art": "res://art/characters/job_rogue_f", "accent_hue": [260, 320], "accent_sat": 0.15 }
   },
   "hp": 100, "hp_per_level": 8, "power_per_level": 0.055,
-  "palette": "moon",
+  "palette": "ink",
+  "fx": { "swing": "ink", "hit": "blot", "ghost": true, "glyph": true },
   "attack": [
     { "anim": "attack1", "duration": 0.24, "hit_at": 0.09, "cancel_at": 0.13, "lunge": 1.1, "damage": 7, "reach": 1.6, "half_arc_deg": 65, "start_frame": 2, "hit_frame": 5, "slash": "horizontal", "slash_scale": 0.75, "sound": "knifeSlice" },
     { "anim": "attack2", "duration": 0.24, "hit_at": 0.09, "cancel_at": 0.13, "lunge": 1.1, "damage": 7, "reach": 1.6, "half_arc_deg": 65, "start_frame": 2, "hit_frame": 6, "slash": "reverse", "slash_scale": 0.75, "sound": "knifeSlice" },

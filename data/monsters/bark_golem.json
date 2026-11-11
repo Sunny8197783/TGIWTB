@@ -1,0 +1,11 @@
+{
+  // 고목 골렘: 느리고 단단하다. 주인공이 선 자리를 내려찍는다 — 원이 차오르기 전에 벗어난다
+  "id": "bark_golem", "name": "고목 골렘", "art": "res://art/characters/bark_golem", "cell": 192,
+  "level": 14, "hp": 520, "poise": 140, "speed": 1.8, "sight": 10, "radius": 0.9, "knockback": 0.15, "exp": 110,
+  "super_armor": true, "height": 2.7,
+  "attacks": [
+    { "id": "smash", "shape": "circle", "damage": 48, "reach": 2.8, "radius": 2.6, "windup": 1.25, "active": 0.2, "recover": 1.3,
+      "cooldown": 2.2, "telegraph": true, "max_range": 4.2, "hit_frame": 8 }
+  ],
+  "sounds": { "hit": "impactPunch_heavy", "windup": "impactPlate_heavy", "death": "impactPlate_heavy" }
+}

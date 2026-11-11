@@ -19,6 +19,10 @@ public static class Controls
     public static readonly StringName Vista = "vista";
     /// <summary>상호작용: 여신상에 기도 (F · 패드 A)</summary>
     public static readonly StringName Interact = "interact";
+    /// <summary>이슬 한 모금 (H · 패드 십자 위)</summary>
+    public static readonly StringName Heal = "heal";
+    /// <summary>멈춤 차림 (Esc · 패드 Start), 지도 (M), 이름록 (N), 이야기 (Tab)</summary>
+    public static readonly StringName Pause = "pause", Map = "map", Codex = "codex", Journal = "journal";
 
     public static void Register()
     {
@@ -35,6 +39,11 @@ public static class Controls
         Action(Look, Key.C); Pad(Look, JoyButton.Back);
         Action(Vista, Key.V); Pad(Vista, JoyButton.LeftStick);
         Action(Interact, Key.F); Pad(Interact, JoyButton.A);
+        Action(Heal, Key.H); Pad(Heal, JoyButton.DpadUp);
+        Action(Pause, Key.Escape); Pad(Pause, JoyButton.Start);
+        Action(Map, Key.M); Pad(Map, JoyButton.DpadRight);
+        Action(Codex, Key.N); Pad(Codex, JoyButton.DpadLeft);
+        Action(Journal, Key.Tab); Pad(Journal, JoyButton.DpadDown);
     }
 
     private static void Action(StringName name, params Key[] keys)

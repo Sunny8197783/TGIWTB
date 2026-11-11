@@ -1,0 +1,7 @@
+{
+  // 무명 그림자: 이름을 통째로 잃은 것. 남의 이름을 뜯으러 긴 팔을 휘두른다. 무명지와 밤의 주인
+  "id": "hush_shade", "name": "그림자", "art": "res://art/characters/hush_shade",
+  "level": 2, "hp": 70, "poise": 14, "speed": 2.8, "sight": 10, "radius": 0.4, "knockback": 1.0, "exp": 12,
+  "attack": { "damage": 15, "reach": 1.9, "windup": 0.6, "active": 0.2, "recover": 0.8, "lunge": 4.0, "cooldown": 1.4, "hit_frame": 6 },
+  "sounds": { "hit": "impactSoft_heavy", "windup": "cloth", "death": "impactSoft_heavy" }
+}

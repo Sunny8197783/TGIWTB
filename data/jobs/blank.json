@@ -1,0 +1,27 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "blank",
+  "name": "백지",
+  "glyph": "白",
+  "motto": "끝내 아무 이름도 받지 않은 잎",
+  "weapon": "blade",
+  "tier": 2,
+  "description": "비어 있기에 무엇이든 될 수 있고, 끝까지 비어 있기에 무엇도 아니다.",
+  "required_level": 20,
+  "from": [
+    "novice"
+  ],
+  "sealed": true,
+  "hidden": true,
+  "requires": {
+    "engrave": {
+      "novice": 10
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "teal",
+  "attack": [],
+  "skills": []
+}

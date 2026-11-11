@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "oathbreaker",
+  "name": "파약검",
+  "glyph": "破",
+  "motto": "맹세를 깨고도 지지 않은 이름",
+  "weapon": "blade",
+  "tier": 2,
+  "description": "어긴 맹세의 무게를 칼에 싣는다.",
+  "required_level": 25,
+  "from": [
+    "warrior"
+  ],
+  "sealed": true,
+  "hidden": true,
+  "requires": {
+    "deeds": {
+      "death": 30
+    },
+    "engrave": {
+      "warrior": 4
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "ember",
+  "attack": [],
+  "skills": []
+}

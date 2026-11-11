@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "namer",
+  "name": "작명가",
+  "glyph": "作",
+  "motto": "없던 이름을 새로 짓는 자",
+  "weapon": "tome",
+  "tier": 2,
+  "description": "부르는 것으로 모자라, 지어 낸다.",
+  "required_level": 25,
+  "from": [
+    "mage"
+  ],
+  "sealed": true,
+  "hidden": false,
+  "requires": {
+    "deeds": {
+      "stele": 5
+    },
+    "engrave": {
+      "mage": 5
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "call",
+  "attack": [],
+  "skills": []
+}

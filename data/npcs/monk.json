@@ -1,0 +1,8 @@
+{
+  "id": "npc_monk", "name": "단", "title": "단풍 산사의 스님", "role": "villager",
+  "art": "res://art/characters/npc_monk", "x": 224, "z": 292,
+  "lines": {
+    "greet": ["잊히는 것은 무섭지 않소. 잊는 것이 무섭지.",
+              "노을 절벽에 가 보았소? 해가 바다로 지는 것을 보면, 지는 것도 나쁘지 않다는 생각이 들 게요."]
+  }
+}

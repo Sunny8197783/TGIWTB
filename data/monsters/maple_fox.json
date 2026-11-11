@@ -1,0 +1,12 @@
+{
+  // 단풍 여우: 불씨 셋을 부채꼴로 뱉고 연기처럼 사라져 다른 자리에 나타난다
+  "id": "maple_fox", "name": "단풍 여우", "art": "res://art/characters/maple_fox",
+  "level": 12, "hp": 150, "poise": 20, "speed": 4.2, "sight": 12, "radius": 0.4, "knockback": 1.2, "exp": 60,
+  "move": "kite", "prefer_range": 7, "blink": true,
+  "attacks": [
+    { "id": "ember", "shape": "shot", "damage": 30, "reach": 11, "windup": 0.65, "active": 0.15, "recover": 0.5, "cooldown": 2.2,
+      "min_range": 2.0, "max_range": 11.5, "hit_frame": 6,
+      "shot": { "speed": 10, "range": 14, "radius": 0.4, "count": 3, "spread_deg": 14, "palette": "fire" } }
+  ],
+  "sounds": { "hit": "impactSoft_medium", "windup": "cloth", "death": "impactSoft_heavy" }
+}

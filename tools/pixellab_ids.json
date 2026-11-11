@@ -1,0 +1,572 @@
+{
+ "chars": {
+  "hush_shade": {
+   "id": "00c49363-4d81-4ea6-82c3-cd4f0e595b6e",
+   "desc": "nameless shade",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "hush_shade_idle",
+     "group": "a7f9ebb3-3f9e-4011-8df4-7d98a34b37ac",
+     "action": "idle stance: swaying slowly side to side, shoulders rising and falling, wisps of mist drifting off its body",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "hush_shade_move",
+     "group": "a1297cde-1ed8-4a0e-9e50-46dac0cc2abe",
+     "action": "shambling walk forward, dragging its long arms, body swaying",
+     "frames": 8,
+     "drop_first": true
+    },
+    "death": {
+     "name": "hush_shade_death",
+     "group": "5c235ee7-129e-4446-a2f4-d9c65cb202f1",
+     "action": "collapses to its knees and crumbles into a low pile of grey ash on the ground",
+     "frames": 8,
+     "drop_first": false
+    },
+    "attack": {
+     "name": "hush_shade_attack",
+     "group": "2a7dfa37-2a58-47de-8430-06f73c60fabe",
+     "action": "raises one long clawed arm high overhead, then slashes it down diagonally in front, and recovers to a hunched stance",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "hush_shade_hurt",
+     "group": "c8abad84-f834-4b49-b1ec-459090b94504",
+     "action": "flinches hard from a hit, body jerking backward, then recovers balance",
+     "frames": 4,
+     "drop_first": true
+    }
+   }
+  },
+  "moss_boar": {
+   "id": "ff108083-d159-4fe2-9873-8c287d8d4222",
+   "desc": "a wild boar beast with a shaggy dark-brown hide overgrown with green moss and small ferns on its back, big curved ivory tusks, small red eyes, stocky and angry, fantasy monster",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "moss_boar_idle",
+     "group": "e977bad4-a9ab-46ac-9e18-517e0f5c9aff",
+     "action": "standing idle, breathing heavily, snorting, ears twitching",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "moss_boar_move",
+     "group": "cad7fb58-2b58-4dc4-91d8-04abdd9c35be",
+     "action": "trotting forward at a steady run, legs galloping",
+     "frames": 8,
+     "drop_first": true
+    },
+    "hurt": {
+     "name": "moss_boar_hurt",
+     "group": "a17a599c-e61a-4a2e-be10-b44af2ad55ca",
+     "action": "flinches from a hit, head snapping aside, stumbling, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "moss_boar_attack",
+     "group": "161953b3-64e9-4c77-985b-9b09a5422e96",
+     "action": "lowers its head and paws the ground with a front hoof again and again, shaking its tusks, about to charge",
+     "frames": 8,
+     "drop_first": false
+    },
+    "death": {
+     "name": "moss_boar_death",
+     "group": "f7e3aca6-7097-4ebb-95d9-357b363cbc26",
+     "action": "staggers and topples over onto its side, lying still on the ground",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "petal_wisp": {
+   "id": "118d4ebf-fd15-4398-9b63-60636fbe9b78",
+   "desc": "a small floating flower spirit: a round glowing pink blossom bud body with large petal wings and two tiny leaf arms, a cute face with closed smiling eyes, sparkling pollen, hovering above the ground, fantasy creature",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "petal_wisp_idle",
+     "group": "5d9e5bb8-78b2-4c22-80f5-5445ee91ffab",
+     "action": "hovering in place, bobbing gently up and down, petal wings fluttering",
+     "frames": 4,
+     "drop_first": true
+    },
+    "hurt": {
+     "name": "petal_wisp_hurt",
+     "group": "0ded75ed-38ab-4b48-9a89-d03045a56b55",
+     "action": "knocked back by a hit, spinning, petals ruffled, then steadies",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "petal_wisp_move",
+     "group": "673c6992-4cfa-49a0-9fef-efc3f3e1939f",
+     "action": "flying forward, petal wings beating",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "petal_wisp_attack",
+     "group": "a3821d20-bd58-456e-809f-8e933d1c375d",
+     "action": "curls all petals inward gathering light, then bursts the petals open and spits a seed forward",
+     "frames": 8,
+     "drop_first": false
+    },
+    "death": {
+     "name": "petal_wisp_death",
+     "group": "4e23d456-2ffb-4ed0-a845-1ffb22849bbf",
+     "action": "petals wilt and fall off, it drops to the ground and lies there as a withered bud",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "stone_crab": {
+   "id": "39a7985e-a54d-43e0-9a5e-d0f5b00ad1c0",
+   "desc": "a big rock crab monster: a mossy grey boulder for a shell, two heavy stone pincers, six short armored legs, two small glowing yellow eyes peeking from under the shell, blue-grey stone and moss green, fantasy monster",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "stone_crab_idle",
+     "group": "685676a4-833a-455d-a2be-a441932fa9e0",
+     "action": "idle, pincers opening and closing slowly, eyes blinking",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "stone_crab_move",
+     "group": "48e2a02c-e31e-4f2c-ba4f-d0e539df4f64",
+     "action": "scuttling forward quickly on its many legs",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "stone_crab_attack",
+     "group": "347ce972-76e2-4a9b-bc94-cc3d25621db5",
+     "action": "raises both heavy pincers high, then slams them down together in front",
+     "frames": 8,
+     "drop_first": false
+    },
+    "guard": {
+     "name": "stone_crab_guard",
+     "group": "fb2d75f9-b6ef-4f2f-84da-80fb8bdba59b",
+     "action": "pulls its legs and pincers in and hides completely under its boulder shell",
+     "frames": 4,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "stone_crab_hurt",
+     "group": "09ad5eaa-f958-4e3d-9070-f7c8f2193cb0",
+     "action": "flinches from a hit, shell rocking, pincers flailing, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "death": {
+     "name": "stone_crab_death",
+     "group": "c3bd058a-3564-4e80-a0d9-45574e29d48e",
+     "action": "flips over onto its back, legs curling up, and goes still",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "frost_wolf": {
+   "id": "4bce50b6-5dcf-4476-87f5-ef2e95d771d5",
+   "desc": "a fierce frost wolf with thick white fur, pale ice-blue tufts along its back and tail like icicles, glowing blue eyes, lean muscular body, snarling, fantasy monster",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "frost_wolf_idle",
+     "group": "cf2f24c9-0b27-41fa-84f0-57741a092ec1",
+     "action": "standing alert, breathing, tail swaying slightly, ears turning",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "frost_wolf_move",
+     "group": "d98cc58c-c265-456c-a018-956f6928cab2",
+     "action": "running forward in a fast gallop",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "frost_wolf_attack",
+     "group": "6c3424c7-9da4-41bd-a1ad-1359362b9a74",
+     "action": "crouches low on its front legs, then pounces forward with jaws wide open in a biting lunge, and lands",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "frost_wolf_hurt",
+     "group": "66df4bb9-54bd-4c16-96ef-2dc76b41a66e",
+     "action": "yelps and flinches from a hit, stumbling sideways, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "death": {
+     "name": "frost_wolf_death",
+     "group": "02a38270-ea0c-433c-884c-221b3c581226",
+     "action": "collapses onto its side and lies still on the ground",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "maple_fox": {
+   "id": "a424ccb4-6092-412d-b517-77adf544e915",
+   "desc": "a mystical fox spirit with fiery orange-red fur, three big fluffy tails shaped like autumn maple leaves, white mask markings around glowing golden eyes, small and elegant, fantasy creature",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "maple_fox_idle",
+     "group": "a8b5b7d7-44d8-43d8-9926-5350375cc6ea",
+     "action": "standing idle, three tails swaying like flames, ears flicking",
+     "frames": 4,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "maple_fox_attack",
+     "group": "923f6bc5-096f-44be-896b-8dee6c4067a0",
+     "action": "rears back and fans its three tails upward, then barks forward sharply with its mouth open, and settles",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "maple_fox_hurt",
+     "group": "17fa1009-0dd5-4279-bcb3-a334f5e772c3",
+     "action": "flinches from a hit, jumping back, fur bristling, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "death": {
+     "name": "maple_fox_death",
+     "group": "5e7b3fe3-11b7-4712-bd2d-21e5fd0a3aa1",
+     "action": "collapses and curls up on the ground, tails going limp",
+     "frames": 8,
+     "drop_first": false
+    },
+    "move": {
+     "name": "maple_fox_move",
+     "group": "cdf9f1d3-373a-4eb9-8d3e-f70c2b17691d",
+     "action": "running forward lightly, tails streaming behind",
+     "frames": 8,
+     "drop_first": true
+    }
+   }
+  },
+  "field_scarecrow": {
+   "id": "938cc501-2097-4d8b-be91-e8bce7aba454",
+   "desc": "a living scarecrow monster: burlap sack head with a stitched mouth and two glowing orange eyes, wide torn straw hat, ragged patched farmer coat stuffed with straw, stick arms, holding a rusty pitchfork, autumn colors, fantasy monster",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "field_scarecrow_idle",
+     "group": "c27f3dd9-36bd-490f-a8a5-f8d6aef80f4c",
+     "action": "standing idle, swaying loosely as if hanging on a pole, head tilting",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "field_scarecrow_move",
+     "group": "5cb40684-3456-4af9-afc0-a9b085f85f51",
+     "action": "walking forward with jerky loose limbs, straw shaking",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "field_scarecrow_attack",
+     "group": "136d520b-01ab-419e-95b0-9f546e7a1d0e",
+     "action": "pulls the pitchfork back with both hands, then thrusts it far forward in a long stab, and pulls it back",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "field_scarecrow_hurt",
+     "group": "3e436df2-f979-4159-9e54-4c1d4e5ceaf4",
+     "action": "flinches from a hit, straw bursting out, head wobbling, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "death": {
+     "name": "field_scarecrow_death",
+     "group": "c2bf09c7-fa3d-4f2e-a24c-76b0c7b4449f",
+     "action": "falls apart into a heap of straw on the ground, the hat landing on top",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "bark_golem": {
+   "id": "c75ad7e5-bc59-452a-9a07-38df7b020ba9",
+   "desc": "a hulking tree golem made of ancient gnarled bark and thick roots, moss and small glowing mushrooms on its broad shoulders, a hollow in its chest with a glowing green core, huge heavy wooden fists, small glowing green eyes, fantasy monster",
+   "size": 80,
+   "anims": {
+    "idle": {
+     "name": "bark_golem_idle",
+     "group": "60ab9376-0175-40c7-aa87-165182384372",
+     "action": "standing idle, heavy slow breathing, chest core pulsing",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "bark_golem_move",
+     "group": "0eb35768-457c-4b0e-8b76-fa4bfe42d59a",
+     "action": "stomping forward with slow heavy steps",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "bark_golem_attack",
+     "group": "1d644990-3bed-42c7-97ca-b51c545b3e67",
+     "action": "slowly raises both huge fists high above its head, then smashes them down onto the ground in front with great force",
+     "frames": 10,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "bark_golem_hurt",
+     "group": "63e0a418-979e-45a2-b3e6-8fd1774d7083",
+     "action": "flinches from a hit, bark chips flying, torso twisting, then recovers",
+     "frames": 4,
+     "drop_first": true
+    },
+    "death": {
+     "name": "bark_golem_death",
+     "group": "db98bab6-c7cd-4c7d-afa3-823ce2523223",
+     "action": "its core dims, it falls to its knees and collapses into a pile of logs and bark",
+     "frames": 8,
+     "drop_first": false
+    }
+   }
+  },
+  "hollow_stag": {
+   "id": "b429bcc2-e572-4844-9dd4-ecc0015232d3",
+   "desc": "a colossal ancient stag deity turned colorless: a huge deer beast with pale ash-grey fur, enormous branching antlers like bare dead tree branches with a few last glowing white leaves, hollow glowing white eyes, tattered moss and roots hanging from its body, a dark crack across its chest, majestic and terrifying, monochrome grey palette, fantasy boss monster",
+   "size": 96,
+   "anims": {
+    "idle": {
+     "name": "hollow_stag_idle",
+     "group": "126612d2-4a38-4d9c-b6d0-32df1c2b1ccc",
+     "action": "standing idle, breathing slowly, head lowering and rising",
+     "frames": 4,
+     "drop_first": true
+    },
+    "move": {
+     "name": "hollow_stag_move",
+     "group": "5789dd01-fa3b-4b29-8aa6-a2f4244e9b14",
+     "action": "walking forward with slow majestic heavy steps",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "hollow_stag_attack",
+     "group": "d82e9d2e-2063-4541-8bd2-484229c0ba70",
+     "action": "lowers its head and sweeps its huge antlers in a wide horizontal arc from one side to the other, then raises its head",
+     "frames": 8,
+     "drop_first": false
+    },
+    "stomp": {
+     "name": "hollow_stag_stomp",
+     "group": "ec696fff-d3f7-4baa-9a31-71098f46640a",
+     "action": "rears up on its hind legs, then slams both front hooves down onto the ground",
+     "frames": 8,
+     "drop_first": false
+    },
+    "roar": {
+     "name": "hollow_stag_roar",
+     "group": "6ba58477-ed86-4b2b-986d-1178cbe635fd",
+     "action": "lowers its head, then throws it back and bellows a long roar at the sky, body trembling",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "hollow_stag_hurt",
+     "group": "2b11eca2-3556-4586-a3ee-1050f47c5ab7",
+     "action": "staggers, head dropping low, front legs buckling, then recovers",
+     "frames": 6,
+     "drop_first": false
+    },
+    "death": {
+     "name": "hollow_stag_death",
+     "group": "952ccf37-140a-409a-b219-b590ab1b9069",
+     "action": "its legs give out, it slowly kneels and lies down on the ground, head lowering to rest",
+     "frames": 10,
+     "drop_first": false
+    }
+   }
+  },
+  "narae": {
+   "id": "704e5a83-b6cf-4e41-a3af-e9619301f2b2",
+   "desc": "a brave teenage girl traveler with short ash-brown hair tied with a small red ribbon, a long scarf that is vivid red on one half and faded colorless grey on the other half, cream tunic with a short teal cape, brown boots, carrying a wooden staff with a small glowing paper lantern hanging from its tip, gentle determined face",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "narae_idle",
+     "group": "f758c4c1-1010-433a-b265-6304ff8fa01b",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    },
+    "run": {
+     "name": "narae_run",
+     "group": "6a03f7ed-c163-43e6-8e7e-52a7609a6477",
+     "action": "running forward at a brisk pace, holding the lantern staff in one hand, scarf trailing behind",
+     "frames": 8,
+     "drop_first": true
+    },
+    "attack": {
+     "name": "narae_attack",
+     "group": "0107addf-cf25-42aa-8cc5-92129121f356",
+     "action": "swings the lantern staff in a wide horizontal arc in front of her, then returns to a ready stance; no magic effects, no glow",
+     "frames": 8,
+     "drop_first": false
+    },
+    "cheer": {
+     "name": "narae_cheer",
+     "group": "56f23367-71bb-47d7-8314-11190e07a002",
+     "action": "raises the lantern staff high above her head with both hands and holds it there proudly, then lowers it",
+     "frames": 8,
+     "drop_first": false
+    },
+    "hurt": {
+     "name": "narae_hurt",
+     "group": "58995ca6-02fb-4da4-8324-45470c00dd0e",
+     "action": "getting hit: flinches and recoils backward from a blow, then recovers balance",
+     "frames": 4,
+     "drop_first": true
+    }
+   }
+  },
+  "npc_guide": {
+   "id": "f16f5c43-6a12-488d-bc20-3da40fa4c3e7",
+   "desc": "an old wandering scholar man with a long white beard, round spectacles, a wide-brimmed traveler hat, a big backpack full of rolled scrolls, long olive-green coat, holding a walking staff, kind face",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_guide_idle",
+     "group": "dc133673-9a89-4288-9aa7-e752a36bd1f7",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_warrior": {
+   "id": "ddd6cf20-61f0-46ef-ba63-cc42fae8d6f1",
+   "desc": "a tall veteran knight man with short grey hair and a scar over one eye, heavy steel plate armor with a crimson tabard, a big kite shield on his back, both hands resting on a greatsword planted in the ground in front of him",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_warrior_idle",
+     "group": "fade0365-1e66-44ee-8baf-9892dcdd5e5e",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_archer": {
+   "id": "b4c169c2-4514-4a9f-9efe-aa7af0744bb0",
+   "desc": "a ranger woman with a long green hooded cloak and a feathered cap, brown braid, leather bracers, a longbow and quiver on her back, a small white messenger bird on her shoulder",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_archer_idle",
+     "group": "af855d69-7bb0-4a4d-9483-8d107141b7f7",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_mage": {
+   "id": "a8ef22aa-4c59-47ec-a351-fd7d827ed8e7",
+   "desc": "an elegant sorceress woman with long violet hair, deep blue robe with golden star embroidery, a tall crystal-topped staff in one hand and an open spellbook in the other",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_mage_idle",
+     "group": "ac3f6798-c084-46e3-9e77-fa0e4c2ef869",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_rogue": {
+   "id": "0db0c411-5edb-4f01-a5ea-e7f404e7f7a4",
+   "desc": "a lean masked man in dark charcoal clothes with an ink-black scarf covering his lower face, a large calligraphy brush strapped on his back and two short blades at his belt, arms crossed, quiet and sharp",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_rogue_idle",
+     "group": "395023de-df0b-4f79-8da0-6097d2f41203",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_miko": {
+   "id": "3d57d71c-d2c9-4616-81df-2e1f6eb84857",
+   "desc": "a shrine maiden girl in a white kimono top and red hakama, long black hair with a cherry blossom hairpin, holding a paper purification wand, serene face",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_miko_idle",
+     "group": "fe5c2dc2-cb62-440a-8d48-deb43e5b7a94",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_keeper": {
+   "id": "2671d83c-a29d-44aa-8f69-e0167f2558d4",
+   "desc": "an old lighthouse keeper man in a navy pea coat and captain cap, bushy grey mustache, holding a big brass oil lantern, weathered kind face",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_keeper_idle",
+     "group": "9557f5b9-2576-4d2f-9f9d-2ec9102fdefe",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_monk": {
+   "id": "bae501dc-3e83-4a3c-9e76-8c5b320eb6e4",
+   "desc": "a calm bald buddhist monk man in saffron-orange and brown robes, wooden prayer beads around his neck, holding a wooden bell mallet, gentle smile",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_monk_idle",
+     "group": "f585d9ae-3e7b-4736-9106-a2dbdbf47716",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  },
+  "npc_scribe": {
+   "id": "b4180cb4-bbeb-4851-8d6e-2f0a17f0926e",
+   "desc": "a small gentle woman scribe in moss-green robes with a leaf-shaped hair ornament in her brown bun, carrying a huge open book and a feather quill, ink-stained fingers, round glasses",
+   "size": 64,
+   "anims": {
+    "idle": {
+     "name": "npc_scribe_idle",
+     "group": "046d79ea-9605-453f-b89e-6f18a883eb2e",
+     "action": "",
+     "frames": null,
+     "drop_first": false
+    }
+   }
+  }
+ },
+ "jobs": []
+}

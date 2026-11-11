@@ -1,16 +1,18 @@
 {
-  // 전사: 검과 갑옷. 견습생 검술 그대로 더 묵직하게 — 체력이 가장 높고 막기·패링이 주무기
+  // 서약검(誓約劍): 제 이름을 걸고 맹세한 검. 묵직한 3연타 — 체력이 가장 높고 막기·패링이 주무기
   "id": "warrior",
-  "name": "전사",
+  "name": "서약검",
+  "glyph": "誓", "motto": "이름을 걸고 맹세한 자", "weapon": "blade",
   "tier": 1,
-  "description": "가장 먼저 손에 잡히는 길. 검을 들고 앞으로 나간다.",
+  "description": "맹세는 이름에 새긴다. 어기면 이름이 진다 — 그래서 물러서지 않는다.",
   "required_level": 10, "from": ["novice"], "trainer": "npc_warrior",
   "art": {
     "m": { "art": "res://art/characters/hero_warrior", "accent_hue": [70, 150], "accent_sat": 0.25 },
     "f": { "art": "res://art/characters/hero_swordswoman", "accent_hue": [212, 246], "accent_sat": 0.2, "accent_val": 0.2 }
   },
   "hp": 140, "hp_per_level": 11, "power_per_level": 0.05,
-  "palette": "teal",
+  "palette": "oath",
+  "fx": { "swing": "light", "echo": 0.07, "hit": "seal", "glyph": true },
   "attack": [
     { "anim": "attack1", "duration": 0.36, "hit_at": 0.14, "cancel_at": 0.20, "lunge": 1.0, "damage": 13, "reach": 2.0, "half_arc_deg": 80, "start_frame": 2, "hit_frame": 6, "slash": "horizontal", "slash_scale": 1.1 },
     { "anim": "attack2", "duration": 0.36, "hit_at": 0.13, "cancel_at": 0.20, "lunge": 1.1, "damage": 14, "reach": 2.0, "half_arc_deg": 80, "start_frame": 2, "hit_frame": 5, "slash": "reverse", "slash_scale": 1.1 },

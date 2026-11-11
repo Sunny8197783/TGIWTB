@@ -45,6 +45,7 @@ global uniform sampler2D height_map : filter_linear;
 global uniform sampler2D ao_map : filter_linear;
 
 varying float dapple;
+varying float hush;
 
 void vertex() {
 	wpos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
@@ -372,8 +373,16 @@ void fragment() {
 	// 숲 그늘에 나뭇잎 사이로 드는 햇빛 조각 (바람에 천천히 흔들린다). 그늘 안에서만 보인다 — light() 참고
 	bool woods = t == FOREST || t == SAKURA || t == AUTUMN || t == MOSS || t == GINKGO;
 	dapple = woods ? step(0.68, vnoise(tp * 0.05 + wind * world_time * 1.5)) : 0.0;
+	// 무명지: 색이 빠지고, 경계에는 돌아오는 색의 옅은 빛 띠
+	float hraw = hush_raw(wpos.xz / map_size, wpos.xz);
+	hush = smoothstep(0.44, 0.56, hraw);
+	col = hush_mix(col, hush);
+	col += vec3(0.5, 0.46, 0.34) * (1.0 - smoothstep(0.0, 0.035, abs(hraw - 0.5))) * step(0.3, hraw);
 	ALBEDO = slow_tint(col);
 	ROUGHNESS = 1.0;
+	AO = 1.0 - hush;
+	AO_LIGHT_AFFECT = 0.0;
+	EMISSION = ALBEDO * ambient_luma * hush;
 }
 
 void light() {
@@ -387,5 +396,5 @@ void light() {
 	// Godot 점광원 감쇠는 등불 높이(약 2m)에서 이미 0.3 남짓 — 0..1 로 늘린 뒤 끊는다
 	// 바깥으로 갈수록 빨리 어두워지게 제곱한 뒤 3단으로 끊는다
 	else { float a = clamp(ATTENUATION * 3.0, 0.0, 1.0); shade = floor(a * a * 3.0 + 0.5) / 3.0; lit = 1.0; }
-	DIFFUSE_LIGHT += LIGHT_COLOR / PI * lit * shade;
+	DIFFUSE_LIGHT += hush_light(LIGHT_COLOR, hush) / PI * lit * shade;
 }

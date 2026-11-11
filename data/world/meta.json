@@ -3,10 +3,22 @@
   "height": 1024,
   "sea_level": 0.0,
   "spawn": [
-    520.0,
-    892.0
+    631.0,
+    548.0
   ],
-  "lake_surface": 7.7,
+  "root": [
+    634.0,
+    544.0
+  ],
+  "world_tree": [
+    572.0,
+    424.0
+  ],
+  "arena": [
+    548.0,
+    392.0
+  ],
+  "lake_surface": 7.72,
   "waterfalls": [
     {
       "x": 587.57,
@@ -47,7 +59,7 @@
       "x": 602.04,
       "top_z": 428.0,
       "top_y": 19.73,
-      "bottom_y": 7.7,
+      "bottom_y": 7.72,
       "width": 5.0
     },
     {
@@ -98,136 +110,6 @@
       "top_y": 13.17,
       "bottom_y": 4.35,
       "width": 5.4
-    }
-  ],
-  "monsters": [
-    {
-      "id": "sakura_slime",
-      "x": 500,
-      "z": 700,
-      "radius": 6,
-      "count": 3,
-      "respawn": 8
-    },
-    {
-      "id": "sakura_slime",
-      "x": 620,
-      "z": 744,
-      "radius": 6,
-      "count": 3,
-      "respawn": 8
-    },
-    {
-      "id": "sakura_slime",
-      "x": 380,
-      "z": 680,
-      "radius": 6,
-      "count": 3,
-      "respawn": 8
-    },
-    {
-      "id": "sakura_slime",
-      "x": 476,
-      "z": 520,
-      "radius": 6,
-      "count": 3,
-      "respawn": 8
-    },
-    {
-      "id": "sakura_slime",
-      "x": 262,
-      "z": 664,
-      "radius": 7,
-      "count": 4,
-      "respawn": 9
-    },
-    {
-      "id": "forest_goblin",
-      "x": 150,
-      "z": 640,
-      "radius": 6,
-      "count": 3,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 282,
-      "z": 500,
-      "radius": 6,
-      "count": 3,
-      "respawn": 14
-    },
-    {
-      "id": "sakura_slime",
-      "x": 760,
-      "z": 702,
-      "radius": 7,
-      "count": 4,
-      "respawn": 9
-    },
-    {
-      "id": "sakura_slime",
-      "x": 884,
-      "z": 620,
-      "radius": 6,
-      "count": 3,
-      "respawn": 9
-    },
-    {
-      "id": "forest_goblin",
-      "x": 322,
-      "z": 318,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 232,
-      "z": 384,
-      "radius": 6,
-      "count": 3,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 452,
-      "z": 382,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 540,
-      "z": 276,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 724,
-      "z": 372,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 452,
-      "z": 140,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
-    },
-    {
-      "id": "forest_goblin",
-      "x": 700,
-      "z": 176,
-      "radius": 7,
-      "count": 4,
-      "respawn": 14
     }
   ],
   "viewpoints": [
@@ -310,9 +192,35 @@
       "distance": 28,
       "look_ahead": 10,
       "look_up": 12
+    },
+    {
+      "name": "뿌리 계단",
+      "x": 508,
+      "z": 470,
+      "radius": 6,
+      "pitch": 12,
+      "distance": 28,
+      "look_ahead": 14,
+      "look_up": 10
+    },
+    {
+      "name": "세계수 아래",
+      "x": 566,
+      "z": 414,
+      "radius": 5,
+      "pitch": 16,
+      "distance": 28,
+      "look_ahead": 6,
+      "look_up": 5
     }
   ],
   "statues": [
+    {
+      "id": "root",
+      "name": "뿌리 나루",
+      "x": 640.0,
+      "z": 540.0
+    },
     {
       "id": "harumi",
       "name": "하루미 광장",

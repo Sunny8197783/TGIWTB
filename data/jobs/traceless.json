@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "traceless",
+  "name": "무흔",
+  "glyph": "痕",
+  "motto": "제 이름마저 지운 그림자",
+  "weapon": "twin",
+  "tier": 2,
+  "description": "아무도 그가 지나간 것을 기억하지 못한다.",
+  "required_level": 25,
+  "from": [
+    "rogue"
+  ],
+  "sealed": true,
+  "hidden": true,
+  "requires": {
+    "deeds": {
+      "perfect_dodge": 120
+    },
+    "engrave": {
+      "rogue": 4
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "hush",
+  "attack": [],
+  "skills": []
+}

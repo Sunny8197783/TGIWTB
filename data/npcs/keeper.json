@@ -1,0 +1,8 @@
+{
+  "id": "npc_keeper", "name": "솔", "title": "등대지기", "role": "villager",
+  "art": "res://art/characters/npc_keeper", "x": 978, "z": 428,
+  "lines": {
+    "greet": ["밤바다는 이름이 없는 것들로 가득하지. 그래서 불을 켜는 거야.",
+              "불빛이 닿는 데까지가 사람의 땅이라네. 자네도 어두울 땐 등불 곁에 있게."]
+  }
+}

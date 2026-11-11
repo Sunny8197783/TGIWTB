@@ -1,0 +1,20 @@
+{
+  // 허(虛): 세계수를 지키던 사슴. 제 이름이 가장 먼저 졌다 — 지금은 남의 이름을 먹는다. 뿌리의 상처에서 만난다
+  "id": "hollow_stag", "name": "허(虛)", "title": "이름을 먹는 것", "art": "res://art/characters/hollow_stag", "cell": 192,
+  "level": 18, "hp": 2600, "poise": 420, "speed": 2.5, "sight": 40, "radius": 1.3, "knockback": 0.05, "exp": 1500,
+  "super_armor": true, "boss": true, "height": 3.7,
+  "attacks": [
+    { "id": "sweep", "anim": "attack", "shape": "arc", "damage": 60, "reach": 3.7, "windup": 0.9, "active": 0.25, "recover": 1.0,
+      "lunge": 3.0, "cooldown": 1.2, "telegraph": true, "max_range": 4.4, "weight": 3, "hit_frame": 5 },
+    { "id": "stomp", "anim": "stomp", "shape": "circle", "damage": 70, "reach": 8, "radius": 3.0, "windup": 1.1, "active": 0.2,
+      "recover": 1.0, "cooldown": 1.5, "telegraph": true, "min_range": 2.0, "max_range": 9.5, "weight": 2, "hit_frame": 6 },
+    { "id": "charge", "anim": "attack", "shape": "charge", "damage": 75, "reach": 0.4, "windup": 1.0, "active": 0.8, "recover": 1.4,
+      "lunge": 13, "cooldown": 2.5, "telegraph": true, "min_range": 6.0, "max_range": 17, "weight": 2 },
+    { "id": "roar", "anim": "roar", "shape": "nova", "damage": 55, "radius": 6.5, "windup": 1.4, "active": 0.3, "recover": 1.2,
+      "cooldown": 3.0, "telegraph": true, "max_range": 8.5, "weight": 2, "below_hp": 0.55, "hit_frame": 6 },
+    { "id": "leaves", "anim": "roar", "shape": "shot", "damage": 40, "reach": 14, "windup": 0.9, "active": 0.2, "recover": 0.9,
+      "cooldown": 2.4, "min_range": 4.0, "max_range": 15, "weight": 1.5, "below_hp": 0.55, "hit_frame": 6,
+      "shot": { "speed": 9, "range": 18, "radius": 0.45, "count": 5, "spread_deg": 34, "palette": "hush" } }
+  ],
+  "sounds": { "hit": "impactPunch_heavy", "windup": "impactBell_heavy", "death": "impactPlate_heavy" }
+}

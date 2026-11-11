@@ -2,6 +2,7 @@
 
 Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프라이트** (A Short Hike / HD-2D 계열).
 2026-09-28 전면 재시작. 설계·조사 근거는 `docs/design/REBUILD.md`, 큰 지도(1024m)는 `docs/design/WORLD.md`. 이전 버전은 `archive/astra-3d` 브랜치.
+2026-11 M9 «무명록(無名錄) — 이름이 지는 대륙»: 소재·이야기·직업(이름)·지도 설계는 `docs/design/NAMELESS.md`, 진행 상황은 `docs/design/PROGRESS.md`.
 
 ## 절대 규칙
 1. 직업·스킬·기연 데이터는 코드에 하드코딩하지 않는다. 전부 `data/**.json` + C# 로더.
@@ -25,7 +26,9 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 ## 빌드 / 실행 / 검증
 - `dotnet build` → `tools/godot.sh --headless --import` (새 그림을 넣었을 때) → `tools/godot.sh`
 - 지도(1024m): `$PY tools/mapgen/mapgen.py` → `data/world/*` + `docs/design/map_preview.png` (약 2분)
-  - `$PY` = `/c/Users/gram/AppData/Local/Programs/Python/Python313/python.exe` (numpy·Pillow 가 여기 깔려 있다. Bash 의 `python` 은 msys 라 없다)
+  - `$PY` = numpy·Pillow 가 깔린 윈도우 파이썬 (Bash 의 `python` 은 msys 라 없다). PC 마다 다르다 —
+    노트북 `/c/Users/gram/AppData/Local/Programs/Python/Python313/python.exe`, 데스크톱 `/c/Users/김태양/AppData/Local/Programs/Python/Python312/python.exe`
+  - Godot 실행 파일은 `tools/godot.sh` 가 찾는다 (환경 변수 `GODOT`, 없으면 바탕화면의 `Godot_v4.7.2-stable_mono_win64`). .NET 8 SDK 가 PATH 에 없으면 `export PATH="/c/Program Files/dotnet:$PATH"`
   - 지역·절벽선·강·길·마을·폭포는 mapgen.py 위쪽 상수. 절벽선을 옮기면 폭포·호수 자리는 `pinned` 로 붙든다
 - 스프라이트 법선 지도: 새 그림을 받으면 `$PY tools/normals.py` (→ `*_n.png`: RG 법선, B 부피 깊이) 뒤 `--headless --import`.
   나무·덤불·바위는 B 깊이만큼 판을 부풀려 입체로 그린다 (`PropBuilder.Relief`, 끄기 `--no=relief`). 충돌은 그림 아랫선 모양 그대로 (`World/Footprint`)
@@ -54,3 +57,30 @@ Godot 4.7 (.NET/C#) 액션 RPG. **저해상도 3D 디오라마 + 픽셀 스프�
 - 나무·건물: `create_object_pro_flash` + 기존 그림을 `style_image` 로 (한 장 6회, 긴 변 208px 넘으면 9회). 참고 그림이 캔버스보다 크면 거절된다
   - 같은 종류의 그림 여러 장은 `<종류>_<번호>.png` — 불러올 때 아틀라스로 이어 붙이고 인스턴스마다 무작위로 고른다 (`World/PropBuilder`)
 - 주의: PowerShell 은 스크립트 인자의 맨 `--` 를 삼킨다. Godot 실행은 Bash 의 `tools/godot.sh` 로.
+
+## 무명록 (M9)
+- 세계: 모든 것은 세계수 잎에 적힌 **이름**으로 있다. 이름을 잃으면 잿빛 '무명'. 주인공은 빈 잎(무명인). 직업 = 이름 (서약검 誓·묵영 墨·풍문사 風·호명사 呼)
+- 무명지·이름비: `data/world/hush.json` + `World/Hush`. 색 빠짐은 전역 셰이더 변수 `hush_map`(256², 4m/텍셀)·`ambient_luma` — 새 월드 셰이더는
+  `common.gdshaderinc` 의 `hush_at/hush_mix/hush_light` 를 거친다. 주인공·이펙트는 `hush_exempt`. 이름비(F) → 무리 → (보스) → 색이 번지는 복원 연출
+- 행적·각인: `Core/Deeds` (유효한 행동만 센다, 규칙 3), 조건은 `Data/Requirement` (레벨·직업·행적·각인·플래그). 각인 단계는 `data/player/engrave.json`
+  - 직업 JSON 의 `requires`·`hidden`·`sealed` — 봉인(sealed)된 이름 10개는 다음 대규모 직업 업데이트용 자리. 히든의 조건은 화면에 쓰지 않는다 (규칙 4)
+- 몬스터: `data/monsters/*.json` (`MonsterDef`: move chase/kite/circle, attacks 의 shape arc/circle/charge/shot/nova, guard·blink·super_armor·boss).
+  밀도 스포너 `data/world/spawns.json` (`Combat/MonsterSpawner`), 적 투사체 `Combat/EnemyShot` (패링하면 되돌아간다). 큰 몸은 시트 칸 192 (`cell`)
+- 이야기: `data/story/*.json` (단계의 goal·actions) + `World/Story`. 동행 나래 `World/Companion`. 대화 상자 `Render/Dialogue` (이름 입력 포함)
+  - 위기 연출(이름이 지워진다 → 나래가 부른다)은 `Story.StartCrisis`. 확인: `--capture --shot=548,398,14 --no=spawn,hush --crisis --autotalk=1 --exp=1 --steps=110,480,760,1300`
+- UI: 부품은 `Render/Ui` (Frame·Title·Button·KeyCap·Hints·Bar·Emblem) 만 쓴다. `Render/Hud`, `Render/Menus` (타이틀·멈춤·이야기·이름록·지도·조작법·설정),
+  머리 위 안내는 `Npcs.Prompt` 하나로 (사람·여신상·이름비 같은 모양). 설정은 `Core/Settings` (`user://settings.json`)
+- 직업별 이펙트: 직업 JSON 의 `"fx"` (swing light/ink · echo · cast bow/ring · hit seal/blot/gust/chime · glyph · ghost) → `Combat/JobFx`.
+  먹 붓질은 `shaders/slash_ink.gdshader` (불투명 패스 — 깊이를 써야 땅에 안 덮인다). 새 이펙트 모양은 `JobFx.Warm`·`CombatFx.Prewarm` 에 넣는다
+- 모습 빚기(Forge): `Core/Forge` + `data/player/forge.json` + `Render/CharacterCreator` 의 '빚기' 탭 — 고른 항목으로 PixelLab 에 원화(2회)·동작 9개(방향당 1회)를
+  실시간으로 뽑아 `user://forge/<id>/` 에 시트로 묶는다. 열쇠는 `user://pixellab_key.txt` (없으면 탭이 안내만 한다). 확인: `--creator=forge`
+  - 실제 생성 시험: `--creator=forgetest` (원화, 2회) → `--creator=forgeanim --waitforge` (동작 9개, 약 72회·20분. 끊겨도 이어받고, 이미 그려진 동작은 다시 내지 않는다).
+    빚은 몸으로 찍기: `--forge=latest` (또는 id). 생성기가 "효과 없이"를 어기고 빛을 그려 넣는 칸이 가끔 있다 — 원화 품질의 한계
+- PixelLab 도구: `$PY tools/pixellab.py balance|char|anim|wait|status|image|object` (열쇠 `tools/.pixellab_key`, 깃 제외. id 는 `tools/pixellab_ids.json`),
+  묶음 생성은 `tools/gen_m9.py all --only=이름,…` (동시 작업 칸 8개 — 동작 하나씩 낸다). 템플릿 동작(breathing-idle)은 zip 안에서 `breathing_idle` 폴더
+  - 끝난 캐릭터는 `$PY tools/fetch_assets.py --only=characters/<이름>/ --force` → `$PY tools/normals.py` → `tools/godot.sh --headless --import`
+- 지도 그림(미니맵·전체 지도)은 mapgen 뒤 `$PY tools/ui_map.py`
+- 캡처 옵션(M9): `--spawn=id:수[:레벨[:h]]` `--spawnat=dx,dz` (주인공 기준 자리), `--kill=N` (물리 N걸음마다 전멸), `--menu=title|pause|journal|codex|map|help|settings`,
+  `--no=spawn,hush`, `--delay=N` (물리 N걸음 뒤에 누른다), `--keys=60:attack,180:appearance` (장면 시작 뒤 그 걸음에 톡 누른다), `--boot` (캡처에서도 첫 화면부터), `--steps=6,10,16` (누른 뒤 그 걸음마다 한 장 — 동작 타이밍은 이걸로. `--settle` 은 그리기 프레임이라 PC 마다 다르다)
+  - 직업 이펙트 한 번에 보기: `tools/fxshots.sh <직업> <걸음들> [누를 것] [몬스터] [dx,dz]`, 여러 장 이어 붙이기 `$PY tools/grid.py out.png x0,y0,x1,y1 열수 그림…`
+- Bash 한 명령에 긴 heredoc·작은따옴표 든 한글을 넣으면 파싱이 깨진다 — 파일은 Write/Edit 로 쓰고 실행만 Bash 로

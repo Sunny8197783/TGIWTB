@@ -1,0 +1,12 @@
+{
+  // 꽃잎 정령: 거리를 두고 떠다니며 씨앗을 쏜다. 패링하면 씨앗이 되돌아간다
+  "id": "petal_wisp", "name": "꽃잎 정령", "art": "res://art/characters/petal_wisp",
+  "level": 5, "hp": 60, "poise": 10, "speed": 3.2, "sight": 11, "radius": 0.4, "knockback": 1.4, "exp": 20,
+  "move": "kite", "prefer_range": 6.5,
+  "attacks": [
+    { "id": "seed", "shape": "shot", "damage": 13, "reach": 10, "windup": 0.7, "active": 0.15, "recover": 0.6, "cooldown": 2.0,
+      "min_range": 2.5, "max_range": 10.5, "hit_frame": 6,
+      "shot": { "speed": 8, "range": 13, "radius": 0.35, "homing": 25, "palette": "sakura" } }
+  ],
+  "sounds": { "hit": "impactSoft_medium", "windup": "cloth", "death": "impactSoft_heavy" }
+}

@@ -1,0 +1,30 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "herald",
+  "name": "전령",
+  "glyph": "傳",
+  "motto": "이름을 대륙 끝까지 실어 나르는 자",
+  "weapon": "bow",
+  "tier": 2,
+  "description": "가장 먼 곳에 가장 먼저 닿는다.",
+  "required_level": 25,
+  "from": [
+    "archer"
+  ],
+  "sealed": true,
+  "hidden": false,
+  "requires": {
+    "deeds": {
+      "statue": 9
+    },
+    "engrave": {
+      "archer": 5
+    }
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "wind",
+  "attack": [],
+  "skills": []
+}

@@ -89,6 +89,36 @@ public partial class DevCapture : Node
         }
     }
 
+    /// <summary>--forge=id 또는 --forge=latest — 빚은 모습(user://forge/&lt;id&gt;)을 입고 찍는다. 동작이 다 새겨진 것만.</summary>
+    public static string ForgeOverride()
+    {
+        foreach (string a in OS.GetCmdlineUserArgs())
+        {
+            if (!a.StartsWith("--forge="))
+                continue;
+            string id = a.Substring(8);
+            if (id != "latest")
+                return Forge.Ready(id) ? id : null;
+            string best = null;
+            ulong bestTime = 0;
+            if (!DirAccess.DirExistsAbsolute(ProjectSettings.GlobalizePath(Forge.Root)))
+                return null;
+            foreach (string dir in DirAccess.GetDirectoriesAt(Forge.Root))
+            {
+                if (!Forge.Ready(dir))
+                    continue;
+                ulong t = FileAccess.GetModifiedTime(Forge.Folder(dir) + "/meta.json");
+                if (t >= bestTime)
+                {
+                    bestTime = t;
+                    best = dir;
+                }
+            }
+            return best;
+        }
+        return null;
+    }
+
     /// <summary>--level=N --job=id : 레벨·직업을 정해 시작 (세이브와 무관). 스킬 칸도 그 레벨만큼 열린다</summary>
     public static void JobOverride(ref int level, ref Data.JobDef job)
     {
@@ -133,6 +163,34 @@ public partial class DevCapture : Node
                 _after = int.Parse(a.Substring(8));
             else if (a.StartsWith("--out="))
                 _out = a.Substring(6);
+            else if (a.StartsWith("--kill="))
+                _killEvery = int.Parse(a.Substring(7));
+            else if (a.StartsWith("--spawn="))
+                _spawn.AddRange(a.Substring(8).Split(','));
+            else if (a.StartsWith("--spawnat="))
+            {
+                var o = a.Substring(10).Split(',');
+                _spawnAt = new Vector2(float.Parse(o[0], CultureInfo.InvariantCulture), float.Parse(o[1], CultureInfo.InvariantCulture));
+            }
+            else if (a.StartsWith("--delay="))
+                _delay = int.Parse(a.Substring(8));
+            else if (a == "--waitforge")
+                _waitForge = true;
+            else if (a.StartsWith("--keys="))
+            {
+                foreach (string item in a.Substring(7).Split(','))
+                {
+                    var kv = item.Split(':');
+                    _keys.Add((int.Parse(kv[0]), kv[1]));
+                }
+            }
+            else if (a.StartsWith("--steps="))
+            {
+                foreach (string n in a.Substring(8).Split(','))
+                    _stepShots.Add(int.Parse(n));
+                _stepShots.Sort();
+                _shootAfter = _stepShots[^1];
+            }
         }
         DirAccess.MakeDirRecursiveAbsolute(_out);
         GD.Print($"[Capture] {_shots.Count}장 → {ProjectSettings.GlobalizePath(_out)}");
@@ -166,14 +224,78 @@ public partial class DevCapture : Node
         _spikes = _gcSpikes = _gcCount = 0;
         _lastGc = System.GC.CollectionCount(0);
         _pressPending = _press.Count > 0 || _exp > 0;
+        _delayLeft = _delay;
+        _keyTick = 0;
+        if (_pressPending && _delay > 0)
+            _wait = int.MaxValue - 1; // 누른 뒤부터 센다
+        else if (!_pressPending && _shootAfter > 0)
+        {
+            // 누를 것이 없으면 장면이 시작된 때부터 센다
+            _shootLeft = _shootAfter;
+            _wait = int.MaxValue - 1;
+        }
         _reacted = false;
+        SpawnTest(feet);
     }
+
+    // --spawn=id:수[:레벨[:h]],…  장면마다 주인공 북쪽 4m 둘레에 몬스터를 세운다 (h = 무명)
+    private readonly List<string> _spawn = new();
+    // --spawnat=dx,dz : 첫 몬스터를 세울 자리 (주인공 기준 m). --delay=N : 물리 N걸음(60 = 1초) 기다렸다가 누른다 (몬스터가 다 나타난 뒤)
+    private Vector2 _spawnAt = new(-3f, -3.5f);
+    private int _delay, _delayLeft;
+    // --waitforge : 빚기(Core/Forge)가 일하는 동안은 찍지 않고 기다린다 (실시간 생성은 몇 분~수십 분)
+    private bool _waitForge;
+    // --keys=60:attack,200:appearance : 장면이 시작되고 물리 N걸음째에 그 조작을 톡 누른다 (첫 화면 → 모습 → 여는 글처럼 차례로 눌러야 하는 흐름)
+    private readonly List<(int step, string action)> _keys = new();
+    private int _keyTick;
+    // --steps=N : 누른 뒤 물리 N걸음(60 = 1초)째에 찍는다. --settle 은 그리기 프레임이라 PC 마다 시간이 달라, 동작 타이밍은 이걸로 맞춘다
+    // --steps=6,10,16 처럼 여럿이면 그 걸음마다 한 장씩 (shot_00_s06.png …) — 이펙트가 흘러가는 모습을 한 번에 본다
+    private int _shootAfter, _shootLeft = -1;
+    private readonly List<int> _stepShots = new();
+    private readonly Queue<int> _grab = new();
+
+    private void SpawnTest(Vector3 feet)
+    {
+        foreach (var e in Combat.Enemy.All.ToArray())
+            e.Despawn();
+        int k = 0;
+        foreach (string item in _spawn)
+        {
+            var p = item.Split(':');
+            if (!Data.MonsterDef.Exists(p[0]))
+            {
+                GD.PrintErr($"[Capture] 모르는 몬스터 {p[0]}");
+                continue;
+            }
+            var def = Data.MonsterDef.Get(p[0]);
+            int count = p.Length > 1 ? int.Parse(p[1]) : 1;
+            int level = p.Length > 2 ? int.Parse(p[2]) : def.Level;
+            bool hushed = p.Length > 3 && p[3] == "h";
+            for (int i = 0; i < count; i++, k++)
+                Combat.MonsterSpawner.SpawnAt(def, new Vector2(feet.X + _spawnAt.X + k * 2.2f, feet.Z + _spawnAt.Y - (k % 2) * 1.2f), level, hushed);
+        }
+    }
+
+    // --kill=N : 물리 N걸음마다 살아 있는 적을 모두 쓰러뜨린다 (이름비 싸움을 끝까지 돌려 볼 때)
+    private int _killEvery, _killTick;
 
     public override void _PhysicsProcess(double delta)
     {
         _steps++;
+        if (_killEvery > 0 && ++_killTick % _killEvery == 0)
+            foreach (var e in Combat.Enemy.All.ToArray())
+                if (e.Alive)
+                    e.TakeHit(999999f, Vector3.Forward, true);
         if (_index < 0 || _index >= _shots.Count)
             return;
+        _keyTick++;
+        foreach (var (step, action) in _keys)
+        {
+            if (_keyTick == step)
+                Input.ActionPress(action);
+            else if (_keyTick == step + 3)
+                Input.ActionRelease(action);
+        }
         if (_react != null && !_reacted)
         {
             _wait = int.MaxValue - 1; // 반응할 때까지 기다린다
@@ -189,9 +311,25 @@ public partial class DevCapture : Node
                 break;
             }
         }
-        if (_pressPending)
+        if (_shootLeft > 0)
+        {
+            _shootLeft--;
+            int step = _shootAfter - _shootLeft;
+            if (_shootLeft == 0)
+                _wait = 1;
+            else if (_stepShots.Contains(step))
+                _grab.Enqueue(step);
+        }
+        if (_pressPending && --_delayLeft < 0)
         {
             _pressPending = false;
+            if (_shootAfter > 0)
+            {
+                _shootLeft = _shootAfter;
+                _wait = int.MaxValue - 1;
+            }
+            else if (_delay > 0)
+                _wait = _settle;
             if (_exp > 0)
                 Combat.Hero.Instance?.GrantExp(_exp);
             foreach (var action in _press)
@@ -231,10 +369,21 @@ public partial class DevCapture : Node
 
         if (_index < 0 || _index >= _shots.Count)
             return;
+        if (_grab.Count > 0)
+            CallDeferred(nameof(Grab), _grab.Dequeue());
+        if (_waitForge && Forge.Instance.Busy && _wait < 400 && _shootLeft <= 0)
+            _wait = 400;   // 끝난 뒤에도 잠깐 더 (갈아입은 모습이 그려지게)
         if (--_wait > 0)
             return;
         CallDeferred(nameof(Shoot));
         _wait = int.MaxValue;
+    }
+
+    /// <summary>중간 걸음 한 장: 다음 장면으로 넘어가지 않고 화면만 남긴다.</summary>
+    private void Grab(int step)
+    {
+        string path = $"{_out}/shot_{_index:D2}_s{step:D2}.png";
+        GetViewport().GetTexture().GetImage().SavePng(path);
     }
 
     private void Shoot()

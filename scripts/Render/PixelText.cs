@@ -32,6 +32,10 @@ public static class PixelText
         ci.DrawString(Font, pos, s, HorizontalAlignment.Left, -1, Size, new Color(c, alpha));
     }
 
+    /// <summary>테두리 없이 (밝은 판 위의 어두운 글자)</summary>
+    public static void DrawPlain(CanvasItem ci, string s, Vector2 pos, Color c) =>
+        ci.DrawString(Font, pos.Round(), s, HorizontalAlignment.Left, -1, Size, c);
+
     public static void DrawCentered(CanvasItem ci, string s, Vector2 center, Color c, float alpha = 1f) =>
         Draw(ci, s, new Vector2(Mathf.Round(center.X - Width(s) * 0.5f), center.Y), c, alpha);
 }

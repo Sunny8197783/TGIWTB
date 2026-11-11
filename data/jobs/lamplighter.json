@@ -1,0 +1,33 @@
+{
+  // 봉인된 이름 (다음 직업 업데이트): 그림·기술이 아직 없다. requires 는 그때 쓸 조건의 본보기 — 화면에는 나오지 않는다 (규칙 4)
+  "id": "lamplighter",
+  "name": "등불지기",
+  "glyph": "燈",
+  "motto": "누군가의 이름을 기억해 주는 자",
+  "weapon": "blade",
+  "tier": 2,
+  "description": "밤에도 지워지지 않게, 불을 들고 곁에 선다.",
+  "required_level": 20,
+  "from": [
+    "warrior",
+    "rogue",
+    "archer",
+    "mage"
+  ],
+  "sealed": true,
+  "hidden": true,
+  "requires": {
+    "deeds": {
+      "kill_night": 100
+    },
+    "flags": [
+      "narae_returned"
+    ]
+  },
+  "hp": 120,
+  "hp_per_level": 9,
+  "power_per_level": 0.055,
+  "palette": "lantern",
+  "attack": [],
+  "skills": []
+}

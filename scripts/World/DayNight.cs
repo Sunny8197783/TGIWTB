@@ -135,6 +135,11 @@ public partial class DayNight : Node
     private static Vector3 Dir(float az, float el)
         => new(Mathf.Sin(az) * Mathf.Cos(el), Mathf.Sin(el), -Mathf.Cos(az) * Mathf.Cos(el));
 
+    private static readonly StringName AmbientLuma = "ambient_luma";
+
+    /// <summary>밤인가 — 밤에는 이름이 흐려져 무명이 무명지 밖으로 나온다 (스포너·행적이 묻는다)</summary>
+    public bool IsNight => Night > 0.5f;
+
     /// <summary>0 = 한낮 ~ 1 = 한밤.</summary>
     public float Night
     {
@@ -178,6 +183,8 @@ public partial class DayNight : Node
 
         _env.AmbientLightColor = ambient;
         _env.AmbientLightEnergy = ambientEnergy;
+        // 무명지는 환경광의 색을 버리고 밝기만 쓴다 (common.gdshaderinc hush_light)
+        RenderingServer.GlobalShaderParameterSet(AmbientLuma, ambient.Luminance * ambientEnergy);
         _env.FogLightColor = horizon;
 
         float night = Night;

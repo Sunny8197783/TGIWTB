@@ -1,0 +1,8 @@
+{
+  "id": "npc_miko", "name": "하나", "title": "벚꽃 신사의 무녀", "role": "villager",
+  "art": "res://art/characters/npc_miko", "x": 118, "z": 504,
+  "lines": {
+    "greet": ["지는 것이 있어야 피는 것도 있어요. 이 골짜기는 그걸 잊고 있었어요.",
+              "신사 언덕에서 북쪽을 보면 노을이 고와요. 한번 올라가 보세요."]
+  }
+}
